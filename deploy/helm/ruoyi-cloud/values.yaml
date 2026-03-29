@@ -7,7 +7,7 @@ mysql:
   enabled: true
   rootPassword: password
   database: ry-cloud
-  image: 192.168.1.104/dockerhub-proxy/mysql:8.0
+  image: 192.168.1.104/dockerhub-proxy/library/mysql:8.0
   nfs:
     server: 192.168.1.104
     path: /data/nfs/share/ruoyi-mysql

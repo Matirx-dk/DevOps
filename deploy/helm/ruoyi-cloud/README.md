@@ -53,6 +53,10 @@ sqlInit:
   mode: bundled
 ```
 
+当前默认也把 MySQL 镜像改成了 Harbor 代理缓存地址：
+
+- `192.168.1.104/dockerhub-proxy/library/mysql:8.0`
+
 Chart 已内置：
 - `files/ry_config.sql`
 - `files/ry_cloud.sql`
