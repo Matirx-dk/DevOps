@@ -1,0 +1,21 @@
+mysql:
+  rootPassword: password
+  nfs:
+    server: 192.168.1.104
+    path: /data/nfs/share/ruoyi-mysql
+
+auth:
+  image: 192.168.1.104/ruoyi/ruoyi-auth:demo
+
+system:
+  image: 192.168.1.104/ruoyi/ruoyi-system:demo
+
+gateway:
+  image: 192.168.1.104/ruoyi/ruoyi-gateway:demo
+
+ui:
+  image: 192.168.1.104/ruoyi/ruoyi-ui:demo
+
+ingress:
+  uiHost: devops1.zoudekang.cloud
+  nacosHost: nacos.zoudekang.cloud

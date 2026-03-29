@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-mysql
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ruoyi-mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-redis
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ruoyi-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-nacos
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ruoyi-nacos
+  ports:
+    - name: http
+      port: {{ .Values.nacos.service.port }}
+      targetPort: 8848
+    - name: grpc1
+      port: {{ .Values.nacos.service.grpc1 }}
+      targetPort: 9848
+    - name: grpc2
+      port: {{ .Values.nacos.service.grpc2 }}
+      targetPort: 9849
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-auth
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ruoyi-auth
+  ports:
+    - port: {{ .Values.auth.servicePort }}
+      targetPort: {{ .Values.auth.servicePort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-system
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ruoyi-system
+  ports:
+    - port: {{ .Values.system.servicePort }}
+      targetPort: {{ .Values.system.servicePort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-gateway
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ruoyi-gateway
+  ports:
+    - port: {{ .Values.gateway.servicePort }}
+      targetPort: {{ .Values.gateway.servicePort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-ui
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ruoyi-ui
+  ports:
+    - port: {{ .Values.ui.servicePort }}
+      targetPort: {{ .Values.ui.servicePort }}

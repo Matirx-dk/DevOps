@@ -1,0 +1,54 @@
+nameOverride: ""
+fullnameOverride: ""
+
+namespaceOverride: ""
+
+mysql:
+  enabled: true
+  rootPassword: password
+  database: ry-cloud
+  image: mysql:8.0
+  nfs:
+    server: 192.168.1.104
+    path: /data/nfs/share/ruoyi-mysql
+    size: 20Gi
+
+redis:
+  enabled: true
+  image: redis:7-alpine
+
+nacos:
+  enabled: true
+  image: nacos/nacos-server:v2.2.3
+  service:
+    port: 8848
+    grpc1: 9848
+    grpc2: 9849
+
+auth:
+  image: CHANGE_ME_REGISTRY/ruoyi-auth:CHANGE_ME_TAG
+  servicePort: 9200
+
+system:
+  image: CHANGE_ME_REGISTRY/ruoyi-system:CHANGE_ME_TAG
+  servicePort: 9201
+
+gateway:
+  image: CHANGE_ME_REGISTRY/ruoyi-gateway:CHANGE_ME_TAG
+  servicePort: 8080
+
+ui:
+  image: CHANGE_ME_REGISTRY/ruoyi-ui:CHANGE_ME_TAG
+  servicePort: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  uiHost: devops1.zoudekang.cloud
+  nacosHost: nacos.zoudekang.cloud
+
+sqlInit:
+  enabled: false
+  ryConfigSql: ""
+  ryCloudSql: ""
+  quartzSql: ""
