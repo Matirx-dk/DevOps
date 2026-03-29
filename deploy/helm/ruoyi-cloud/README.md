@@ -86,6 +86,57 @@ sqlInit:
       ...
 ```
 
+## Harbor Proxy Cache 使用说明
+
+当前环境已在 `192.168.1.104` 的 Harbor 上配置：
+
+- Registry Endpoint: `dockerhub`
+- Proxy Cache Project: `dockerhub-proxy`
+
+### 为什么要这样做
+
+这样可以让集群优先通过 Harbor 拉取 Docker 官方镜像，避免直接访问 Docker Hub 不稳定或过慢。
+
+### 关键规则
+
+Docker Hub 官方镜像在 Harbor proxy cache 中，通常要带 `library/` 路径。
+
+例如：
+
+- 正确：`192.168.1.104/dockerhub-proxy/library/mysql:8.0`
+- 正确：`192.168.1.104/dockerhub-proxy/library/redis:7-alpine`
+- 错误：`192.168.1.104/dockerhub-proxy/mysql:8.0`
+
+Nacos 这类非 library 路径镜像则保持原组织名：
+
+- `192.168.1.104/dockerhub-proxy/nacos/nacos-server:v2.2.3`
+
+### 首次拉取行为
+
+第一次拉取某个镜像时，Harbor 会去 Docker Hub 回源并缓存，所以首次可能会慢一些。
+后续节点再次拉取同一镜像时，会直接命中 Harbor 缓存。
+
+### 示例
+
+```bash
+ctr -n k8s.io images pull 192.168.1.104/dockerhub-proxy/library/mysql:8.0
+ctr -n k8s.io images pull 192.168.1.104/dockerhub-proxy/library/redis:7-alpine
+ctr -n k8s.io images pull 192.168.1.104/dockerhub-proxy/nacos/nacos-server:v2.2.3
+```
+
+### Chart 当前默认策略
+
+Helm Chart 中已优先把这些基础镜像改为 Harbor proxy/cache 地址：
+
+- busybox
+- mysql
+- redis
+- nacos
+
+业务镜像仍然保持使用你自己的 Harbor 项目：
+
+- `192.168.1.104/ruoyi/...`
+
 ## 已保留的关键修复
 
 - `ruoyi-auth` 使用 `SPRING_DATA_REDIS_HOST/PORT`
