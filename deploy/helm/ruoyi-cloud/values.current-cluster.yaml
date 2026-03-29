@@ -1,0 +1,28 @@
+mysql:
+  rootPassword: password
+  nfs:
+    server: 192.168.1.104
+    path: /data/nfs/share/ruoyi-mysql
+    size: 20Gi
+
+auth:
+  image: 192.168.1.104/ruoyi/ruoyi-auth@sha256:2e88aaa875bc146e429da73b2a20c5004058efc0bcb2ca6f98668778ac062bf1
+
+system:
+  image: 192.168.1.104/ruoyi/ruoyi-system@sha256:7a07142f0046c0bcfc9705057a03e2424ba90a0f2569d129144ef1ed87fe93f7
+
+gateway:
+  image: 192.168.1.104/ruoyi/ruoyi-gateway@sha256:be23b226c6c854ada39bd7088a317b21f70a8109d7a5ddd33389b01c9be2ea43
+
+ui:
+  image: 192.168.1.104/ruoyi/ruoyi-ui:demo
+
+ingress:
+  enabled: true
+  className: nginx
+  uiHost: devops1.zoudekang.cloud
+  nacosHost: nacos.zoudekang.cloud
+
+sqlInit:
+  enabled: true
+  mode: bundled

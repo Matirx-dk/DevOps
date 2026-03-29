@@ -34,6 +34,10 @@ helm install ruoyi-cloud ./deploy/helm/ruoyi-cloud \
   -f my-values.yaml
 ```
 
+仓库里也附带了一个当前集群可直接参考的示例：
+
+- `deploy/helm/ruoyi-cloud/values.current-cluster.yaml`
+
 ## SQL 初始化
 
 默认：
