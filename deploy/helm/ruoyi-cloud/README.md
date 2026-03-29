@@ -53,9 +53,12 @@ sqlInit:
   mode: bundled
 ```
 
-当前默认也把 MySQL 镜像改成了 Harbor 代理缓存地址：
+当前默认已优先把基础镜像切到 Harbor 代理缓存地址：
 
+- `192.168.1.104/dockerhub-proxy/library/busybox:1.36`
 - `192.168.1.104/dockerhub-proxy/library/mysql:8.0`
+- `192.168.1.104/dockerhub-proxy/library/redis:7-alpine`
+- `192.168.1.104/dockerhub-proxy/nacos/nacos-server:v2.2.3`
 
 Chart 已内置：
 - `files/ry_config.sql`
