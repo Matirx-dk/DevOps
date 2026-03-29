@@ -49,6 +49,12 @@ ingress:
 
 sqlInit:
   enabled: false
-  ryConfigSql: ""
-  ryCloudSql: ""
-  quartzSql: ""
+  mode: bundled
+  bundled:
+    ryConfigFile: files/ry_config.sql
+    ryCloudFile: files/ry_cloud.sql
+    quartzFile: files/quartz.sql
+  inline:
+    ryConfigSql: ""
+    ryCloudSql: ""
+    quartzSql: ""

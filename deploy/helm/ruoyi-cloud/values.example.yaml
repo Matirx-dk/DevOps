@@ -19,3 +19,7 @@ ui:
 ingress:
   uiHost: devops1.zoudekang.cloud
   nacosHost: nacos.zoudekang.cloud
+
+sqlInit:
+  enabled: true
+  mode: bundled

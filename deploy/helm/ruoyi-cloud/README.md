@@ -39,10 +39,41 @@ helm install ruoyi-cloud ./deploy/helm/ruoyi-cloud \
 默认：
 - `sqlInit.enabled=false`
 
-如果你要用 Chart 直接初始化数据库，需要在 values 中填入：
-- `sqlInit.ryConfigSql`
-- `sqlInit.ryCloudSql`
-- `sqlInit.quartzSql`
+### 方式一：使用 Chart 自带 SQL（推荐）
+
+开启：
+
+```yaml
+sqlInit:
+  enabled: true
+  mode: bundled
+```
+
+Chart 已内置：
+- `files/ry_config.sql`
+- `files/ry_cloud.sql`
+- `files/quartz.sql`
+
+这些文件已经按 Kubernetes 场景做过一轮基础替换：
+- Redis 不走 localhost
+- MySQL 不走 localhost
+- Gateway URL 不走 localhost
+- Nacos 菜单地址改为域名入口
+
+### 方式二：使用外部 inline SQL
+
+```yaml
+sqlInit:
+  enabled: true
+  mode: inline
+  inline:
+    ryConfigSql: |
+      ...
+    ryCloudSql: |
+      ...
+    quartzSql: |
+      ...
+```
 
 ## 已保留的关键修复
 

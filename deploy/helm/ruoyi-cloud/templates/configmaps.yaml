@@ -115,9 +115,21 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   01-ry-config.sql: |
-{{ .Values.sqlInit.ryConfigSql | indent 4 }}
+{{- if eq .Values.sqlInit.mode "bundled" }}
+{{ (.Files.Get .Values.sqlInit.bundled.ryConfigFile) | indent 4 }}
+{{- else }}
+{{ .Values.sqlInit.inline.ryConfigSql | indent 4 }}
+{{- end }}
   02-ry-cloud.sql: |
-{{ .Values.sqlInit.ryCloudSql | indent 4 }}
+{{- if eq .Values.sqlInit.mode "bundled" }}
+{{ (.Files.Get .Values.sqlInit.bundled.ryCloudFile) | indent 4 }}
+{{- else }}
+{{ .Values.sqlInit.inline.ryCloudSql | indent 4 }}
+{{- end }}
   03-quartz.sql: |
-{{ .Values.sqlInit.quartzSql | indent 4 }}
+{{- if eq .Values.sqlInit.mode "bundled" }}
+{{ (.Files.Get .Values.sqlInit.bundled.quartzFile) | indent 4 }}
+{{- else }}
+{{ .Values.sqlInit.inline.quartzSql | indent 4 }}
+{{- end }}
 {{- end }}
