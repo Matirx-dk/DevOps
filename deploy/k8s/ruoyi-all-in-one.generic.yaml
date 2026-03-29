@@ -1,0 +1,563 @@
+# RuoYi Cloud generic all-in-one Kubernetes manifest
+#
+# This version is intended as a reusable template.
+# Before applying, replace the placeholder values below:
+# - CHANGE_ME_REGISTRY/...
+# - CHANGE_ME_DOMAIN_UI
+# - CHANGE_ME_DOMAIN_NACOS
+# - CHANGE_ME_NFS_SERVER
+# - CHANGE_ME_NFS_PATH
+# - CHANGE_ME_MYSQL_ROOT_PASSWORD
+#
+# Apply:
+#   kubectl apply -f deploy/k8s/ruoyi-all-in-one.generic.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ruoyi-cloud
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ruoyi-sql-init
+  namespace: ruoyi-cloud
+data:
+  01-ry-config.sql: |
+    -- Import your sanitized ry-config SQL here.
+    -- Recommended: replace all localhost Redis/MySQL/Gateway references before use.
+  02-ry-cloud.sql: |
+    -- Import your business database SQL here.
+  03-quartz.sql: |
+    -- Import your quartz SQL here.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ruoyi-gateway-local
+  namespace: ruoyi-cloud
+data:
+  application.yml: |
+    spring:
+      data:
+        redis:
+          host: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+          port: 6379
+          password:
+      cloud:
+        gateway:
+          server:
+            webflux:
+              discovery:
+                locator:
+                  lowerCaseServiceId: true
+                  enabled: true
+              routes:
+                - id: ruoyi-auth
+                  uri: lb://ruoyi-auth
+                  predicates:
+                    - Path=/auth/**
+                  filters:
+                    - name: CacheRequestBody
+                      args:
+                        bodyClass: java.lang.String
+                    - ValidateCodeFilter
+                    - StripPrefix=1
+                - id: ruoyi-system
+                  uri: lb://ruoyi-system
+                  predicates:
+                    - Path=/system/**
+                  filters:
+                    - StripPrefix=1
+    security:
+      captcha:
+        enabled: true
+        type: math
+      xss:
+        enabled: true
+        excludeUrls:
+          - /system/notice
+      ignore:
+        whites:
+          - /auth/logout
+          - /auth/login
+          - /auth/register
+          - /*/v2/api-docs
+          - /*/v3/api-docs
+          - /csrf
+    springdoc:
+      webjars:
+        prefix:
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ruoyi-system-local
+  namespace: ruoyi-cloud
+data:
+  application.yml: |
+    spring:
+      data:
+        redis:
+          host: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+          port: 6379
+          password:
+      datasource:
+        druid:
+          stat-view-servlet:
+            enabled: true
+            loginUsername: ruoyi
+            loginPassword: 123456
+        dynamic:
+          druid:
+            initial-size: 1
+            min-idle: 1
+            maxActive: 10
+            maxWait: 60000
+            connectTimeout: 30000
+            socketTimeout: 60000
+            timeBetweenEvictionRunsMillis: 60000
+            minEvictableIdleTimeMillis: 300000
+            validationQuery: SELECT 1
+            testWhileIdle: true
+            testOnBorrow: false
+            testOnReturn: false
+            poolPreparedStatements: true
+            maxPoolPreparedStatementPerConnectionSize: 20
+            filters: stat,slf4j
+            connectionProperties: druid.stat.mergeSql\=true;druid.stat.slowSqlMillis\=5000
+          datasource:
+            master:
+              driver-class-name: com.mysql.cj.jdbc.Driver
+              url: jdbc:mysql://ruoyi-mysql.ruoyi-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+              username: root
+              password: CHANGE_ME_MYSQL_ROOT_PASSWORD
+    mybatis:
+      typeAliasesPackage: com.ruoyi.system
+      mapperLocations: classpath*:mapper/**/*.xml
+    springdoc:
+      gatewayUrl: http://ruoyi-gateway.ruoyi-cloud.svc.cluster.local:8080/${spring.application.name}
+      api-docs:
+        enabled: true
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ruoyi-mysql-pv
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: CHANGE_ME_NFS_SERVER
+    path: CHANGE_ME_NFS_PATH
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ruoyi-mysql-pvc
+  namespace: ruoyi-cloud
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+  volumeName: ruoyi-mysql-pv
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-mysql
+  namespace: ruoyi-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-mysql
+  template:
+    metadata:
+      labels:
+        app: ruoyi-mysql
+    spec:
+      initContainers:
+        - name: init-perms
+          image: busybox:1.36
+          command: ['sh','-c','mkdir -p /var/lib/mysql && chown -R 999:999 /var/lib/mysql']
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+            - --lower-case-table-names=1
+            - --default-time-zone=+8:00
+            - --default-authentication-plugin=mysql_native_password
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: CHANGE_ME_MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              value: ry-cloud
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: ruoyi-mysql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-mysql
+  namespace: ruoyi-cloud
+spec:
+  selector:
+    app: ruoyi-mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ruoyi-db-init
+  namespace: ruoyi-cloud
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mysql-init
+          image: mysql:8.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              until mysqladmin ping -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD --silent; do sleep 5; done
+              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS \`ry-config\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS \`ry-cloud\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-config < /sql/01-ry-config.sql
+              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-cloud < /sql/02-ry-cloud.sql
+              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-cloud < /sql/03-quartz.sql
+          volumeMounts:
+            - name: sql
+              mountPath: /sql
+      volumes:
+        - name: sql
+          configMap:
+            name: ruoyi-sql-init
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-redis
+  namespace: ruoyi-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-redis
+  template:
+    metadata:
+      labels:
+        app: ruoyi-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-redis
+  namespace: ruoyi-cloud
+spec:
+  selector:
+    app: ruoyi-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-nacos
+  namespace: ruoyi-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-nacos
+  template:
+    metadata:
+      labels:
+        app: ruoyi-nacos
+    spec:
+      containers:
+        - name: nacos
+          image: nacos/nacos-server:v2.2.3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MODE
+              value: standalone
+            - name: SPRING_DATASOURCE_PLATFORM
+              value: mysql
+            - name: MYSQL_SERVICE_HOST
+              value: ruoyi-mysql.ruoyi-cloud.svc.cluster.local
+            - name: MYSQL_SERVICE_PORT
+              value: '3306'
+            - name: MYSQL_SERVICE_DB_NAME
+              value: ry-config
+            - name: MYSQL_SERVICE_USER
+              value: root
+            - name: MYSQL_SERVICE_PASSWORD
+              value: CHANGE_ME_MYSQL_ROOT_PASSWORD
+          ports:
+            - containerPort: 8848
+            - containerPort: 9848
+            - containerPort: 9849
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-nacos
+  namespace: ruoyi-cloud
+spec:
+  selector:
+    app: ruoyi-nacos
+  ports:
+    - name: http
+      port: 8848
+      targetPort: 8848
+    - name: grpc1
+      port: 9848
+      targetPort: 9848
+    - name: grpc2
+      port: 9849
+      targetPort: 9849
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-auth
+  namespace: ruoyi-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-auth
+  template:
+    metadata:
+      labels:
+        app: ruoyi-auth
+    spec:
+      containers:
+        - name: auth
+          image: CHANGE_ME_REGISTRY/ruoyi-auth:CHANGE_ME_TAG
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
+              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+            - name: SPRING_DATA_REDIS_HOST
+              value: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+            - name: SPRING_DATA_REDIS_PORT
+              value: '6379'
+          ports:
+            - containerPort: 9200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-auth
+  namespace: ruoyi-cloud
+spec:
+  selector:
+    app: ruoyi-auth
+  ports:
+    - port: 9200
+      targetPort: 9200
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-system
+  namespace: ruoyi-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-system
+  template:
+    metadata:
+      labels:
+        app: ruoyi-system
+    spec:
+      containers:
+        - name: system
+          image: CHANGE_ME_REGISTRY/ruoyi-system:CHANGE_ME_TAG
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
+              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+          ports:
+            - containerPort: 9201
+          volumeMounts:
+            - name: system-local-config
+              mountPath: /app/application.yml
+              subPath: application.yml
+      volumes:
+        - name: system-local-config
+          configMap:
+            name: ruoyi-system-local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-system
+  namespace: ruoyi-cloud
+spec:
+  selector:
+    app: ruoyi-system
+  ports:
+    - port: 9201
+      targetPort: 9201
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-gateway
+  namespace: ruoyi-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-gateway
+  template:
+    metadata:
+      labels:
+        app: ruoyi-gateway
+    spec:
+      containers:
+        - name: gateway
+          image: CHANGE_ME_REGISTRY/ruoyi-gateway:CHANGE_ME_TAG
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
+              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: gateway-local-config
+              mountPath: /app/application.yml
+              subPath: application.yml
+      volumes:
+        - name: gateway-local-config
+          configMap:
+            name: ruoyi-gateway-local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-gateway
+  namespace: ruoyi-cloud
+spec:
+  selector:
+    app: ruoyi-gateway
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-ui
+  namespace: ruoyi-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-ui
+  template:
+    metadata:
+      labels:
+        app: ruoyi-ui
+    spec:
+      containers:
+        - name: ui
+          image: CHANGE_ME_REGISTRY/ruoyi-ui:CHANGE_ME_TAG
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-ui
+  namespace: ruoyi-cloud
+spec:
+  selector:
+    app: ruoyi-ui
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ruoyi-ui
+  namespace: ruoyi-cloud
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: CHANGE_ME_DOMAIN_UI
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ruoyi-ui
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ruoyi-nacos
+  namespace: ruoyi-cloud
+  annotations:
+    nginx.ingress.kubernetes.io/app-root: /nacos/
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: CHANGE_ME_DOMAIN_NACOS
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ruoyi-nacos
+                port:
+                  number: 8848
