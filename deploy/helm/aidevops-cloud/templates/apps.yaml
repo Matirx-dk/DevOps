@@ -198,6 +198,14 @@ spec:
               value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
           ports:
             - containerPort: {{ .Values.gateway.servicePort }}
+          volumeMounts:
+            - name: gateway-local-config
+              mountPath: /app/application.yml
+              subPath: application.yml
+      volumes:
+        - name: gateway-local-config
+          configMap:
+            name: aidevops-gateway-local
 ---
 apiVersion: apps/v1
 kind: Deployment
