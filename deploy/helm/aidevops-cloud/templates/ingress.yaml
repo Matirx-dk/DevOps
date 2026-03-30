@@ -41,13 +41,25 @@ spec:
                 name: aidevops-ui
                 port:
                   number: {{ .Values.ui.servicePort }}
-          - path: /prod-api(/|$)(.*)
-            pathType: ImplementationSpecific
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aidevops-api
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /prod-api
+            pathType: Prefix
             backend:
               service:
-                name: aidevops-ui
+                name: aidevops-gateway
                 port:
-                  number: {{ .Values.ui.servicePort }}
+                  number: {{ .Values.gateway.servicePort }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
