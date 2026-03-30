@@ -4,14 +4,45 @@ kind: Ingress
 metadata:
   name: aidevops-ui
   namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{ .Values.ingress.uiHost }}
+    - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: {{ .Values.ingress.uiPath }}(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: aidevops-ui
+                port:
+                  number: {{ .Values.ui.servicePort }}
+          - path: /static(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: aidevops-ui
+                port:
+                  number: {{ .Values.ui.servicePort }}
+          - path: /html(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: aidevops-ui
+                port:
+                  number: {{ .Values.ui.servicePort }}
+          - path: /favicon.ico
+            pathType: Exact
+            backend:
+              service:
+                name: aidevops-ui
+                port:
+                  number: {{ .Values.ui.servicePort }}
+          - path: /prod-api(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: aidevops-ui
@@ -24,14 +55,14 @@ metadata:
   name: aidevops-nacos
   namespace: {{ .Release.Namespace }}
   annotations:
-    nginx.ingress.kubernetes.io/app-root: /nacos/
+    nginx.ingress.kubernetes.io/app-root: {{ .Values.ingress.nacosPath }}/
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{ .Values.ingress.nacosHost }}
+    - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: /
+          - path: {{ .Values.ingress.nacosPath }}
             pathType: Prefix
             backend:
               service:
