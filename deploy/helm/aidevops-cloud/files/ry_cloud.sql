@@ -162,8 +162,8 @@ create table sys_menu (
 -- ----------------------------
 -- 一级菜单
 insert into sys_menu values('1', '平台管理', '0', '3', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
-insert into sys_menu values('2', '运维入口', '0', '4', 'monitor',          null, '', '', 1, 0, 'M', '0', '0', '', 'dashboard',  'admin', sysdate(), '', null, '运维入口目录');
-insert into sys_menu values('4', '工作台', '0', '1', 'index', null, '', '', 1, 0, 'M', '0', '0', '', 'dashboard', 'admin', sysdate(), '', null, '工作台菜单');
+insert into sys_menu values('2', '运维入口', '0', '4', 'monitor',          null, '', '', 1, 0, 'M', '0', '0', '', 'monitor',  'admin', sysdate(), '', null, '运维入口目录');
+insert into sys_menu values('4', '监控中心', '0', '1', 'index', null, '', '', 1, 0, 'M', '0', '0', '', 'dashboard', 'admin', sysdate(), '', null, '监控中心菜单');
 -- 二级菜单
 insert into sys_menu values('100',  '用户与权限',       '1',   '1', 'user',       'system/user/index',                 '', '', 1, 0, 'C', '0', '0', 'system:user:list',        'user',          'admin', sysdate(), '', null, '用户与权限菜单');
 insert into sys_menu values('101',  '角色与授权',       '1',   '2', 'role',       'system/role/index',                 '', '', 1, 0, 'C', '0', '0', 'system:role:list',        'peoples',       'admin', sysdate(), '', null, '角色与授权菜单');
