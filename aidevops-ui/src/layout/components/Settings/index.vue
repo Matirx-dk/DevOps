@@ -278,13 +278,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+::v-deep .el-drawer {
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
 .setting-drawer-content {
   .setting-drawer-title {
     margin-bottom: 12px;
-    color: rgba(0, 0, 0, .85);
+    color: #334155;
     font-size: 14px;
     line-height: 22px;
-    font-weight: bold;
+    font-weight: 600;
   }
 
   .setting-drawer-block-checbox {
@@ -363,9 +369,10 @@ export default {
     cursor: pointer;
     width: 56px;
     height: 48px;
-    border-radius: 4px;
-    background: #f0f2f5;
-    border: 2px solid transparent;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 6px 16px rgba(148, 163, 184, 0.12);
   }
 
   .left {

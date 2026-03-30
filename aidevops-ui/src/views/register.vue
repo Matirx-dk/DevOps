@@ -161,18 +161,6 @@ export default {
   background-position: center;
   overflow: hidden;
 }
-.register::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 18% 20%, rgba(255,255,255,0.36), transparent 24%),
-    radial-gradient(circle at 82% 18%, rgba(255,255,255,0.24), transparent 20%),
-    radial-gradient(circle at 74% 76%, rgba(255,255,255,0.16), transparent 24%),
-    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
 .title {
   margin: 0px auto 30px auto;
   text-align: center;

@@ -170,18 +170,6 @@ export default {
   background-position: center;
   overflow: hidden;
 }
-.login::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.38), transparent 24%),
-    radial-gradient(circle at 80% 18%, rgba(255,255,255,0.26), transparent 20%),
-    radial-gradient(circle at 72% 78%, rgba(255,255,255,0.18), transparent 24%),
-    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
 .title {
   margin: 0px auto 30px auto;
   text-align: center;

@@ -143,14 +143,14 @@ export default {
 }
 
 .navbar {
-  height: 56px;
+  height: 54px;
   overflow: hidden;
   position: relative;
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   // padding: 0 8px;
