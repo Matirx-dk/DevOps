@@ -48,7 +48,7 @@ ingress:
   enabled: true
   className: nginx
   host: devops.zoudekang.cloud
-  uiPath: /aidevops
+  uiPath: /
   nacosPath: /nacos
 
 sqlInit:

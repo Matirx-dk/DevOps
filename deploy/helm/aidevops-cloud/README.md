@@ -60,15 +60,18 @@ Helm 升级会失败。
 
 ### 2. 当前公网入口现状
 
-截至 2026-03-30 本次发布完成后，集群内 Helm 升级与 Pod rollout 已成功，但公网域名入口现状与 Helm 默认值不完全一致：
+截至 2026-03-30 收口后，当前线上目标方案已经统一为：
 
-- `nacos.zoudekang.cloud`：可正常访问
-- `devops.zoudekang.cloud/jenkins/`：可到 Jenkins
-- `devops.zoudekang.cloud/`：当前返回 404，需要继续检查公网 Nginx 到集群 UI 的转发
-- `devops.zoudekang.cloud/nacos/`：当前返回 404，需要继续检查单域名路径代理配置
-- `devops1.zoudekang.cloud`：当前公网侧解析未就绪
+- `https://devops.zoudekang.cloud/aidevops/`
+- `https://devops.zoudekang.cloud/nacos/`
+- `https://devops.zoudekang.cloud/jenkins/`
 
-所以如果你是按当前线上环境维护，建议把 **集群发布成功** 和 **公网入口已完全对齐** 视为两个独立步骤处理。
+对应原则：
+- 外部只保留一个域名：`devops.zoudekang.cloud`
+- AIDevOps 页面走 `/aidevops/`
+- Nacos 走 `/nacos/`
+- Jenkins 走 `/jenkins/`
+- 前端接口仍保留 `/prod-api/*`，转发到 `aidevops-gateway`
 
 ## SQL 初始化
 
