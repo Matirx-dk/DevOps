@@ -1,4 +1,4 @@
-# RuoYi K8s 通用版说明
+# AIDevOps K8s 通用版说明
 
 文件：`deploy/k8s/ruoyi-all-in-one.generic.yaml`
 
@@ -16,10 +16,10 @@
 
 ## 你需要替换的占位符
 
-- `CHANGE_ME_REGISTRY/ruoyi-auth:CHANGE_ME_TAG`
-- `CHANGE_ME_REGISTRY/ruoyi-system:CHANGE_ME_TAG`
-- `CHANGE_ME_REGISTRY/ruoyi-gateway:CHANGE_ME_TAG`
-- `CHANGE_ME_REGISTRY/ruoyi-ui:CHANGE_ME_TAG`
+- `CHANGE_ME_REGISTRY/aidevops-auth:CHANGE_ME_TAG`
+- `CHANGE_ME_REGISTRY/aidevops-system:CHANGE_ME_TAG`
+- `CHANGE_ME_REGISTRY/aidevops-gateway:CHANGE_ME_TAG`
+- `CHANGE_ME_REGISTRY/aidevops-ui:CHANGE_ME_TAG`
 - `CHANGE_ME_DOMAIN_UI`
 - `CHANGE_ME_DOMAIN_NACOS`
 - `CHANGE_ME_NFS_SERVER`
@@ -28,7 +28,7 @@
 
 ## 还需要你补的内容
 
-`ConfigMap/ruoyi-sql-init` 里我保留成了模板注释：
+`ConfigMap/aidevops-sql-init` 里我保留成了模板注释：
 
 - `01-ry-config.sql`
 - `02-ry-cloud.sql`
@@ -50,9 +50,9 @@
 
 这个模板版仍然保留了已经验证过的关键配置：
 
-- `ruoyi-auth` 强制带 `SPRING_DATA_REDIS_HOST/PORT`
-- Redis 统一走 `ruoyi-redis` Service
-- MySQL 统一走 `ruoyi-mysql` Service
+- `aidevops-auth` 强制带 `SPRING_DATA_REDIS_HOST/PORT`
+- Redis 统一走 `aidevops-redis` Service
+- MySQL 统一走 `aidevops-mysql` Service
 - Gateway / System 本地覆盖配置走 ConfigMap
 - Nacos Web 入口默认按 `/nacos/` 处理
 
