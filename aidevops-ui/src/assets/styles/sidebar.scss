@@ -255,6 +255,26 @@
     min-width: $base-sidebar-width !important;
   }
 
+  .el-menu--popup {
+    padding: 6px 0 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0, 21, 41, 0.16) !important;
+  }
+
+  .el-menu--popup .el-menu-item,
+  .el-menu--popup .el-submenu__title {
+    height: 40px !important;
+    line-height: 40px !important;
+    margin: 2px 6px !important;
+    border-radius: 8px !important;
+    min-width: calc(#{$base-sidebar-width} - 12px) !important;
+  }
+
+  .el-menu--popup .el-menu-item:hover,
+  .el-menu--popup .el-submenu__title:hover {
+    background-color: rgba(64, 158, 255, 0.10) !important;
+  }
+
   // mobile responsive
   .mobile {
     .main-container {
