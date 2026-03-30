@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-mysql
+  name: aidevops-mysql
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-mysql
+      app: aidevops-mysql
   template:
     metadata:
       labels:
-        app: ruoyi-mysql
+        app: aidevops-mysql
     spec:
       initContainers:
         - name: init-perms
@@ -43,22 +43,22 @@ spec:
       volumes:
         - name: mysql-data
           persistentVolumeClaim:
-            claimName: ruoyi-mysql-pvc
+            claimName: aidevops-mysql-pvc
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-redis
+  name: aidevops-redis
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-redis
+      app: aidevops-redis
   template:
     metadata:
       labels:
-        app: ruoyi-redis
+        app: aidevops-redis
     spec:
       containers:
         - name: redis
@@ -70,17 +70,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-nacos
+  name: aidevops-nacos
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-nacos
+      app: aidevops-nacos
   template:
     metadata:
       labels:
-        app: ruoyi-nacos
+        app: aidevops-nacos
     spec:
       containers:
         - name: nacos
@@ -92,7 +92,7 @@ spec:
             - name: SPRING_DATASOURCE_PLATFORM
               value: mysql
             - name: MYSQL_SERVICE_HOST
-              value: ruoyi-mysql.{{ .Release.Namespace }}.svc.cluster.local
+              value: aidevops-mysql.{{ .Release.Namespace }}.svc.cluster.local
             - name: MYSQL_SERVICE_PORT
               value: '3306'
             - name: MYSQL_SERVICE_DB_NAME
@@ -109,17 +109,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-auth
+  name: aidevops-auth
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-auth
+      app: aidevops-auth
   template:
     metadata:
       labels:
-        app: ruoyi-auth
+        app: aidevops-auth
     spec:
       containers:
         - name: auth
@@ -127,11 +127,11 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
             - name: SPRING_DATA_REDIS_HOST
-              value: ruoyi-redis.{{ .Release.Namespace }}.svc.cluster.local
+              value: aidevops-redis.{{ .Release.Namespace }}.svc.cluster.local
             - name: SPRING_DATA_REDIS_PORT
               value: '6379'
           ports:
@@ -140,17 +140,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-system
+  name: aidevops-system
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-system
+      app: aidevops-system
   template:
     metadata:
       labels:
-        app: ruoyi-system
+        app: aidevops-system
     spec:
       containers:
         - name: system
@@ -158,9 +158,9 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
           ports:
             - containerPort: {{ .Values.system.servicePort }}
           volumeMounts:
@@ -170,22 +170,22 @@ spec:
       volumes:
         - name: system-local-config
           configMap:
-            name: ruoyi-system-local
+            name: aidevops-system-local
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-gateway
+  name: aidevops-gateway
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-gateway
+      app: aidevops-gateway
   template:
     metadata:
       labels:
-        app: ruoyi-gateway
+        app: aidevops-gateway
     spec:
       containers:
         - name: gateway
@@ -193,9 +193,9 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
           ports:
             - containerPort: {{ .Values.gateway.servicePort }}
           volumeMounts:
@@ -205,22 +205,22 @@ spec:
       volumes:
         - name: gateway-local-config
           configMap:
-            name: ruoyi-gateway-local
+            name: aidevops-gateway-local
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-ui
+  name: aidevops-ui
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-ui
+      app: aidevops-ui
   template:
     metadata:
       labels:
-        app: ruoyi-ui
+        app: aidevops-ui
     spec:
       containers:
         - name: ui

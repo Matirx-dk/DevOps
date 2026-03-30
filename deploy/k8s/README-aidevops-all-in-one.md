@@ -1,11 +1,11 @@
 # AIDevOps K8s 一键部署说明
 
-文件：`deploy/k8s/ruoyi-all-in-one.yaml`
+文件：`deploy/k8s/aidevops-all-in-one.yaml`
 
 ## 用法
 
 ```bash
-kubectl apply -f deploy/k8s/ruoyi-all-in-one.yaml
+kubectl apply -f deploy/k8s/aidevops-all-in-one.yaml
 kubectl get pods -n aidevops-cloud -w
 ```
 

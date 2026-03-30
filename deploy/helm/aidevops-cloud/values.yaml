@@ -13,7 +13,7 @@ mysql:
   image: 192.168.1.104/dockerhub-proxy/library/mysql:8.0
   nfs:
     server: 192.168.1.104
-    path: /data/nfs/share/ruoyi-mysql
+    path: /data/nfs/share/aidevops-mysql
     size: 20Gi
 
 redis:
@@ -29,19 +29,19 @@ nacos:
     grpc2: 9849
 
 auth:
-  image: CHANGE_ME_REGISTRY/ruoyi-auth:CHANGE_ME_TAG
+  image: CHANGE_ME_REGISTRY/aidevops-auth:CHANGE_ME_TAG
   servicePort: 9200
 
 system:
-  image: CHANGE_ME_REGISTRY/ruoyi-system:CHANGE_ME_TAG
+  image: CHANGE_ME_REGISTRY/aidevops-system:CHANGE_ME_TAG
   servicePort: 9201
 
 gateway:
-  image: CHANGE_ME_REGISTRY/ruoyi-gateway:CHANGE_ME_TAG
+  image: CHANGE_ME_REGISTRY/aidevops-gateway:CHANGE_ME_TAG
   servicePort: 8080
 
 ui:
-  image: CHANGE_ME_REGISTRY/ruoyi-ui:CHANGE_ME_TAG
+  image: CHANGE_ME_REGISTRY/aidevops-ui:CHANGE_ME_TAG
   servicePort: 80
 
 ingress:

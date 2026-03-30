@@ -1,6 +1,6 @@
 # AIDevOps K8s 通用版说明
 
-文件：`deploy/k8s/ruoyi-all-in-one.generic.yaml`
+文件：`deploy/k8s/aidevops-all-in-one.generic.yaml`
 
 这是从当前线上可运行版本抽出来的**通用模板版**，目的是方便迁移到别的 Kubernetes 集群。
 

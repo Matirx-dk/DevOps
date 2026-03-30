@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-gateway-local
+  name: aidevops-gateway-local
   namespace: {{ .Release.Namespace }}
 data:
   application.yml: |
     spring:
       data:
         redis:
-          host: ruoyi-redis.{{ .Release.Namespace }}.svc.cluster.local
+          host: aidevops-redis.{{ .Release.Namespace }}.svc.cluster.local
           port: 6379
           password:
       cloud:
@@ -20,8 +20,8 @@ data:
                   lowerCaseServiceId: true
                   enabled: true
               routes:
-                - id: ruoyi-auth
-                  uri: lb://ruoyi-auth
+                - id: aidevops-auth
+                  uri: lb://aidevops-auth
                   predicates:
                     - Path=/auth/**
                   filters:
@@ -30,8 +30,8 @@ data:
                         bodyClass: java.lang.String
                     - ValidateCodeFilter
                     - StripPrefix=1
-                - id: ruoyi-system
-                  uri: lb://ruoyi-system
+                - id: aidevops-system
+                  uri: lb://aidevops-system
                   predicates:
                     - Path=/system/**
                   filters:
@@ -59,21 +59,21 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-system-local
+  name: aidevops-system-local
   namespace: {{ .Release.Namespace }}
 data:
   application.yml: |
     spring:
       data:
         redis:
-          host: ruoyi-redis.{{ .Release.Namespace }}.svc.cluster.local
+          host: aidevops-redis.{{ .Release.Namespace }}.svc.cluster.local
           port: 6379
           password:
       datasource:
         druid:
           stat-view-servlet:
             enabled: true
-            loginUsername: ruoyi
+            loginUsername: aidevops
             loginPassword: 123456
         dynamic:
           druid:
@@ -96,14 +96,14 @@ data:
           datasource:
             master:
               driver-class-name: com.mysql.cj.jdbc.Driver
-              url: jdbc:mysql://ruoyi-mysql.{{ .Release.Namespace }}.svc.cluster.local:3306/{{ .Values.mysql.database }}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+              url: jdbc:mysql://aidevops-mysql.{{ .Release.Namespace }}.svc.cluster.local:3306/{{ .Values.mysql.database }}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
               username: root
               password: {{ .Values.mysql.rootPassword }}
     mybatis:
-      typeAliasesPackage: com.ruoyi.system
+      typeAliasesPackage: com.aidevops.system
       mapperLocations: classpath*:mapper/**/*.xml
     springdoc:
-      gatewayUrl: http://ruoyi-gateway.{{ .Release.Namespace }}.svc.cluster.local:8080/${spring.application.name}
+      gatewayUrl: http://aidevops-gateway.{{ .Release.Namespace }}.svc.cluster.local:8080/${spring.application.name}
       api-docs:
         enabled: true
 {{- if .Values.sqlInit.enabled }}
@@ -111,7 +111,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-sql-init
+  name: aidevops-sql-init
   namespace: {{ .Release.Namespace }}
 data:
   01-ry-config.sql: |

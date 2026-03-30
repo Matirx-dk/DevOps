@@ -6,7 +6,7 @@ mysql:
   rootPassword: password
   nfs:
     server: 192.168.1.104
-    path: /data/nfs/share/ruoyi-mysql
+    path: /data/nfs/share/aidevops-mysql
 
 redis:
   image: 192.168.1.104/dockerhub-proxy/library/redis:7-alpine
@@ -15,16 +15,16 @@ nacos:
   image: 192.168.1.104/dockerhub-proxy/nacos/nacos-server:v2.2.3
 
 auth:
-  image: 192.168.1.104/ruoyi/ruoyi-auth:demo
+  image: 192.168.1.104/aidevops/aidevops-auth:demo
 
 system:
-  image: 192.168.1.104/ruoyi/ruoyi-system:demo
+  image: 192.168.1.104/aidevops/aidevops-system:demo
 
 gateway:
-  image: 192.168.1.104/ruoyi/ruoyi-gateway:demo
+  image: 192.168.1.104/aidevops/aidevops-gateway:demo
 
 ui:
-  image: 192.168.1.104/ruoyi/ruoyi-ui:demo
+  image: 192.168.1.104/aidevops/aidevops-ui:demo
 
 ingress:
   uiHost: devops1.zoudekang.cloud

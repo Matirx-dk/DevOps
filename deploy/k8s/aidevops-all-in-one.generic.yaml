@@ -10,7 +10,7 @@
 # - CHANGE_ME_MYSQL_ROOT_PASSWORD
 #
 # Apply:
-#   kubectl apply -f deploy/k8s/ruoyi-all-in-one.generic.yaml
+#   kubectl apply -f deploy/k8s/aidevops-all-in-one.generic.yaml
 ---
 apiVersion: v1
 kind: Namespace

@@ -3,7 +3,7 @@
 ## 安装
 
 ```bash
-helm install aidevops-cloud ./deploy/helm/ruoyi-cloud -n aidevops-cloud --create-namespace
+helm install aidevops-cloud ./deploy/helm/aidevops-cloud -n aidevops-cloud --create-namespace
 ```
 
 ## 卸载
@@ -29,14 +29,14 @@ helm uninstall aidevops-cloud -n aidevops-cloud
 建议通过单独 values 文件安装：
 
 ```bash
-helm install aidevops-cloud ./deploy/helm/ruoyi-cloud \
+helm install aidevops-cloud ./deploy/helm/aidevops-cloud \
   -n aidevops-cloud --create-namespace \
   -f my-values.yaml
 ```
 
 仓库里也附带了一个当前集群可直接参考的示例：
 
-- `deploy/helm/ruoyi-cloud/values.current-cluster.yaml`
+- `deploy/helm/aidevops-cloud/values.current-cluster.yaml`
 
 ## SQL 初始化
 
