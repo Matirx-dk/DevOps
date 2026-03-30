@@ -14,28 +14,28 @@ cp ../sql/ry_config_20260311.sql ./mysql/db
 
 # copy html
 echo "begin copy html "
-cp -r ../ruoyi-ui/dist/** ./nginx/html/dist
+cp -r ../aidevops-ui/dist/** ./nginx/html/dist
 
 
 # copy jar
-echo "begin copy ruoyi-gateway "
-cp ../ruoyi-gateway/target/ruoyi-gateway.jar ./ruoyi/gateway/jar
+echo "begin copy aidevops-gateway "
+cp ../aidevops-gateway/target/aidevops-gateway.jar ./aidevops/gateway/jar
 
-echo "begin copy ruoyi-auth "
-cp ../ruoyi-auth/target/ruoyi-auth.jar ./ruoyi/auth/jar
+echo "begin copy aidevops-auth "
+cp ../aidevops-auth/target/aidevops-auth.jar ./aidevops/auth/jar
 
-echo "begin copy ruoyi-visual "
-cp ../ruoyi-visual/ruoyi-monitor/target/ruoyi-visual-monitor.jar  ./ruoyi/visual/monitor/jar
+echo "begin copy aidevops-visual "
+cp ../aidevops-visual/aidevops-monitor/target/aidevops-visual-monitor.jar  ./aidevops/visual/monitor/jar
 
-echo "begin copy ruoyi-modules-system "
-cp ../ruoyi-modules/ruoyi-system/target/ruoyi-modules-system.jar ./ruoyi/modules/system/jar
+echo "begin copy aidevops-modules-system "
+cp ../aidevops-modules/aidevops-system/target/aidevops-modules-system.jar ./aidevops/modules/system/jar
 
-echo "begin copy ruoyi-modules-file "
-cp ../ruoyi-modules/ruoyi-file/target/ruoyi-modules-file.jar ./ruoyi/modules/file/jar
+echo "begin copy aidevops-modules-file "
+cp ../aidevops-modules/aidevops-file/target/aidevops-modules-file.jar ./aidevops/modules/file/jar
 
-echo "begin copy ruoyi-modules-job "
-cp ../ruoyi-modules/ruoyi-job/target/ruoyi-modules-job.jar ./ruoyi/modules/job/jar
+echo "begin copy aidevops-modules-job "
+cp ../aidevops-modules/aidevops-job/target/aidevops-modules-job.jar ./aidevops/modules/job/jar
 
-echo "begin copy ruoyi-modules-gen "
-cp ../ruoyi-modules/ruoyi-gen/target/ruoyi-modules-gen.jar ./ruoyi/modules/gen/jar
+echo "begin copy aidevops-modules-gen "
+cp ../aidevops-modules/aidevops-gen/target/aidevops-modules-gen.jar ./aidevops/modules/gen/jar
 

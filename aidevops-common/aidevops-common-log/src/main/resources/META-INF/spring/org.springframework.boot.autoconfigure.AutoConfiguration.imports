@@ -1,0 +1,2 @@
+com.aidevops.common.log.service.AsyncLogService
+com.aidevops.common.log.aspect.LogAspect

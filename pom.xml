@@ -4,16 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.ruoyi</groupId>
-    <artifactId>ruoyi</artifactId>
+    <groupId>com.aidevops</groupId>
+    <artifactId>aidevops</artifactId>
     <version>3.6.7</version>
 
-    <name>ruoyi</name>
-    <url>http://www.ruoyi.vip</url>
-    <description>若依微服务系统</description>
+    <name>aidevops</name>
+    <url>http://www.devops.zoudekang.cloud</url>
+    <description>AI智能运维微服务系统</description>
 
     <properties>
-        <ruoyi.version>3.6.7</ruoyi.version>
+        <aidevops.version>3.6.7</aidevops.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>17</java.version>
@@ -144,84 +144,84 @@
 
             <!-- 核心模块 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-core</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-core</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 接口模块 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-swagger</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-swagger</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 安全模块 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-security</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-security</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 数据脱敏 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-sensitive</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-sensitive</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 权限范围 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-datascope</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-datascope</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 多数据源 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-datasource</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-datasource</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 分布式事务 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-seata</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-seata</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 日志记录 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-log</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-log</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 缓存服务 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common-redis</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-common-redis</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
             <!-- 系统接口 -->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-api-system</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.aidevops</groupId>
+                <artifactId>aidevops-api-system</artifactId>
+                <version>${aidevops.version}</version>
             </dependency>
 
         </dependencies>
     </dependencyManagement>
 
     <modules>
-        <module>ruoyi-auth</module>
-        <module>ruoyi-gateway</module>
-        <module>ruoyi-visual</module>
-        <module>ruoyi-modules</module>
-        <module>ruoyi-api</module>
-        <module>ruoyi-common</module>
+        <module>aidevops-auth</module>
+        <module>aidevops-gateway</module>
+        <module>aidevops-visual</module>
+        <module>aidevops-modules</module>
+        <module>aidevops-api</module>
+        <module>aidevops-common</module>
     </modules>
     <packaging>pom</packaging>
 

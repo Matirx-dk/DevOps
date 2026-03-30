@@ -1,0 +1,15 @@
+# 基础镜像
+FROM  openjdk:17
+# author
+MAINTAINER aidevops
+
+# 挂载目录
+VOLUME /home/aidevops
+# 创建目录
+RUN mkdir -p /home/aidevops
+# 指定路径
+WORKDIR /home/aidevops
+# 复制jar文件到路径
+COPY ./jar/aidevops-modules-gen.jar /home/aidevops/aidevops-modules-gen.jar
+# 启动代码生成服务
+ENTRYPOINT ["java","-jar","aidevops-modules-gen.jar"]
