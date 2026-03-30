@@ -165,7 +165,7 @@ insert into sys_menu values('111',  '工作台', '0',   '1', 'index', 'index', '
 insert into sys_menu values('4', 'AI对话', '0', '2', 'https://devops.zoudekang.cloud/openclaw/', null, '', '', 0, 0, 'M', '0', '0', '', 'guide', 'admin', sysdate(), '', null, 'AI对话菜单');
 insert into sys_menu values('1', '平台管理', '0', '5', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
 insert into sys_menu values('2000', '运维中心', '0', '4', 'ops', 'ops/index', '', '', 1, 0, 'C', '0', '0', '', 'monitor', 'admin', sysdate(), '', null, '运维中心菜单');
-insert into sys_menu values('3000', '质量中心', '0', '5', 'quality', 'quality/index', '', '', 1, 0, 'C', '0', '0', '', 'skill', 'admin', sysdate(), '', null, '质量中心菜单');
+insert into sys_menu values('3000', '质量中心', '0', '3', 'quality', 'quality/index', '', '', 1, 0, 'C', '0', '0', '', 'skill', 'admin', sysdate(), '', null, '质量中心菜单');
 insert into sys_menu values('1', '平台管理', '0', '5', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
 -- 二级菜单
 insert into sys_menu values('100',  '用户与权限',       '1',   '1', 'user',       'system/user/index',                 '', '', 1, 0, 'C', '0', '0', 'system:user:list',        'user',          'admin', sysdate(), '', null, '用户与权限菜单');
