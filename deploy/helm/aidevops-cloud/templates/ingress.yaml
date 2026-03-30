@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: aidevops-ui
+  name: aidevops-ui-root
   namespace: {{ .Release.Namespace }}
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
@@ -20,15 +20,27 @@ spec:
                 name: aidevops-ui
                 port:
                   number: {{ .Values.ui.servicePort }}
-          - path: /static(/|$)(.*)
-            pathType: ImplementationSpecific
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aidevops-ui-static
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /static
+            pathType: Prefix
             backend:
               service:
                 name: aidevops-ui
                 port:
                   number: {{ .Values.ui.servicePort }}
-          - path: /html(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /html
+            pathType: Prefix
             backend:
               service:
                 name: aidevops-ui
@@ -69,8 +81,6 @@ kind: Ingress
 metadata:
   name: aidevops-nacos
   namespace: {{ .Release.Namespace }}
-  annotations:
-    nginx.ingress.kubernetes.io/app-root: {{ .Values.ingress.nacosPath }}/
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
