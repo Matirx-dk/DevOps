@@ -4,50 +4,14 @@ kind: Ingress
 metadata:
   name: aidevops-ui-root
   namespace: {{ .Release.Namespace }}
-  annotations:
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: {{ .Values.ingress.uiPath }}(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: aidevops-ui
-                port:
-                  number: {{ .Values.ui.servicePort }}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: aidevops-ui-static
-  namespace: {{ .Release.Namespace }}
-spec:
-  ingressClassName: {{ .Values.ingress.className }}
-  rules:
-    - host: {{ .Values.ingress.host }}
-      http:
-        paths:
-          - path: /static
+          - path: /
             pathType: Prefix
-            backend:
-              service:
-                name: aidevops-ui
-                port:
-                  number: {{ .Values.ui.servicePort }}
-          - path: /html
-            pathType: Prefix
-            backend:
-              service:
-                name: aidevops-ui
-                port:
-                  number: {{ .Values.ui.servicePort }}
-          - path: /favicon.ico
-            pathType: Exact
             backend:
               service:
                 name: aidevops-ui

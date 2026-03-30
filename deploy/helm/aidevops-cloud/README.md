@@ -62,13 +62,13 @@ Helm 升级会失败。
 
 截至 2026-03-30 收口后，当前线上目标方案已经统一为：
 
-- `https://devops.zoudekang.cloud/aidevops/`
+- `https://devops.zoudekang.cloud/`
 - `https://devops.zoudekang.cloud/nacos/`
 - `https://devops.zoudekang.cloud/jenkins/`
 
 对应原则：
 - 外部只保留一个域名：`devops.zoudekang.cloud`
-- AIDevOps 页面走 `/aidevops/`
+- AIDevOps 页面走根路径 `/`
 - Nacos 走 `/nacos/`
 - Jenkins 走 `/jenkins/`
 - 前端接口仍保留 `/prod-api/*`，转发到 `aidevops-gateway`
