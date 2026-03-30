@@ -163,30 +163,45 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  min-height: 100%;
+  position: relative;
   background-image: url("../assets/images/login-background-aidevops.svg");
   background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+.login::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.38), transparent 24%),
+    radial-gradient(circle at 80% 18%, rgba(255,255,255,0.26), transparent 20%),
+    radial-gradient(circle at 72% 78%, rgba(255,255,255,0.18), transparent 24%),
+    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .title {
   margin: 0px auto 30px auto;
   text-align: center;
-  color: #707070;
+  color: #30445f;
+  letter-spacing: 0.5px;
 }
 
 .login-form {
-  border-radius: 6px;
-  background: #ffffff;
-  width: 400px;
-  padding: 25px 25px 5px 25px;
+  width: 420px;
+  padding: 30px 28px 10px 28px;
   z-index: 1;
+  position: relative;
   .el-input {
-    height: 38px;
+    height: 42px;
     input {
-      height: 38px;
+      height: 42px;
     }
   }
   .input-icon {
-    height: 39px;
+    height: 42px;
     width: 14px;
     margin-left: 2px;
   }
