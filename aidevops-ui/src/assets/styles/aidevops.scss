@@ -1,27 +1,36 @@
 /**
-* AIDevOps liquid glass theme
+* AIDevOps liquid glass theme - stronger glass / softer corners
 */
 
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.14);
-  --glass-bg-strong: rgba(255, 255, 255, 0.2);
-  --glass-border: rgba(255, 255, 255, 0.22);
-  --glass-shadow: 0 10px 35px rgba(15, 23, 42, 0.16);
-  --glass-blur: blur(18px);
-  --glass-radius: 18px;
-  --glass-radius-sm: 14px;
+  --glass-bg: rgba(255, 255, 255, 0.28);
+  --glass-bg-strong: rgba(255, 255, 255, 0.38);
+  --glass-bg-soft: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(255, 255, 255, 0.38);
+  --glass-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+  --glass-shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.1);
+  --glass-blur: blur(28px);
+  --glass-blur-soft: blur(18px);
+  --glass-radius: 24px;
+  --glass-radius-sm: 18px;
+  --glass-radius-xs: 14px;
+  --glass-text: #20324d;
+  --glass-text-secondary: #4a5d79;
 }
 
 body {
+  color: var(--glass-text);
   background:
-    radial-gradient(circle at top left, rgba(125, 211, 252, 0.22), transparent 30%),
-    radial-gradient(circle at top right, rgba(167, 139, 250, 0.2), transparent 28%),
-    linear-gradient(135deg, #eef6ff 0%, #edf4ff 45%, #f6f8ff 100%);
+    radial-gradient(circle at top left, rgba(125, 211, 252, 0.28), transparent 30%),
+    radial-gradient(circle at top right, rgba(167, 139, 250, 0.22), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(96, 165, 250, 0.16), transparent 20%),
+    linear-gradient(135deg, #eef5ff 0%, #edf4ff 45%, #f7f9ff 100%);
 }
 
 .app-main,
 .app-container {
   background: transparent;
+  color: var(--glass-text);
 }
 
 .el-card,
@@ -41,24 +50,40 @@ body {
 
 .el-card__header,
 .el-dialog__header,
-.el-message-box__header {
-  background: rgba(255, 255, 255, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+.el-message-box__header,
+.el-drawer__header {
+  background: rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.el-card__body,
+.el-dialog__body,
+.el-message-box__content {
+  color: var(--glass-text);
 }
 
 .el-button {
-  border-radius: 14px !important;
+  border-radius: 18px !important;
 }
 
 .el-button:not(.el-button--text) {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.34);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: var(--glass-shadow-soft);
+  color: var(--glass-text);
 }
 
 .el-button--primary {
-  background: linear-gradient(135deg, #5bbcff 0%, #4f8cff 100%) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: linear-gradient(135deg, #69bbff 0%, #4f8cff 100%) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #fff !important;
+}
+
+.el-button--default:hover,
+.el-button--default:focus,
+.el-button:not(.el-button--text):hover,
+.el-button:not(.el-button--text):focus {
+  background: rgba(255, 255, 255, 0.44) !important;
 }
 
 .el-input__inner,
@@ -67,11 +92,17 @@ body {
 .el-input-group__prepend,
 .el-select .el-input__inner,
 .el-range-editor.el-input__inner {
-  background: rgba(255, 255, 255, 0.26) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  border-radius: 14px !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.42) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 18px !important;
+  color: var(--glass-text) !important;
+  backdrop-filter: var(--glass-blur-soft);
+  -webkit-backdrop-filter: var(--glass-blur-soft);
+}
+
+.el-input__inner::placeholder,
+.el-textarea__inner::placeholder {
+  color: rgba(74, 93, 121, 0.78);
 }
 
 .el-table,
@@ -86,23 +117,26 @@ body {
 .el-table {
   border-radius: var(--glass-radius);
   overflow: hidden;
+  color: var(--glass-text);
 }
 
 .el-table th {
-  background: rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.34) !important;
+  color: var(--glass-text) !important;
 }
 
 .el-table td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--glass-text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
 }
 
 .el-table--enable-row-hover .el-table__body tr:hover > td {
-  background: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.24) !important;
 }
 
 .el-tabs__nav-wrap::after,
 .el-divider {
-  background-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.18) !important;
 }
 
 .el-menu,
@@ -113,20 +147,20 @@ body {
 
 .el-menu-item,
 .el-submenu__title {
-  border-radius: 12px;
-  margin: 4px 8px;
+  border-radius: 16px;
+  margin: 4px 10px;
 }
 
 .el-menu-item:hover,
 .el-submenu__title:hover,
 .el-menu-item.is-active {
-  background: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
 }
 
 .el-pagination button,
 .el-pagination .el-pager li {
-  background: rgba(255, 255, 255, 0.22) !important;
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.36) !important;
+  border-radius: 14px;
 }
 
 .navbar,
@@ -134,46 +168,52 @@ body {
 .tags-view-container,
 .sidebar-container,
 .el-menu--collapse {
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .sidebar-container {
-  background: rgba(15, 23, 42, 0.68) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
 }
 
 .fixed-header,
 .navbar,
 .tags-view-container {
-  background: rgba(255, 255, 255, 0.14) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .el-tag {
   border-radius: 999px !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .el-form-item__content > .el-input,
 .el-form-item__content > .el-select,
 .el-form-item__content > .el-textarea {
-  border-radius: 14px;
+  border-radius: 18px;
 }
 
 .login-form,
 .register-form {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  border-radius: 22px !important;
+  background: rgba(255, 255, 255, 0.34) !important;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 28px !important;
 }
 
 .tree-border,
 .detail-card {
-  background: rgba(255, 255, 255, 0.16) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.24) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 20px !important;
+}
+
+.list-group-item,
+.detail-card-title,
+.form-header {
+  color: var(--glass-text);
 }
