@@ -43,6 +43,39 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: aidevops-swagger
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /swagger-ui
+            pathType: Prefix
+            backend:
+              service:
+                name: aidevops-gateway
+                port:
+                  number: {{ .Values.gateway.servicePort }}
+          - path: /v3/api-docs
+            pathType: Prefix
+            backend:
+              service:
+                name: aidevops-gateway
+                port:
+                  number: {{ .Values.gateway.servicePort }}
+          - path: /webjars
+            pathType: Prefix
+            backend:
+              service:
+                name: aidevops-gateway
+                port:
+                  number: {{ .Values.gateway.servicePort }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
   name: aidevops-nacos
   namespace: {{ .Release.Namespace }}
 spec:
