@@ -162,24 +162,24 @@ create table sys_menu (
 -- ----------------------------
 -- 一级菜单
 insert into sys_menu values('1', '系统管理', '0', '1', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '系统管理目录');
-insert into sys_menu values('2', '系统监控', '0', '2', 'monitor',          null, '', '', 1, 0, 'M', '0', '0', '', 'monitor',  'admin', sysdate(), '', null, '系统监控目录');
-insert into sys_menu values('3', '系统工具', '0', '3', 'tool',             null, '', '', 1, 0, 'M', '0', '0', '', 'tool',     'admin', sysdate(), '', null, '系统工具目录');
+insert into sys_menu values('2', '系统监控', '0', '2', 'monitor',          null, '', '', 1, 0, 'M', '0', '1', '', 'monitor',  'admin', sysdate(), '', null, '系统监控目录');
+insert into sys_menu values('3', '系统工具', '0', '3', 'tool',             null, '', '', 1, 0, 'M', '0', '1', '', 'tool',     'admin', sysdate(), '', null, '系统工具目录');
 insert into sys_menu values('4', '平台总览', '0', '4', 'index', null, '', '', 1, 0, 'M', '0', '0', '', 'dashboard', 'admin', sysdate(), '', null, '平台总览菜单');
 -- 二级菜单
 insert into sys_menu values('100',  '用户管理',       '1',   '1', 'user',       'system/user/index',                 '', '', 1, 0, 'C', '0', '0', 'system:user:list',        'user',          'admin', sysdate(), '', null, '用户管理菜单');
 insert into sys_menu values('101',  '角色管理',       '1',   '2', 'role',       'system/role/index',                 '', '', 1, 0, 'C', '0', '0', 'system:role:list',        'peoples',       'admin', sysdate(), '', null, '角色管理菜单');
 insert into sys_menu values('102',  '菜单管理',       '1',   '3', 'menu',       'system/menu/index',                 '', '', 1, 0, 'C', '0', '0', 'system:menu:list',        'tree-table',    'admin', sysdate(), '', null, '菜单管理菜单');
 insert into sys_menu values('103',  '部门管理',       '1',   '4', 'dept',       'system/dept/index',                 '', '', 1, 0, 'C', '0', '0', 'system:dept:list',        'tree',          'admin', sysdate(), '', null, '部门管理菜单');
-insert into sys_menu values('104',  '岗位管理',       '1',   '5', 'post',       'system/post/index',                 '', '', 1, 0, 'C', '0', '0', 'system:post:list',        'post',          'admin', sysdate(), '', null, '岗位管理菜单');
-insert into sys_menu values('105',  '字典管理',       '1',   '6', 'dict',       'system/dict/index',                 '', '', 1, 0, 'C', '0', '0', 'system:dict:list',        'dict',          'admin', sysdate(), '', null, '字典管理菜单');
+insert into sys_menu values('104',  '岗位管理',       '1',   '5', 'post',       'system/post/index',                 '', '', 1, 0, 'C', '0', '1', 'system:post:list',        'post',          'admin', sysdate(), '', null, '岗位管理菜单');
+insert into sys_menu values('105',  '字典管理',       '1',   '6', 'dict',       'system/dict/index',                 '', '', 1, 0, 'C', '0', '1', 'system:dict:list',        'dict',          'admin', sysdate(), '', null, '字典管理菜单');
 insert into sys_menu values('106',  '参数设置',       '1',   '7', 'config',     'system/config/index',               '', '', 1, 0, 'C', '0', '0', 'system:config:list',      'edit',          'admin', sysdate(), '', null, '参数设置菜单');
-insert into sys_menu values('107',  '通知公告',       '1',   '8', 'notice',     'system/notice/index',               '', '', 1, 0, 'C', '0', '0', 'system:notice:list',      'message',       'admin', sysdate(), '', null, '通知公告菜单');
+insert into sys_menu values('107',  '通知公告',       '1',   '8', 'notice',     'system/notice/index',               '', '', 1, 0, 'C', '0', '1', 'system:notice:list',      'message',       'admin', sysdate(), '', null, '通知公告菜单');
 insert into sys_menu values('108',  '日志管理',       '1',   '9', 'log',        '',                                  '', '', 1, 0, 'M', '0', '0', '',                        'log',           'admin', sysdate(), '', null, '日志管理菜单');
-insert into sys_menu values('109',  '在线用户',       '2',   '1', 'online',     'monitor/online/index',              '', '', 1, 0, 'C', '0', '0', 'monitor:online:list',     'online',        'admin', sysdate(), '', null, '在线用户菜单');
-insert into sys_menu values('110',  '定时任务',       '2',   '2', 'job',        'monitor/job/index',                 '', '', 1, 0, 'C', '0', '0', 'monitor:job:list',        'job',           'admin', sysdate(), '', null, '定时任务菜单');
-insert into sys_menu values('111',  'OpenClaw对话', '2',   '3', 'https://devops.zoudekang.cloud/openclaw/', '', '', '', 0, 0, 'C', '0', '0', 'monitor:sentinel:list',   'guide',         'admin', sysdate(), '', null, 'OpenClaw对话入口');
-insert into sys_menu values('112',  '配置中心',    '2',   '4', 'https://devops.zoudekang.cloud/nacos/',  '',                '', '', 0, 0, 'C', '0', '0', 'monitor:nacos:list',      'nacos',         'admin', sysdate(), '', null, '配置中心菜单');
-insert into sys_menu values('113',  '流水线',    '2',   '5', 'https://devops.zoudekang.cloud/jenkins/',  '',                '', '', 0, 0, 'C', '0', '0', 'monitor:server:list',     'job',           'admin', sysdate(), '', null, 'Jenkins流水线菜单');
+insert into sys_menu values('109',  '在线用户',       '2',   '1', 'online',     'monitor/online/index',              '', '', 1, 0, 'C', '0', '1', 'monitor:online:list',     'online',        'admin', sysdate(), '', null, '在线用户菜单');
+insert into sys_menu values('110',  '定时任务',       '2',   '2', 'job',        'monitor/job/index',                 '', '', 1, 0, 'C', '0', '1', 'monitor:job:list',        'job',           'admin', sysdate(), '', null, '定时任务菜单');
+insert into sys_menu values('111',  'OpenClaw对话', '2',   '3', 'https://devops.zoudekang.cloud/openclaw/', '', '', '', 0, 0, 'C', '0', '1', 'monitor:sentinel:list',   'guide',         'admin', sysdate(), '', null, 'OpenClaw对话入口');
+insert into sys_menu values('112',  '配置中心',    '2',   '4', 'https://devops.zoudekang.cloud/nacos/',  '',                '', '', 0, 0, 'C', '0', '1', 'monitor:nacos:list',      'nacos',         'admin', sysdate(), '', null, '配置中心菜单');
+insert into sys_menu values('113',  '流水线',    '2',   '5', 'https://devops.zoudekang.cloud/jenkins/',  '',                '', '', 0, 0, 'C', '0', '1', 'monitor:server:list',     'job',           'admin', sysdate(), '', null, 'Jenkins流水线菜单');
 insert into sys_menu values('114',  '表单构建',       '3',   '1', 'build',      'tool/build/index',                  '', '', 1, 0, 'C', '0', '1', 'tool:build:list',         'build',         'admin', sysdate(), '', null, '表单构建菜单');
 insert into sys_menu values('115',  '代码生成',       '3',   '2', 'gen',        'tool/gen/index',                    '', '', 1, 0, 'C', '0', '1', 'tool:gen:list',           'code',          'admin', sysdate(), '', null, '代码生成菜单');
 insert into sys_menu values('116',  '系统接口',       '3',   '3', '/swagger-ui/index.html', 'InnerLink', '', '', 0, 0, 'C', '0', '1', 'tool:swagger:list',       'swagger',       'admin', sysdate(), '', null, '系统接口菜单');
