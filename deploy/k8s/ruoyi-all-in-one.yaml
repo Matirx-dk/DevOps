@@ -1,21 +1,21 @@
-# RuoYi Cloud all-in-one Kubernetes manifest
+# AIDevOps Cloud all-in-one Kubernetes manifest
 # Usage:
 #   kubectl apply -f deploy/k8s/ruoyi-all-in-one.yaml
 # Notes:
 # - This file is tailored to the current cluster layout used on 2026-03-29.
-# - MySQL data uses an NFS PV at 192.168.1.104:/data/nfs/share/ruoyi-mysql
+# - MySQL data uses an NFS PV at 192.168.1.104:/data/nfs/share/aidevops-mysql
 # - Images default to the registry/image tags currently running in cluster.
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ruoyi-cloud
+  name: aidevops-cloud
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-sql-init
-  namespace: ruoyi-cloud
+  name: aidevops-sql-init
+  namespace: aidevops-cloud
 data:
   01-ry-config.sql: |
     DROP DATABASE IF EXISTS `ry-config`;
@@ -54,14 +54,14 @@ data:
     
     insert into config_info(id, data_id, group_id, content, md5, gmt_create, gmt_modified, src_user, src_ip, app_name, tenant_id, c_desc, c_use, effect, type, c_schema, encrypted_data_key) values 
     (1,'application-dev.yml','DEFAULT_GROUP','spring:\n  autoconfigure:\n    exclude: com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure\n\n# feign 配置\nfeign:\n  sentinel:\n    enabled: true\n  okhttp:\n    enabled: true\n  httpclient:\n    enabled: false\n  client:\n    config:\n      default:\n        connectTimeout: 10000\n        readTimeout: 10000\n  compression:\n    request:\n      enabled: true\n      min-request-size: 8192\n    response:\n      enabled: true\n\n# 暴露监控端点\nmanagement:\n  endpoints:\n    web:\n      exposure:\n        include: \'*\'\n','9928f41dfb10386ad38b3254af5692e0','2020-05-20 12:00:00','2024-08-29 12:14:45','nacos','0:0:0:0:0:0:0:1','','','通用配置','null','null','yaml','',''),
-    (2,'ruoyi-gateway-dev.yml','DEFAULT_GROUP','spring:\n  data:\n    redis:\n      host: ruoyi-redis.ruoyi-cloud.svc.cluster.local\n      port: 6379\n      password: \n  cloud:\n    gateway:\n      server:\n        webflux:\n          discovery:\n            locator:\n              lowerCaseServiceId: true\n              enabled: true\n          routes:\n            # 认证中心\n            - id: ruoyi-auth\n              uri: lb://ruoyi-auth\n              predicates:\n                - Path=/auth/**\n              filters:\n                # 验证码处理\n                - name: CacheRequestBody\n                  args:\n                    bodyClass: java.lang.String\n                - ValidateCodeFilter\n                - StripPrefix=1\n            # 代码生成\n            - id: ruoyi-gen\n              uri: lb://ruoyi-gen\n              predicates:\n                - Path=/code/**\n              filters:\n                - StripPrefix=1\n            # 定时任务\n            - id: ruoyi-job\n              uri: lb://ruoyi-job\n              predicates:\n                - Path=/schedule/**\n              filters:\n                - StripPrefix=1\n            # 系统模块\n            - id: ruoyi-system\n              uri: lb://ruoyi-system\n              predicates:\n                - Path=/system/**\n              filters:\n                - StripPrefix=1\n            # 文件服务\n            - id: ruoyi-file\n              uri: lb://ruoyi-file\n              predicates:\n                - Path=/file/**\n              filters:\n                - StripPrefix=1\n\n# 安全配置\nsecurity:\n  # 验证码\n  captcha:\n    enabled: true\n    type: math\n  # 防止XSS攻击\n  xss:\n    enabled: true\n    excludeUrls:\n      - /system/notice\n\n  # 不校验白名单\n  ignore:\n    whites:\n      - /auth/logout\n      - /auth/login\n      - /auth/register\n      - /*/v2/api-docs\n      - /*/v3/api-docs\n      - /csrf\n\n# springdoc配置\nspringdoc:\n  webjars:\n    # 访问前缀\n    prefix:\n','1650061c268e8065f4ca40a1ee99808d','2020-05-14 14:17:55','2026-03-10 10:57:46','nacos_namespace_migrate','192.168.137.1','','','网关模块',NULL,NULL,'yaml',NULL,''),
-    (3,'ruoyi-auth-dev.yml','DEFAULT_GROUP','spring:\n  data:\n    redis:\n      host: ruoyi-redis.ruoyi-cloud.svc.cluster.local\n      port: 6379\n      password: \n','72565b1a725e013154ee57c8fd3045c4','2020-11-20 00:00:00','2024-09-14 04:49:42','nacos','0:0:0:0:0:0:0:1','','','认证中心','null','null','yaml','',''),
-    (4,'ruoyi-monitor-dev.yml','DEFAULT_GROUP','# spring\nspring:\n  security:\n    user:\n      name: ruoyi\n      password: 123456\n  boot:\n    admin:\n      ui:\n        title: 若依服务状态监控\n','6f122fd2bfb8d45f858e7d6529a9cd44','2020-11-20 00:00:00','2024-08-29 12:15:11','nacos','0:0:0:0:0:0:0:1','','','监控中心','null','null','yaml','',''),
-    (5,'ruoyi-system-dev.yml','DEFAULT_GROUP','# spring配置\nspring:\n  data:\n    redis:\n      host: ruoyi-redis.ruoyi-cloud.svc.cluster.local\n      port: 6379\n      password: \n  datasource:\n    druid:\n      stat-view-servlet:\n        enabled: true\n        loginUsername: ruoyi\n        loginPassword: 123456\n    dynamic:\n      druid:\n        initial-size: 5\n        min-idle: 5\n        maxActive: 20\n        maxWait: 60000\n        connectTimeout: 30000\n        socketTimeout: 60000\n        timeBetweenEvictionRunsMillis: 60000\n        minEvictableIdleTimeMillis: 300000\n        validationQuery: SELECT 1 FROM DUAL\n        testWhileIdle: true\n        testOnBorrow: false\n        testOnReturn: false\n        poolPreparedStatements: true\n        maxPoolPreparedStatementPerConnectionSize: 20\n        filters: stat,slf4j\n        connectionProperties: druid.stat.mergeSql\\=true;druid.stat.slowSqlMillis\\=5000\n      datasource:\n          # 主库数据源\n          master:\n            driver-class-name: com.mysql.cj.jdbc.Driver\n            url: jdbc:mysql://ruoyi-mysql.ruoyi-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia%2FShanghai\n            username: root\n            password: password\n          # 从库数据源\n          # slave:\n            # username: \n            # password: \n            # url: \n            # driver-class-name: \n\n# mybatis配置\nmybatis:\n    # 搜索指定包别名\n    typeAliasesPackage: com.ruoyi.system\n    # 配置mapper的扫描，找到所有的mapper.xml映射文件\n    mapperLocations: classpath:mapper/**/*.xml\n\n# springdoc配置\nspringdoc:\n  gatewayUrl: http://ruoyi-gateway.ruoyi-cloud.svc.cluster.local:8080/${spring.application.name}\n  api-docs:\n    # 是否开启接口文档\n    enabled: true\n  info:\n    # 标题\n    title: \'系统模块接口文档\'\n    # 描述\n    description: \'系统模块接口描述\'\n    # 作者信息\n    contact:\n      name: RuoYi\n      url: https://ruoyi.vip\n','a79ae256018abb7f3bbaba923baeb6af','2020-11-20 00:00:00','2024-09-14 04:49:54','nacos','0:0:0:0:0:0:0:1','','','系统模块','null','null','yaml','',''),
-    (6,'ruoyi-gen-dev.yml','DEFAULT_GROUP','# spring配置\nspring:\n  data:\n    redis:\n      host: ruoyi-redis.ruoyi-cloud.svc.cluster.local\n      port: 6379\n      password: \n  datasource:\n    driver-class-name: com.mysql.cj.jdbc.Driver\n    url: jdbc:mysql://ruoyi-mysql.ruoyi-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia%2FShanghai\n    username: root\n    password: password\n\n# mybatis配置\nmybatis:\n    # 搜索指定包别名\n    typeAliasesPackage: com.ruoyi.gen.domain\n    # 配置mapper的扫描，找到所有的mapper.xml映射文件\n    mapperLocations: classpath:mapper/**/*.xml\n\n# springdoc配置\nspringdoc:\n  gatewayUrl: http://ruoyi-gateway.ruoyi-cloud.svc.cluster.local:8080/${spring.application.name}\n  api-docs:\n    # 是否开启接口文档\n    enabled: true\n  info:\n    # 标题\n    title: \'代码生成接口文档\'\n    # 描述\n    description: \'代码生成接口描述\'\n    # 作者信息\n    contact:\n      name: RuoYi\n      url: https://ruoyi.vip\n\n# 代码生成\ngen:\n  # 作者\n  author: ruoyi\n  # 默认生成包路径 system 需改成自己的模块名称 如 system monitor tool\n  packageName: com.ruoyi.system\n  # 自动去除表前缀，默认是false\n  autoRemovePre: false\n  # 表前缀（生成类名不会包含表前缀，多个用逗号分隔）\n  tablePrefix: sys_\n  # 是否允许生成文件覆盖到本地（自定义路径），默认不允许\n  allowOverwrite: false','669b20230daf5b2eddda1c87a1e755d7','2020-11-20 00:00:00','2024-12-25 08:39:25','nacos','0:0:0:0:0:0:0:1','','','代码生成','null','null','yaml','',''),
-    (7,'ruoyi-job-dev.yml','DEFAULT_GROUP','# spring配置\nspring:\n  data:\n    redis:\n      host: ruoyi-redis.ruoyi-cloud.svc.cluster.local\n      port: 6379\n      password: \n  datasource:\n    driver-class-name: com.mysql.cj.jdbc.Driver\n    url: jdbc:mysql://ruoyi-mysql.ruoyi-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia%2FShanghai\n    username: root\n    password: password\n\n# mybatis配置\nmybatis:\n    # 搜索指定包别名\n    typeAliasesPackage: com.ruoyi.job.domain\n    # 配置mapper的扫描，找到所有的mapper.xml映射文件\n    mapperLocations: classpath:mapper/**/*.xml\n\n# springdoc配置\nspringdoc:\n  gatewayUrl: http://ruoyi-gateway.ruoyi-cloud.svc.cluster.local:8080/${spring.application.name}\n  api-docs:\n    # 是否开启接口文档\n    enabled: true\n  info:\n    # 标题\n    title: \'定时任务接口文档\'\n    # 描述\n    description: \'定时任务接口描述\'\n    # 作者信息\n    contact:\n      name: RuoYi\n      url: https://ruoyi.vip\n','225445e638148dbcbadda8d9774ce3fd','2020-11-20 00:00:00','2024-09-14 04:50:12','nacos','0:0:0:0:0:0:0:1','','','定时任务','null','null','yaml','',''),
-    (8,'ruoyi-file-dev.yml','DEFAULT_GROUP','# 本地文件上传    \nfile:\n    domain: http://127.0.0.1:9300\n    path: D:/ruoyi/uploadPath\n    prefix: /statics\n\n# FastDFS配置\nfdfs:\n  domain: http://127.0.0.1\n  soTimeout: 3000\n  connectTimeout: 2000\n  trackerList: 127.0.0.1:22122\n\n# Minio配置\nminio:\n  url: http://127.0.0.1:9000\n  accessKey: minioadmin\n  secretKey: minioadmin\n  bucketName: test\n\n  # 防盗链配置\nreferer:\n  # 防盗链开关\n  enabled: false\n  # 允许的域名列表\n  allowed-domains: localhost,127.0.0.1,ruoyi.vip,www.ruoyi.vip\n','095791a04211d6e3d294359b21357394','2020-11-20 00:00:00','2025-09-02 05:10:11','nacos','0:0:0:0:0:0:0:1','','','文件服务','null','null','yaml','',''),
-    (9,'sentinel-ruoyi-gateway','DEFAULT_GROUP','[\r\n    {\r\n        \"resource\": \"ruoyi-auth\",\r\n        \"count\": 500,\r\n        \"grade\": 1,\r\n        \"limitApp\": \"default\",\r\n        \"strategy\": 0,\r\n        \"controlBehavior\": 0\r\n    },\r\n	{\r\n        \"resource\": \"ruoyi-system\",\r\n        \"count\": 1000,\r\n        \"grade\": 1,\r\n        \"limitApp\": \"default\",\r\n        \"strategy\": 0,\r\n        \"controlBehavior\": 0\r\n    },\r\n	{\r\n        \"resource\": \"ruoyi-gen\",\r\n        \"count\": 200,\r\n        \"grade\": 1,\r\n        \"limitApp\": \"default\",\r\n        \"strategy\": 0,\r\n        \"controlBehavior\": 0\r\n    },\r\n	{\r\n        \"resource\": \"ruoyi-job\",\r\n        \"count\": 300,\r\n        \"grade\": 1,\r\n        \"limitApp\": \"default\",\r\n        \"strategy\": 0,\r\n        \"controlBehavior\": 0\r\n    }\r\n]','9f3a3069261598f74220bc47958ec252','2020-11-20 00:00:00','2020-11-20 00:00:00',NULL,'0:0:0:0:0:0:0:1','','','限流策略','null','null','json',NULL,'');
+    (2,'aidevops-gateway-dev.yml','DEFAULT_GROUP','spring:\n  data:\n    redis:\n      host: aidevops-redis.aidevops-cloud.svc.cluster.local\n      port: 6379\n      password: \n  cloud:\n    gateway:\n      server:\n        webflux:\n          discovery:\n            locator:\n              lowerCaseServiceId: true\n              enabled: true\n          routes:\n            # 认证中心\n            - id: aidevops-auth\n              uri: lb://aidevops-auth\n              predicates:\n                - Path=/auth/**\n              filters:\n                # 验证码处理\n                - name: CacheRequestBody\n                  args:\n                    bodyClass: java.lang.String\n                - ValidateCodeFilter\n                - StripPrefix=1\n            # 代码生成\n            - id: aidevops-gen\n              uri: lb://aidevops-gen\n              predicates:\n                - Path=/code/**\n              filters:\n                - StripPrefix=1\n            # 定时任务\n            - id: aidevops-job\n              uri: lb://aidevops-job\n              predicates:\n                - Path=/schedule/**\n              filters:\n                - StripPrefix=1\n            # 系统模块\n            - id: aidevops-system\n              uri: lb://aidevops-system\n              predicates:\n                - Path=/system/**\n              filters:\n                - StripPrefix=1\n            # 文件服务\n            - id: aidevops-file\n              uri: lb://aidevops-file\n              predicates:\n                - Path=/file/**\n              filters:\n                - StripPrefix=1\n\n# 安全配置\nsecurity:\n  # 验证码\n  captcha:\n    enabled: true\n    type: math\n  # 防止XSS攻击\n  xss:\n    enabled: true\n    excludeUrls:\n      - /system/notice\n\n  # 不校验白名单\n  ignore:\n    whites:\n      - /auth/logout\n      - /auth/login\n      - /auth/register\n      - /*/v2/api-docs\n      - /*/v3/api-docs\n      - /csrf\n\n# springdoc配置\nspringdoc:\n  webjars:\n    # 访问前缀\n    prefix:\n','1650061c268e8065f4ca40a1ee99808d','2020-05-14 14:17:55','2026-03-10 10:57:46','nacos_namespace_migrate','192.168.137.1','','','网关模块',NULL,NULL,'yaml',NULL,''),
+    (3,'aidevops-auth-dev.yml','DEFAULT_GROUP','spring:\n  data:\n    redis:\n      host: aidevops-redis.aidevops-cloud.svc.cluster.local\n      port: 6379\n      password: \n','72565b1a725e013154ee57c8fd3045c4','2020-11-20 00:00:00','2024-09-14 04:49:42','nacos','0:0:0:0:0:0:0:1','','','认证中心','null','null','yaml','',''),
+    (4,'aidevops-monitor-dev.yml','DEFAULT_GROUP','# spring\nspring:\n  security:\n    user:\n      name: aidevops\n      password: 123456\n  boot:\n    admin:\n      ui:\n        title: AI智能运维服务状态监控\n','6f122fd2bfb8d45f858e7d6529a9cd44','2020-11-20 00:00:00','2024-08-29 12:15:11','nacos','0:0:0:0:0:0:0:1','','','监控中心','null','null','yaml','',''),
+    (5,'aidevops-system-dev.yml','DEFAULT_GROUP','# spring配置\nspring:\n  data:\n    redis:\n      host: aidevops-redis.aidevops-cloud.svc.cluster.local\n      port: 6379\n      password: \n  datasource:\n    druid:\n      stat-view-servlet:\n        enabled: true\n        loginUsername: aidevops\n        loginPassword: 123456\n    dynamic:\n      druid:\n        initial-size: 5\n        min-idle: 5\n        maxActive: 20\n        maxWait: 60000\n        connectTimeout: 30000\n        socketTimeout: 60000\n        timeBetweenEvictionRunsMillis: 60000\n        minEvictableIdleTimeMillis: 300000\n        validationQuery: SELECT 1 FROM DUAL\n        testWhileIdle: true\n        testOnBorrow: false\n        testOnReturn: false\n        poolPreparedStatements: true\n        maxPoolPreparedStatementPerConnectionSize: 20\n        filters: stat,slf4j\n        connectionProperties: druid.stat.mergeSql\\=true;druid.stat.slowSqlMillis\\=5000\n      datasource:\n          # 主库数据源\n          master:\n            driver-class-name: com.mysql.cj.jdbc.Driver\n            url: jdbc:mysql://aidevops-mysql.aidevops-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia%2FShanghai\n            username: root\n            password: password\n          # 从库数据源\n          # slave:\n            # username: \n            # password: \n            # url: \n            # driver-class-name: \n\n# mybatis配置\nmybatis:\n    # 搜索指定包别名\n    typeAliasesPackage: com.aidevops.system\n    # 配置mapper的扫描，找到所有的mapper.xml映射文件\n    mapperLocations: classpath:mapper/**/*.xml\n\n# springdoc配置\nspringdoc:\n  gatewayUrl: http://aidevops-gateway.aidevops-cloud.svc.cluster.local:8080/${spring.application.name}\n  api-docs:\n    # 是否开启接口文档\n    enabled: true\n  info:\n    # 标题\n    title: \'系统模块接口文档\'\n    # 描述\n    description: \'系统模块接口描述\'\n    # 作者信息\n    contact:\n      name: AIDevOps\n      url: https://devops.zoudekang.cloud\n','a79ae256018abb7f3bbaba923baeb6af','2020-11-20 00:00:00','2024-09-14 04:49:54','nacos','0:0:0:0:0:0:0:1','','','系统模块','null','null','yaml','',''),
+    (6,'aidevops-gen-dev.yml','DEFAULT_GROUP','# spring配置\nspring:\n  data:\n    redis:\n      host: aidevops-redis.aidevops-cloud.svc.cluster.local\n      port: 6379\n      password: \n  datasource:\n    driver-class-name: com.mysql.cj.jdbc.Driver\n    url: jdbc:mysql://aidevops-mysql.aidevops-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia%2FShanghai\n    username: root\n    password: password\n\n# mybatis配置\nmybatis:\n    # 搜索指定包别名\n    typeAliasesPackage: com.aidevops.gen.domain\n    # 配置mapper的扫描，找到所有的mapper.xml映射文件\n    mapperLocations: classpath:mapper/**/*.xml\n\n# springdoc配置\nspringdoc:\n  gatewayUrl: http://aidevops-gateway.aidevops-cloud.svc.cluster.local:8080/${spring.application.name}\n  api-docs:\n    # 是否开启接口文档\n    enabled: true\n  info:\n    # 标题\n    title: \'代码生成接口文档\'\n    # 描述\n    description: \'代码生成接口描述\'\n    # 作者信息\n    contact:\n      name: AIDevOps\n      url: https://devops.zoudekang.cloud\n\n# 代码生成\ngen:\n  # 作者\n  author: aidevops\n  # 默认生成包路径 system 需改成自己的模块名称 如 system monitor tool\n  packageName: com.aidevops.system\n  # 自动去除表前缀，默认是false\n  autoRemovePre: false\n  # 表前缀（生成类名不会包含表前缀，多个用逗号分隔）\n  tablePrefix: sys_\n  # 是否允许生成文件覆盖到本地（自定义路径），默认不允许\n  allowOverwrite: false','669b20230daf5b2eddda1c87a1e755d7','2020-11-20 00:00:00','2024-12-25 08:39:25','nacos','0:0:0:0:0:0:0:1','','','代码生成','null','null','yaml','',''),
+    (7,'aidevops-job-dev.yml','DEFAULT_GROUP','# spring配置\nspring:\n  data:\n    redis:\n      host: aidevops-redis.aidevops-cloud.svc.cluster.local\n      port: 6379\n      password: \n  datasource:\n    driver-class-name: com.mysql.cj.jdbc.Driver\n    url: jdbc:mysql://aidevops-mysql.aidevops-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia%2FShanghai\n    username: root\n    password: password\n\n# mybatis配置\nmybatis:\n    # 搜索指定包别名\n    typeAliasesPackage: com.aidevops.job.domain\n    # 配置mapper的扫描，找到所有的mapper.xml映射文件\n    mapperLocations: classpath:mapper/**/*.xml\n\n# springdoc配置\nspringdoc:\n  gatewayUrl: http://aidevops-gateway.aidevops-cloud.svc.cluster.local:8080/${spring.application.name}\n  api-docs:\n    # 是否开启接口文档\n    enabled: true\n  info:\n    # 标题\n    title: \'定时任务接口文档\'\n    # 描述\n    description: \'定时任务接口描述\'\n    # 作者信息\n    contact:\n      name: AIDevOps\n      url: https://devops.zoudekang.cloud\n','225445e638148dbcbadda8d9774ce3fd','2020-11-20 00:00:00','2024-09-14 04:50:12','nacos','0:0:0:0:0:0:0:1','','','定时任务','null','null','yaml','',''),
+    (8,'aidevops-file-dev.yml','DEFAULT_GROUP','# 本地文件上传    \nfile:\n    domain: http://127.0.0.1:9300\n    path: D:/aidevops/uploadPath\n    prefix: /statics\n\n# FastDFS配置\nfdfs:\n  domain: http://127.0.0.1\n  soTimeout: 3000\n  connectTimeout: 2000\n  trackerList: 127.0.0.1:22122\n\n# Minio配置\nminio:\n  url: http://127.0.0.1:9000\n  accessKey: minioadmin\n  secretKey: minioadmin\n  bucketName: test\n\n  # 防盗链配置\nreferer:\n  # 防盗链开关\n  enabled: false\n  # 允许的域名列表\n  allowed-domains: localhost,127.0.0.1,devops.zoudekang.cloud,www.devops.zoudekang.cloud\n','095791a04211d6e3d294359b21357394','2020-11-20 00:00:00','2025-09-02 05:10:11','nacos','0:0:0:0:0:0:0:1','','','文件服务','null','null','yaml','',''),
+    (9,'sentinel-aidevops-gateway','DEFAULT_GROUP','[\r\n    {\r\n        \"resource\": \"aidevops-auth\",\r\n        \"count\": 500,\r\n        \"grade\": 1,\r\n        \"limitApp\": \"default\",\r\n        \"strategy\": 0,\r\n        \"controlBehavior\": 0\r\n    },\r\n	{\r\n        \"resource\": \"aidevops-system\",\r\n        \"count\": 1000,\r\n        \"grade\": 1,\r\n        \"limitApp\": \"default\",\r\n        \"strategy\": 0,\r\n        \"controlBehavior\": 0\r\n    },\r\n	{\r\n        \"resource\": \"aidevops-gen\",\r\n        \"count\": 200,\r\n        \"grade\": 1,\r\n        \"limitApp\": \"default\",\r\n        \"strategy\": 0,\r\n        \"controlBehavior\": 0\r\n    },\r\n	{\r\n        \"resource\": \"aidevops-job\",\r\n        \"count\": 300,\r\n        \"grade\": 1,\r\n        \"limitApp\": \"default\",\r\n        \"strategy\": 0,\r\n        \"controlBehavior\": 0\r\n    }\r\n]','9f3a3069261598f74220bc47958ec252','2020-11-20 00:00:00','2020-11-20 00:00:00',NULL,'0:0:0:0:0:0:0:1','','','限流策略','null','null','json',NULL,'');
     
     
     /******************************************/
@@ -293,16 +293,16 @@ data:
     -- ----------------------------
     -- 初始化-部门表数据
     -- ----------------------------
-    insert into sys_dept values(100,  0,   '0',          '若依科技',   0, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(101,  100, '0,100',      '深圳总公司', 1, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(102,  100, '0,100',      '长沙分公司', 2, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(103,  101, '0,100,101',  '研发部门',   1, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(104,  101, '0,100,101',  '市场部门',   2, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(105,  101, '0,100,101',  '测试部门',   3, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(106,  101, '0,100,101',  '财务部门',   4, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(107,  101, '0,100,101',  '运维部门',   5, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(108,  102, '0,100,102',  '市场部门',   1, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
-    insert into sys_dept values(109,  102, '0,100,102',  '财务部门',   2, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(100,  0,   '0',          'AI智能运维科技',   0, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(101,  100, '0,100',      '深圳总公司', 1, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(102,  100, '0,100',      '长沙分公司', 2, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(103,  101, '0,100,101',  '研发部门',   1, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(104,  101, '0,100,101',  '市场部门',   2, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(105,  101, '0,100,101',  '测试部门',   3, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(106,  101, '0,100,101',  '财务部门',   4, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(107,  101, '0,100,101',  '运维部门',   5, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(108,  102, '0,100,102',  '市场部门',   1, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
+    insert into sys_dept values(109,  102, '0,100,102',  '财务部门',   2, 'AI智能运维', '15888888888', 'ry@qq.com', '0', '0', 'admin', sysdate(), '', null);
     
     
     -- ----------------------------
@@ -336,8 +336,8 @@ data:
     -- ----------------------------
     -- 初始化-用户信息表数据
     -- ----------------------------
-    insert into sys_user values(1,  103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '', null, '管理员');
-    insert into sys_user values(2,  105, 'ry',    '若依', '00', 'ry@qq.com',  '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '', null, '测试员');
+    insert into sys_user values(1,  103, 'admin', 'AI智能运维', '00', 'ry@163.com', '15888888888', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '', null, '管理员');
+    insert into sys_user values(2,  105, 'ry',    'AI智能运维', '00', 'ry@qq.com',  '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '', null, '测试员');
     
     
     -- ----------------------------
@@ -432,7 +432,7 @@ data:
     insert into sys_menu values('1', '系统管理', '0', '1', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '系统管理目录');
     insert into sys_menu values('2', '系统监控', '0', '2', 'monitor',          null, '', '', 1, 0, 'M', '0', '0', '', 'monitor',  'admin', sysdate(), '', null, '系统监控目录');
     insert into sys_menu values('3', '系统工具', '0', '3', 'tool',             null, '', '', 1, 0, 'M', '0', '0', '', 'tool',     'admin', sysdate(), '', null, '系统工具目录');
-    insert into sys_menu values('4', '若依官网', '0', '4', 'http://ruoyi.vip', null, '', '', 0, 0, 'M', '0', '0', '', 'guide',    'admin', sysdate(), '', null, '若依官网地址');
+    insert into sys_menu values('4', 'AI智能运维官网', '0', '4', 'http://devops.zoudekang.cloud', null, '', '', 0, 0, 'M', '0', '0', '', 'guide',    'admin', sysdate(), '', null, 'AI智能运维官网地址');
     -- 二级菜单
     insert into sys_menu values('100',  '用户管理',       '1',   '1', 'user',       'system/user/index',                 '', '', 1, 0, 'C', '0', '0', 'system:user:list',        'user',          'admin', sysdate(), '', null, '用户管理菜单');
     insert into sys_menu values('101',  '角色管理',       '1',   '2', 'role',       'system/role/index',                 '', '', 1, 0, 'C', '0', '0', 'system:role:list',        'peoples',       'admin', sysdate(), '', null, '角色管理菜单');
@@ -905,9 +905,9 @@ data:
     -- ----------------------------
     -- 初始化-公告信息表数据
     -- ----------------------------
-    insert into sys_notice values('1', '温馨提醒：2018-07-01 若依新版本发布啦', '2', '新版本内容', '0', 'admin', sysdate(), '', null, '管理员');
-    insert into sys_notice values('2', '维护通知：2018-07-01 若依系统凌晨维护', '1', '维护内容',   '0', 'admin', sysdate(), '', null, '管理员');
-    insert into sys_notice values('3', '若依开源框架介绍', '1', '<p><span style=\"color: rgb(230, 0, 0);\">项目介绍</span></p><p><font color=\"#333333\">RuoYi开源项目是为企业用户定制的后台脚手架框架，为企业打造的一站式解决方案，降低企业开发成本，提升开发效率。主要包括用户管理、角色管理、部门管理、菜单管理、参数管理、字典管理、</font><span style=\"color: rgb(51, 51, 51);\">岗位管理</span><span style=\"color: rgb(51, 51, 51);\">、定时任务</span><span style=\"color: rgb(51, 51, 51);\">、</span><span style=\"color: rgb(51, 51, 51);\">服务监控、登录日志、操作日志、代码生成等功能。其中，还支持多数据源、数据权限、国际化、Redis缓存、Docker部署、滑动验证码、第三方认证登录、分布式事务、</span><font color=\"#333333\">分布式文件存储</font><span style=\"color: rgb(51, 51, 51);\">、分库分表处理等技术特点。</span></p><p><img src=\"https://foruda.gitee.com/images/1773931848342439032/a4d22313_1815095.png\" style=\"width: 64px;\"><br></p><p><span style=\"color: rgb(230, 0, 0);\">官网及演示</span></p><p><span style=\"color: rgb(51, 51, 51);\">若依官网地址：&nbsp;</span><a href=\"http://ruoyi.vip\" target=\"_blank\">http://ruoyi.vip</a><a href=\"http://ruoyi.vip\" target=\"_blank\"></a></p><p><span style=\"color: rgb(51, 51, 51);\">若依文档地址：&nbsp;</span><a href=\"http://doc.ruoyi.vip\" target=\"_blank\">http://doc.ruoyi.vip</a><br></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【不分离版】：&nbsp;</span><a href=\"http://demo.ruoyi.vip\" target=\"_blank\">http://demo.ruoyi.vip</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【分离版本】：&nbsp;</span><a href=\"http://vue.ruoyi.vip\" target=\"_blank\">http://vue.ruoyi.vip</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【微服务版】：&nbsp;</span><a href=\"http://cloud.ruoyi.vip\" target=\"_blank\">http://cloud.ruoyi.vip</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【移动端版】：&nbsp;</span><a href=\"http://h5.ruoyi.vip\" target=\"_blank\">http://h5.ruoyi.vip</a></p><p><br style=\"color: rgb(48, 49, 51); font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-size: 12px;\"></p>', '0', 'admin', sysdate(), '', null, '管理员');
+    insert into sys_notice values('1', '温馨提醒：2018-07-01 AI智能运维新版本发布啦', '2', '新版本内容', '0', 'admin', sysdate(), '', null, '管理员');
+    insert into sys_notice values('2', '维护通知：2018-07-01 AI智能运维系统凌晨维护', '1', '维护内容',   '0', 'admin', sysdate(), '', null, '管理员');
+    insert into sys_notice values('3', 'AI智能运维开源框架介绍', '1', '<p><span style=\"color: rgb(230, 0, 0);\">项目介绍</span></p><p><font color=\"#333333\">AIDevOps开源项目是为企业用户定制的后台脚手架框架，为企业打造的一站式解决方案，降低企业开发成本，提升开发效率。主要包括用户管理、角色管理、部门管理、菜单管理、参数管理、字典管理、</font><span style=\"color: rgb(51, 51, 51);\">岗位管理</span><span style=\"color: rgb(51, 51, 51);\">、定时任务</span><span style=\"color: rgb(51, 51, 51);\">、</span><span style=\"color: rgb(51, 51, 51);\">服务监控、登录日志、操作日志、代码生成等功能。其中，还支持多数据源、数据权限、国际化、Redis缓存、Docker部署、滑动验证码、第三方认证登录、分布式事务、</span><font color=\"#333333\">分布式文件存储</font><span style=\"color: rgb(51, 51, 51);\">、分库分表处理等技术特点。</span></p><p><img src=\"https://foruda.gitee.com/images/1773931848342439032/a4d22313_1815095.png\" style=\"width: 64px;\"><br></p><p><span style=\"color: rgb(230, 0, 0);\">官网及演示</span></p><p><span style=\"color: rgb(51, 51, 51);\">AI智能运维官网地址：&nbsp;</span><a href=\"http://devops.zoudekang.cloud\" target=\"_blank\">http://devops.zoudekang.cloud</a><a href=\"http://devops.zoudekang.cloud\" target=\"_blank\"></a></p><p><span style=\"color: rgb(51, 51, 51);\">AI智能运维文档地址：&nbsp;</span><a href=\"http://doc.devops.zoudekang.cloud\" target=\"_blank\">http://doc.devops.zoudekang.cloud</a><br></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【不分离版】：&nbsp;</span><a href=\"http://demo.devops.zoudekang.cloud\" target=\"_blank\">http://demo.devops.zoudekang.cloud</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【分离版本】：&nbsp;</span><a href=\"http://vue.devops.zoudekang.cloud\" target=\"_blank\">http://vue.devops.zoudekang.cloud</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【微服务版】：&nbsp;</span><a href=\"http://cloud.devops.zoudekang.cloud\" target=\"_blank\">http://cloud.devops.zoudekang.cloud</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【移动端版】：&nbsp;</span><a href=\"http://h5.devops.zoudekang.cloud\" target=\"_blank\">http://h5.devops.zoudekang.cloud</a></p><p><br style=\"color: rgb(48, 49, 51); font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-size: 12px;\"></p>', '0', 'admin', sysdate(), '', null, '管理员');
     
     
     -- ----------------------------
@@ -1162,14 +1162,14 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-gateway-local
-  namespace: ruoyi-cloud
+  name: aidevops-gateway-local
+  namespace: aidevops-cloud
 data:
   application.yml: |
     spring:
       data:
         redis:
-          host: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+          host: aidevops-redis.aidevops-cloud.svc.cluster.local
           port: 6379
           password:
       cloud:
@@ -1181,8 +1181,8 @@ data:
                   lowerCaseServiceId: true
                   enabled: true
               routes:
-                - id: ruoyi-auth
-                  uri: lb://ruoyi-auth
+                - id: aidevops-auth
+                  uri: lb://aidevops-auth
                   predicates:
                     - Path=/auth/**
                   filters:
@@ -1191,8 +1191,8 @@ data:
                         bodyClass: java.lang.String
                     - ValidateCodeFilter
                     - StripPrefix=1
-                - id: ruoyi-system
-                  uri: lb://ruoyi-system
+                - id: aidevops-system
+                  uri: lb://aidevops-system
                   predicates:
                     - Path=/system/**
                   filters:
@@ -1220,21 +1220,21 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-system-local
-  namespace: ruoyi-cloud
+  name: aidevops-system-local
+  namespace: aidevops-cloud
 data:
   application.yml: |
     spring:
       data:
         redis:
-          host: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+          host: aidevops-redis.aidevops-cloud.svc.cluster.local
           port: 6379
           password:
       datasource:
         druid:
           stat-view-servlet:
             enabled: true
-            loginUsername: ruoyi
+            loginUsername: aidevops
             loginPassword: 123456
         dynamic:
           druid:
@@ -1257,21 +1257,21 @@ data:
           datasource:
             master:
               driver-class-name: com.mysql.cj.jdbc.Driver
-              url: jdbc:mysql://ruoyi-mysql.ruoyi-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+              url: jdbc:mysql://aidevops-mysql.aidevops-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
               username: root
               password: password
     mybatis:
-      typeAliasesPackage: com.ruoyi.system
+      typeAliasesPackage: com.aidevops.system
       mapperLocations: classpath*:mapper/**/*.xml
     springdoc:
-      gatewayUrl: http://ruoyi-gateway.ruoyi-cloud.svc.cluster.local:8080/${spring.application.name}
+      gatewayUrl: http://aidevops-gateway.aidevops-cloud.svc.cluster.local:8080/${spring.application.name}
       api-docs:
         enabled: true
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: ruoyi-mysql-pv
+  name: aidevops-mysql-pv
 spec:
   capacity:
     storage: 20Gi
@@ -1280,35 +1280,35 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     server: 192.168.1.104
-    path: /data/nfs/share/ruoyi-mysql
+    path: /data/nfs/share/aidevops-mysql
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ruoyi-mysql-pvc
-  namespace: ruoyi-cloud
+  name: aidevops-mysql-pvc
+  namespace: aidevops-cloud
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       storage: 20Gi
-  volumeName: ruoyi-mysql-pv
+  volumeName: aidevops-mysql-pv
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-mysql
-  namespace: ruoyi-cloud
+  name: aidevops-mysql
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-mysql
+      app: aidevops-mysql
   template:
     metadata:
       labels:
-        app: ruoyi-mysql
+        app: aidevops-mysql
     spec:
       nodeSelector:
         kubernetes.io/hostname: devops-1
@@ -1357,16 +1357,16 @@ spec:
       volumes:
         - name: mysql-data
           persistentVolumeClaim:
-            claimName: ruoyi-mysql-pvc
+            claimName: aidevops-mysql-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-mysql
-  namespace: ruoyi-cloud
+  name: aidevops-mysql
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-mysql
+    app: aidevops-mysql
   ports:
     - port: 3306
       targetPort: 3306
@@ -1374,8 +1374,8 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ruoyi-db-init
-  namespace: ruoyi-cloud
+  name: aidevops-db-init
+  namespace: aidevops-cloud
 spec:
   backoffLimit: 3
   template:
@@ -1391,13 +1391,13 @@ spec:
             - |
               set -e
               echo 'waiting for mysql...'
-              until mysqladmin ping -h ruoyi-mysql -uroot -ppassword --silent; do sleep 5; done
+              until mysqladmin ping -h aidevops-mysql -uroot -ppassword --silent; do sleep 5; done
               echo 'init databases...'
-              mysql -h ruoyi-mysql -uroot -ppassword -e "CREATE DATABASE IF NOT EXISTS \`ry-config\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-              mysql -h ruoyi-mysql -uroot -ppassword -e "CREATE DATABASE IF NOT EXISTS \`ry-cloud\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-              mysql -h ruoyi-mysql -uroot -ppassword ry-config < /sql/01-ry-config.sql
-              mysql -h ruoyi-mysql -uroot -ppassword ry-cloud < /sql/02-ry-cloud.sql
-              mysql -h ruoyi-mysql -uroot -ppassword ry-cloud < /sql/03-quartz.sql
+              mysql -h aidevops-mysql -uroot -ppassword -e "CREATE DATABASE IF NOT EXISTS \`ry-config\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              mysql -h aidevops-mysql -uroot -ppassword -e "CREATE DATABASE IF NOT EXISTS \`ry-cloud\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              mysql -h aidevops-mysql -uroot -ppassword ry-config < /sql/01-ry-config.sql
+              mysql -h aidevops-mysql -uroot -ppassword ry-cloud < /sql/02-ry-cloud.sql
+              mysql -h aidevops-mysql -uroot -ppassword ry-cloud < /sql/03-quartz.sql
               echo 'done.'
           volumeMounts:
             - name: sql
@@ -1405,22 +1405,22 @@ spec:
       volumes:
         - name: sql
           configMap:
-            name: ruoyi-sql-init
+            name: aidevops-sql-init
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-redis
-  namespace: ruoyi-cloud
+  name: aidevops-redis
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-redis
+      app: aidevops-redis
   template:
     metadata:
       labels:
-        app: ruoyi-redis
+        app: aidevops-redis
     spec:
       containers:
         - name: redis
@@ -1432,11 +1432,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-redis
-  namespace: ruoyi-cloud
+  name: aidevops-redis
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-redis
+    app: aidevops-redis
   ports:
     - port: 6379
       targetPort: 6379
@@ -1444,17 +1444,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-nacos
-  namespace: ruoyi-cloud
+  name: aidevops-nacos
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-nacos
+      app: aidevops-nacos
   template:
     metadata:
       labels:
-        app: ruoyi-nacos
+        app: aidevops-nacos
     spec:
       containers:
         - name: nacos
@@ -1466,7 +1466,7 @@ spec:
             - name: SPRING_DATASOURCE_PLATFORM
               value: mysql
             - name: MYSQL_SERVICE_HOST
-              value: ruoyi-mysql.ruoyi-cloud.svc.cluster.local
+              value: aidevops-mysql.aidevops-cloud.svc.cluster.local
             - name: MYSQL_SERVICE_PORT
               value: '3306'
             - name: MYSQL_SERVICE_DB_NAME
@@ -1489,11 +1489,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-nacos
-  namespace: ruoyi-cloud
+  name: aidevops-nacos
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-nacos
+    app: aidevops-nacos
   ports:
     - name: http
       port: 8848
@@ -1508,29 +1508,29 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-auth
-  namespace: ruoyi-cloud
+  name: aidevops-auth
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-auth
+      app: aidevops-auth
   template:
     metadata:
       labels:
-        app: ruoyi-auth
+        app: aidevops-auth
     spec:
       containers:
         - name: auth
-          image: 192.168.1.104/ruoyi/ruoyi-auth@sha256:2e88aaa875bc146e429da73b2a20c5004058efc0bcb2ca6f98668778ac062bf1
+          image: 192.168.1.104/aidevops/aidevops-auth@sha256:2e88aaa875bc146e429da73b2a20c5004058efc0bcb2ca6f98668778ac062bf1
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
             - name: SPRING_DATA_REDIS_HOST
-              value: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+              value: aidevops-redis.aidevops-cloud.svc.cluster.local
             - name: SPRING_DATA_REDIS_PORT
               value: '6379'
           ports:
@@ -1539,11 +1539,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-auth
-  namespace: ruoyi-cloud
+  name: aidevops-auth
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-auth
+    app: aidevops-auth
   ports:
     - port: 9200
       targetPort: 9200
@@ -1551,27 +1551,27 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-system
-  namespace: ruoyi-cloud
+  name: aidevops-system
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-system
+      app: aidevops-system
   template:
     metadata:
       labels:
-        app: ruoyi-system
+        app: aidevops-system
     spec:
       containers:
         - name: system
-          image: 192.168.1.104/ruoyi/ruoyi-system@sha256:7a07142f0046c0bcfc9705057a03e2424ba90a0f2569d129144ef1ed87fe93f7
+          image: 192.168.1.104/aidevops/aidevops-system@sha256:7a07142f0046c0bcfc9705057a03e2424ba90a0f2569d129144ef1ed87fe93f7
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
           ports:
             - containerPort: 9201
           volumeMounts:
@@ -1581,16 +1581,16 @@ spec:
       volumes:
         - name: system-local-config
           configMap:
-            name: ruoyi-system-local
+            name: aidevops-system-local
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-system
-  namespace: ruoyi-cloud
+  name: aidevops-system
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-system
+    app: aidevops-system
   ports:
     - port: 9201
       targetPort: 9201
@@ -1598,27 +1598,27 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-gateway
-  namespace: ruoyi-cloud
+  name: aidevops-gateway
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-gateway
+      app: aidevops-gateway
   template:
     metadata:
       labels:
-        app: ruoyi-gateway
+        app: aidevops-gateway
     spec:
       containers:
         - name: gateway
-          image: 192.168.1.104/ruoyi/ruoyi-gateway@sha256:be23b226c6c854ada39bd7088a317b21f70a8109d7a5ddd33389b01c9be2ea43
+          image: 192.168.1.104/aidevops/aidevops-gateway@sha256:be23b226c6c854ada39bd7088a317b21f70a8109d7a5ddd33389b01c9be2ea43
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
           ports:
             - containerPort: 8080
           volumeMounts:
@@ -1628,16 +1628,16 @@ spec:
       volumes:
         - name: gateway-local-config
           configMap:
-            name: ruoyi-gateway-local
+            name: aidevops-gateway-local
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-gateway
-  namespace: ruoyi-cloud
+  name: aidevops-gateway
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-gateway
+    app: aidevops-gateway
   ports:
     - port: 8080
       targetPort: 8080
@@ -1645,21 +1645,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-ui
-  namespace: ruoyi-cloud
+  name: aidevops-ui
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-ui
+      app: aidevops-ui
   template:
     metadata:
       labels:
-        app: ruoyi-ui
+        app: aidevops-ui
     spec:
       containers:
         - name: ui
-          image: 192.168.1.104/ruoyi/ruoyi-ui:demo
+          image: 192.168.1.104/aidevops/aidevops-ui:demo
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -1667,11 +1667,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-ui
-  namespace: ruoyi-cloud
+  name: aidevops-ui
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-ui
+    app: aidevops-ui
   ports:
     - port: 80
       targetPort: 80
@@ -1679,8 +1679,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ruoyi-ui
-  namespace: ruoyi-cloud
+  name: aidevops-ui
+  namespace: aidevops-cloud
 spec:
   ingressClassName: nginx
   rules:
@@ -1691,15 +1691,15 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ruoyi-ui
+                name: aidevops-ui
                 port:
                   number: 80
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ruoyi-nacos
-  namespace: ruoyi-cloud
+  name: aidevops-nacos
+  namespace: aidevops-cloud
   annotations:
     nginx.ingress.kubernetes.io/app-root: /nacos/
 spec:
@@ -1712,6 +1712,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ruoyi-nacos
+                name: aidevops-nacos
                 port:
                   number: 8848

@@ -1,4 +1,4 @@
-# RuoYi K8s 一键部署说明
+# AIDevOps K8s 一键部署说明
 
 文件：`deploy/k8s/ruoyi-all-in-one.yaml`
 
@@ -6,29 +6,29 @@
 
 ```bash
 kubectl apply -f deploy/k8s/ruoyi-all-in-one.yaml
-kubectl get pods -n ruoyi-cloud -w
+kubectl get pods -n aidevops-cloud -w
 ```
 
 ## 包含内容
 
-- Namespace: `ruoyi-cloud`
+- Namespace: `aidevops-cloud`
 - ConfigMap:
-  - `ruoyi-sql-init`
-  - `ruoyi-gateway-local`
-  - `ruoyi-system-local`
+  - `aidevops-sql-init`
+  - `aidevops-gateway-local`
+  - `aidevops-system-local`
 - PV/PVC:
-  - `ruoyi-mysql-pv`
-  - `ruoyi-mysql-pvc`
+  - `aidevops-mysql-pv`
+  - `aidevops-mysql-pvc`
 - Job:
-  - `ruoyi-db-init`
+  - `aidevops-db-init`
 - Deployment/Service:
-  - `ruoyi-mysql`
-  - `ruoyi-redis`
-  - `ruoyi-nacos`
-  - `ruoyi-auth`
-  - `ruoyi-system`
-  - `ruoyi-gateway`
-  - `ruoyi-ui`
+  - `aidevops-mysql`
+  - `aidevops-redis`
+  - `aidevops-nacos`
+  - `aidevops-auth`
+  - `aidevops-system`
+  - `aidevops-gateway`
+  - `aidevops-ui`
 - Ingress:
   - `devops1.zoudekang.cloud`
   - `nacos.zoudekang.cloud`
@@ -46,15 +46,15 @@ kubectl get pods -n ruoyi-cloud -w
 
 1. 集群内已安装 `ingress-nginx`
 2. 域名已解析到入口机
-3. `192.168.1.104:/data/nfs/share/ruoyi-mysql` 可被集群挂载
+3. `192.168.1.104:/data/nfs/share/aidevops-mysql` 可被集群挂载
 4. 集群节点能拉取这些镜像：
    - `mysql:8.0`
    - `redis:7-alpine`
    - `nacos/nacos-server:v2.2.3`
-   - `192.168.1.104/ruoyi/ruoyi-auth@sha256:2e88aaa875bc146e429da73b2a20c5004058efc0bcb2ca6f98668778ac062bf1`
-   - `192.168.1.104/ruoyi/ruoyi-system@sha256:7a07142f0046c0bcfc9705057a03e2424ba90a0f2569d129144ef1ed87fe93f7`
-   - `192.168.1.104/ruoyi/ruoyi-gateway@sha256:be23b226c6c854ada39bd7088a317b21f70a8109d7a5ddd33389b01c9be2ea43`
-   - `192.168.1.104/ruoyi/ruoyi-ui:demo`
+   - `192.168.1.104/aidevops/aidevops-auth@sha256:2e88aaa875bc146e429da73b2a20c5004058efc0bcb2ca6f98668778ac062bf1`
+   - `192.168.1.104/aidevops/aidevops-system@sha256:7a07142f0046c0bcfc9705057a03e2424ba90a0f2569d129144ef1ed87fe93f7`
+   - `192.168.1.104/aidevops/aidevops-gateway@sha256:be23b226c6c854ada39bd7088a317b21f70a8109d7a5ddd33389b01c9be2ea43`
+   - `192.168.1.104/aidevops/aidevops-ui:demo`
 
 ## 说明
 

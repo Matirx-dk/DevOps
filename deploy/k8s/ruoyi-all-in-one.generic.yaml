@@ -1,4 +1,4 @@
-# RuoYi Cloud generic all-in-one Kubernetes manifest
+# AIDevOps Cloud generic all-in-one Kubernetes manifest
 #
 # This version is intended as a reusable template.
 # Before applying, replace the placeholder values below:
@@ -15,13 +15,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ruoyi-cloud
+  name: aidevops-cloud
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-sql-init
-  namespace: ruoyi-cloud
+  name: aidevops-sql-init
+  namespace: aidevops-cloud
 data:
   01-ry-config.sql: |
     -- Import your sanitized ry-config SQL here.
@@ -34,14 +34,14 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-gateway-local
-  namespace: ruoyi-cloud
+  name: aidevops-gateway-local
+  namespace: aidevops-cloud
 data:
   application.yml: |
     spring:
       data:
         redis:
-          host: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+          host: aidevops-redis.aidevops-cloud.svc.cluster.local
           port: 6379
           password:
       cloud:
@@ -53,8 +53,8 @@ data:
                   lowerCaseServiceId: true
                   enabled: true
               routes:
-                - id: ruoyi-auth
-                  uri: lb://ruoyi-auth
+                - id: aidevops-auth
+                  uri: lb://aidevops-auth
                   predicates:
                     - Path=/auth/**
                   filters:
@@ -63,8 +63,8 @@ data:
                         bodyClass: java.lang.String
                     - ValidateCodeFilter
                     - StripPrefix=1
-                - id: ruoyi-system
-                  uri: lb://ruoyi-system
+                - id: aidevops-system
+                  uri: lb://aidevops-system
                   predicates:
                     - Path=/system/**
                   filters:
@@ -92,21 +92,21 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ruoyi-system-local
-  namespace: ruoyi-cloud
+  name: aidevops-system-local
+  namespace: aidevops-cloud
 data:
   application.yml: |
     spring:
       data:
         redis:
-          host: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+          host: aidevops-redis.aidevops-cloud.svc.cluster.local
           port: 6379
           password:
       datasource:
         druid:
           stat-view-servlet:
             enabled: true
-            loginUsername: ruoyi
+            loginUsername: aidevops
             loginPassword: 123456
         dynamic:
           druid:
@@ -129,21 +129,21 @@ data:
           datasource:
             master:
               driver-class-name: com.mysql.cj.jdbc.Driver
-              url: jdbc:mysql://ruoyi-mysql.ruoyi-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+              url: jdbc:mysql://aidevops-mysql.aidevops-cloud.svc.cluster.local:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
               username: root
               password: CHANGE_ME_MYSQL_ROOT_PASSWORD
     mybatis:
-      typeAliasesPackage: com.ruoyi.system
+      typeAliasesPackage: com.aidevops.system
       mapperLocations: classpath*:mapper/**/*.xml
     springdoc:
-      gatewayUrl: http://ruoyi-gateway.ruoyi-cloud.svc.cluster.local:8080/${spring.application.name}
+      gatewayUrl: http://aidevops-gateway.aidevops-cloud.svc.cluster.local:8080/${spring.application.name}
       api-docs:
         enabled: true
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: ruoyi-mysql-pv
+  name: aidevops-mysql-pv
 spec:
   capacity:
     storage: 20Gi
@@ -157,30 +157,30 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ruoyi-mysql-pvc
-  namespace: ruoyi-cloud
+  name: aidevops-mysql-pvc
+  namespace: aidevops-cloud
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       storage: 20Gi
-  volumeName: ruoyi-mysql-pv
+  volumeName: aidevops-mysql-pv
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-mysql
-  namespace: ruoyi-cloud
+  name: aidevops-mysql
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-mysql
+      app: aidevops-mysql
   template:
     metadata:
       labels:
-        app: ruoyi-mysql
+        app: aidevops-mysql
     spec:
       initContainers:
         - name: init-perms
@@ -212,16 +212,16 @@ spec:
       volumes:
         - name: mysql-data
           persistentVolumeClaim:
-            claimName: ruoyi-mysql-pvc
+            claimName: aidevops-mysql-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-mysql
-  namespace: ruoyi-cloud
+  name: aidevops-mysql
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-mysql
+    app: aidevops-mysql
   ports:
     - port: 3306
       targetPort: 3306
@@ -229,8 +229,8 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ruoyi-db-init
-  namespace: ruoyi-cloud
+  name: aidevops-db-init
+  namespace: aidevops-cloud
 spec:
   backoffLimit: 3
   template:
@@ -245,34 +245,34 @@ spec:
             - -c
             - |
               set -e
-              until mysqladmin ping -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD --silent; do sleep 5; done
-              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS \`ry-config\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS \`ry-cloud\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-config < /sql/01-ry-config.sql
-              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-cloud < /sql/02-ry-cloud.sql
-              mysql -h ruoyi-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-cloud < /sql/03-quartz.sql
+              until mysqladmin ping -h aidevops-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD --silent; do sleep 5; done
+              mysql -h aidevops-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS \`ry-config\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              mysql -h aidevops-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS \`ry-cloud\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              mysql -h aidevops-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-config < /sql/01-ry-config.sql
+              mysql -h aidevops-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-cloud < /sql/02-ry-cloud.sql
+              mysql -h aidevops-mysql -uroot -pCHANGE_ME_MYSQL_ROOT_PASSWORD ry-cloud < /sql/03-quartz.sql
           volumeMounts:
             - name: sql
               mountPath: /sql
       volumes:
         - name: sql
           configMap:
-            name: ruoyi-sql-init
+            name: aidevops-sql-init
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-redis
-  namespace: ruoyi-cloud
+  name: aidevops-redis
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-redis
+      app: aidevops-redis
   template:
     metadata:
       labels:
-        app: ruoyi-redis
+        app: aidevops-redis
     spec:
       containers:
         - name: redis
@@ -284,11 +284,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-redis
-  namespace: ruoyi-cloud
+  name: aidevops-redis
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-redis
+    app: aidevops-redis
   ports:
     - port: 6379
       targetPort: 6379
@@ -296,17 +296,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-nacos
-  namespace: ruoyi-cloud
+  name: aidevops-nacos
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-nacos
+      app: aidevops-nacos
   template:
     metadata:
       labels:
-        app: ruoyi-nacos
+        app: aidevops-nacos
     spec:
       containers:
         - name: nacos
@@ -318,7 +318,7 @@ spec:
             - name: SPRING_DATASOURCE_PLATFORM
               value: mysql
             - name: MYSQL_SERVICE_HOST
-              value: ruoyi-mysql.ruoyi-cloud.svc.cluster.local
+              value: aidevops-mysql.aidevops-cloud.svc.cluster.local
             - name: MYSQL_SERVICE_PORT
               value: '3306'
             - name: MYSQL_SERVICE_DB_NAME
@@ -335,11 +335,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-nacos
-  namespace: ruoyi-cloud
+  name: aidevops-nacos
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-nacos
+    app: aidevops-nacos
   ports:
     - name: http
       port: 8848
@@ -354,29 +354,29 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-auth
-  namespace: ruoyi-cloud
+  name: aidevops-auth
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-auth
+      app: aidevops-auth
   template:
     metadata:
       labels:
-        app: ruoyi-auth
+        app: aidevops-auth
     spec:
       containers:
         - name: auth
-          image: CHANGE_ME_REGISTRY/ruoyi-auth:CHANGE_ME_TAG
+          image: CHANGE_ME_REGISTRY/aidevops-auth:CHANGE_ME_TAG
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
             - name: SPRING_DATA_REDIS_HOST
-              value: ruoyi-redis.ruoyi-cloud.svc.cluster.local
+              value: aidevops-redis.aidevops-cloud.svc.cluster.local
             - name: SPRING_DATA_REDIS_PORT
               value: '6379'
           ports:
@@ -385,11 +385,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-auth
-  namespace: ruoyi-cloud
+  name: aidevops-auth
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-auth
+    app: aidevops-auth
   ports:
     - port: 9200
       targetPort: 9200
@@ -397,27 +397,27 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-system
-  namespace: ruoyi-cloud
+  name: aidevops-system
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-system
+      app: aidevops-system
   template:
     metadata:
       labels:
-        app: ruoyi-system
+        app: aidevops-system
     spec:
       containers:
         - name: system
-          image: CHANGE_ME_REGISTRY/ruoyi-system:CHANGE_ME_TAG
+          image: CHANGE_ME_REGISTRY/aidevops-system:CHANGE_ME_TAG
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
           ports:
             - containerPort: 9201
           volumeMounts:
@@ -427,16 +427,16 @@ spec:
       volumes:
         - name: system-local-config
           configMap:
-            name: ruoyi-system-local
+            name: aidevops-system-local
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-system
-  namespace: ruoyi-cloud
+  name: aidevops-system
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-system
+    app: aidevops-system
   ports:
     - port: 9201
       targetPort: 9201
@@ -444,27 +444,27 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-gateway
-  namespace: ruoyi-cloud
+  name: aidevops-gateway
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-gateway
+      app: aidevops-gateway
   template:
     metadata:
       labels:
-        app: ruoyi-gateway
+        app: aidevops-gateway
     spec:
       containers:
         - name: gateway
-          image: CHANGE_ME_REGISTRY/ruoyi-gateway:CHANGE_ME_TAG
+          image: CHANGE_ME_REGISTRY/aidevops-gateway:CHANGE_ME_TAG
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
             - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
-              value: ruoyi-nacos.ruoyi-cloud.svc.cluster.local:8848
+              value: aidevops-nacos.aidevops-cloud.svc.cluster.local:8848
           ports:
             - containerPort: 8080
           volumeMounts:
@@ -474,16 +474,16 @@ spec:
       volumes:
         - name: gateway-local-config
           configMap:
-            name: ruoyi-gateway-local
+            name: aidevops-gateway-local
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-gateway
-  namespace: ruoyi-cloud
+  name: aidevops-gateway
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-gateway
+    app: aidevops-gateway
   ports:
     - port: 8080
       targetPort: 8080
@@ -491,21 +491,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruoyi-ui
-  namespace: ruoyi-cloud
+  name: aidevops-ui
+  namespace: aidevops-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ruoyi-ui
+      app: aidevops-ui
   template:
     metadata:
       labels:
-        app: ruoyi-ui
+        app: aidevops-ui
     spec:
       containers:
         - name: ui
-          image: CHANGE_ME_REGISTRY/ruoyi-ui:CHANGE_ME_TAG
+          image: CHANGE_ME_REGISTRY/aidevops-ui:CHANGE_ME_TAG
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -513,11 +513,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruoyi-ui
-  namespace: ruoyi-cloud
+  name: aidevops-ui
+  namespace: aidevops-cloud
 spec:
   selector:
-    app: ruoyi-ui
+    app: aidevops-ui
   ports:
     - port: 80
       targetPort: 80
@@ -525,8 +525,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ruoyi-ui
-  namespace: ruoyi-cloud
+  name: aidevops-ui
+  namespace: aidevops-cloud
 spec:
   ingressClassName: nginx
   rules:
@@ -537,15 +537,15 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ruoyi-ui
+                name: aidevops-ui
                 port:
                   number: 80
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ruoyi-nacos
-  namespace: ruoyi-cloud
+  name: aidevops-nacos
+  namespace: aidevops-cloud
   annotations:
     nginx.ingress.kubernetes.io/app-root: /nacos/
 spec:
@@ -558,6 +558,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ruoyi-nacos
+                name: aidevops-nacos
                 port:
                   number: 8848
