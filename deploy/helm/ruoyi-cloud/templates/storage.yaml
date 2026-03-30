@@ -15,7 +15,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ruoyi-mysql-pvc
+  name: aidevops-mysql-pvc
   namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
