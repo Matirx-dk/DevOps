@@ -20,8 +20,9 @@ helm uninstall aidevops-cloud -n aidevops-cloud
 - `system.image`
 - `gateway.image`
 - `ui.image`
-- `ingress.uiHost`
-- `ingress.nacosHost`
+- `ingress.host`
+- `ingress.uiPath`
+- `ingress.nacosPath`
 - `mysql.rootPassword`
 - `mysql.nfs.server`
 - `mysql.nfs.path`
