@@ -154,33 +154,29 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100%;
-  position: relative;
-  background-image: url("../assets/images/login-background-aidevops.svg");
+  height: 100%;
+  background-image: url("../assets/images/login-background.jpg");
   background-size: cover;
-  background-position: center;
-  overflow: hidden;
 }
 .title {
   margin: 0px auto 30px auto;
   text-align: center;
-  color: #30445f;
-  letter-spacing: 0.5px;
+  color: #707070;
 }
 
 .register-form {
-  width: 420px;
-  padding: 30px 28px 10px 28px;
-  position: relative;
-  z-index: 1;
+  border-radius: 6px;
+  background: #ffffff;
+  width: 400px;
+  padding: 25px 25px 5px 25px;
   .el-input {
-    height: 42px;
+    height: 38px;
     input {
-      height: 42px;
+      height: 38px;
     }
   }
   .input-icon {
-    height: 42px;
+    height: 39px;
     width: 14px;
     margin-left: 2px;
   }
