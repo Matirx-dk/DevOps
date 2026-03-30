@@ -2,12 +2,8 @@
   <div class="workbench-page app-container">
     <el-row :gutter="20">
       <el-col :xs="24" :lg="16">
-        <el-card shadow="hover" class="workbench-card hero-card">
-          <div class="hero-title">AIDevOps 工作台</div>
-          <div class="hero-desc">
-            统一承载 AI 运维协同、配置治理、流水线入口、接口联调与平台状态概览，减少在多个系统之间来回切换。
-          </div>
-
+        <el-card shadow="hover" class="workbench-card">
+          <div slot="header"><span>工作台</span></div>
           <el-row :gutter="14" class="summary-row">
             <el-col :xs="12" :md="6">
               <div class="summary-item blue">
@@ -34,22 +30,25 @@
               </div>
             </el-col>
           </el-row>
+          <div class="hero-desc">
+            当前工作台聚焦日常运维协同：快速进入 AI 对话、配置中心、流水线、接口文档和运维中心，减少在多个系统之间切换。
+          </div>
         </el-card>
 
         <el-card shadow="hover" class="workbench-card">
-          <div slot="header"><span>推荐操作</span></div>
+          <div slot="header"><span>常用操作</span></div>
           <el-row :gutter="16">
             <el-col :xs="24" :md="12">
               <div class="action-card">
                 <h3>开始巡检</h3>
-                <p>优先检查集群、网关、Nacos、Jenkins 与入口链路状态，再决定是否进入运维中心继续处理。</p>
+                <p>优先检查网关、Nacos、Jenkins、入口链路和集群状态，必要时从 AI 对话发起排障。</p>
                 <el-link href="https://devops.zoudekang.cloud/openclaw/" target="_blank" type="primary">打开 AI 对话</el-link>
               </div>
             </el-col>
             <el-col :xs="24" :md="12">
               <div class="action-card">
                 <h3>进入运维中心</h3>
-                <p>统一进入配置中心、流水线、接口文档，以及后续接入的监控、质量和集群管理能力。</p>
+                <p>统一进入配置中心、流水线、接口文档，以及后续接入的监控和集群工具。</p>
                 <router-link to="/ops">
                   <el-link type="primary">打开运维中心</el-link>
                 </router-link>
@@ -73,12 +72,12 @@
         </el-card>
 
         <el-card shadow="hover" class="workbench-card">
-          <div slot="header"><span>工作台说明</span></div>
+          <div slot="header"><span>使用建议</span></div>
           <ul class="tips-list">
-            <li>这里作为日常运维和平台协同的统一入口。</li>
-            <li>AI 对话负责巡检、排障、发布辅助与问题归因。</li>
-            <li>运维中心统一汇总配置、流水线、接口和后续监控入口。</li>
-            <li>质量中心用于承接 SonarQube 等代码质量能力。</li>
+            <li>巡检和排障优先从 AI 对话进入。</li>
+            <li>配置修改统一从 Nacos 进入。</li>
+            <li>发布和构建统一从 Jenkins 进入。</li>
+            <li>接口联调统一从 Swagger 进入。</li>
           </ul>
         </el-card>
       </el-col>
@@ -93,72 +92,44 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.workbench-card {
-  margin-bottom: 20px;
-}
-
-.hero-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #303133;
-  margin-bottom: 12px;
-}
-
-.hero-desc {
-  color: #606266;
-  line-height: 1.9;
-  margin-bottom: 18px;
-}
-
-.summary-row {
-  margin-top: 10px;
-}
-
+.workbench-card { margin-bottom: 20px; }
+.summary-row { margin-bottom: 18px; }
+.hero-desc { color: #606266; line-height: 1.9; }
 .summary-item {
   border-radius: 12px;
   padding: 16px 14px;
   color: #fff;
   margin-bottom: 12px;
 }
-
 .summary-name {
   font-size: 13px;
   opacity: 0.92;
   margin-bottom: 8px;
 }
-
 .summary-value {
   font-size: 18px;
   font-weight: 700;
 }
-
 .summary-item.blue { background: linear-gradient(135deg, #409EFF, #36CFC9); }
 .summary-item.green { background: linear-gradient(135deg, #67C23A, #95DE64); }
 .summary-item.orange { background: linear-gradient(135deg, #FA8C16, #FFC53D); }
 .summary-item.purple { background: linear-gradient(135deg, #722ED1, #B37FEB); }
-
 .action-card {
   height: 100%;
   padding: 18px;
   border-radius: 12px;
   background: #f7f8fa;
 }
-
 .action-card h3 {
   margin: 0 0 10px;
   color: #303133;
 }
-
 .action-card p {
   margin: 0 0 14px;
   color: #606266;
   line-height: 1.8;
 }
-
-.quick-links p {
-  margin: 10px 0;
-}
-
+.quick-links p { margin: 10px 0; }
 .tips-list {
   margin: 0;
   padding-left: 18px;
