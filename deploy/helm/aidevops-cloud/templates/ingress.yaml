@@ -94,6 +94,20 @@ spec:
                 name: aidevops-system
                 port:
                   number: {{ .Values.system.servicePort }}
+          - path: /aidevops-auth/v3/api-docs
+            pathType: Exact
+            backend:
+              service:
+                name: aidevops-auth
+                port:
+                  number: {{ .Values.auth.servicePort }}
+          - path: /aidevops-gateway/v3/api-docs
+            pathType: Exact
+            backend:
+              service:
+                name: aidevops-gateway
+                port:
+                  number: {{ .Values.gateway.servicePort }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
