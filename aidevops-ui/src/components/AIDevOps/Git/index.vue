@@ -9,7 +9,7 @@ export default {
   name: 'AIDevOpsGit',
   data() {
     return {
-      url: 'https://gitee.com/y_project/AIDevOps-Cloud'
+      url: 'https://github.com/dekangzou/DevOps'
     }
   },
   methods: {

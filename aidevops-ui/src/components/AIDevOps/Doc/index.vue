@@ -9,7 +9,7 @@ export default {
   name: 'AIDevOpsDoc',
   data() {
     return {
-      url: 'http://doc.devops.zoudekang.cloud'
+      url: 'https://docs.openclaw.ai'
     }
   },
   methods: {
