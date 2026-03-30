@@ -76,28 +76,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: aidevops-swagger-docs
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /v3/api-docs
-spec:
-  ingressClassName: {{ .Values.ingress.className }}
-  rules:
-    - host: {{ .Values.ingress.host }}
-      http:
-        paths:
-          - path: /aidevops-system/v3/api-docs
-            pathType: Exact
-            backend:
-              service:
-                name: aidevops-system
-                port:
-                  number: {{ .Values.system.servicePort }}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
   name: aidevops-nacos
   namespace: {{ .Release.Namespace }}
 spec:
