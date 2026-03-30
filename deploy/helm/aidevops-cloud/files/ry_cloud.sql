@@ -161,18 +161,17 @@ create table sys_menu (
 -- 初始化-菜单信息表数据
 -- ----------------------------
 -- 一级菜单
-insert into sys_menu values('1', '平台管理', '0', '3', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
-insert into sys_menu values('2', 'AI对话', '0', '4', 'monitor',          null, '', '', 1, 0, 'M', '0', '0', '', 'guide',  'admin', sysdate(), '', null, 'AI对话目录');
-insert into sys_menu values('4', '监控中心', '0', '1', 'dashboard', 'dashboard/index', '', '', 1, 0, 'C', '0', '0', '', 'monitor', 'admin', sysdate(), '', null, '监控中心菜单');
+insert into sys_menu values('111',  '工作台', '0',   '1', 'index', 'index', '', '', 1, 0, 'C', '0', '0', '', 'dashboard', 'admin', sysdate(), '', null, '工作台菜单');
+insert into sys_menu values('4', 'AI对话', '0', '2', 'https://devops.zoudekang.cloud/openclaw/', null, '', '', 0, 0, 'M', '0', '0', '', 'guide', 'admin', sysdate(), '', null, 'AI对话菜单');
+insert into sys_menu values('1', '平台管理', '0', '5', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
+insert into sys_menu values('2000', '运维中心', '0', '4', 'ops', 'ops/index', '', '', 1, 0, 'C', '0', '0', '', 'monitor', 'admin', sysdate(), '', null, '运维中心菜单');
+insert into sys_menu values('3000', '质量中心', '0', '5', 'quality', 'quality/index', '', '', 1, 0, 'C', '0', '0', '', 'skill', 'admin', sysdate(), '', null, '质量中心菜单');
+insert into sys_menu values('1', '平台管理', '0', '5', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
 -- 二级菜单
 insert into sys_menu values('100',  '用户与权限',       '1',   '1', 'user',       'system/user/index',                 '', '', 1, 0, 'C', '0', '0', 'system:user:list',        'user',          'admin', sysdate(), '', null, '用户与权限菜单');
 insert into sys_menu values('101',  '角色与授权',       '1',   '2', 'role',       'system/role/index',                 '', '', 1, 0, 'C', '0', '0', 'system:role:list',        'peoples',       'admin', sysdate(), '', null, '角色与授权菜单');
 insert into sys_menu values('102',  '菜单与导航',       '1',   '3', 'menu',       'system/menu/index',                 '', '', 1, 0, 'C', '0', '0', 'system:menu:list',        'tree-table',    'admin', sysdate(), '', null, '菜单与导航菜单');
 insert into sys_menu values('106',  '系统配置',       '1',   '4', 'config',     'system/config/index',               '', '', 1, 0, 'C', '0', '0', 'system:config:list',      'edit',          'admin', sysdate(), '', null, '系统配置菜单');
-insert into sys_menu values('111',  '工作台', '0',   '2', 'index', 'index', '', '', 1, 0, 'C', '0', '0', 'monitor:sentinel:list',   'dashboard',         'admin', sysdate(), '', null, '工作台入口');
-insert into sys_menu values('112',  '配置中心',    '2',   '1', 'https://devops.zoudekang.cloud/nacos/',  '',                '', '', 0, 0, 'C', '0', '0', 'monitor:nacos:list',      'nacos',         'admin', sysdate(), '', null, '配置中心菜单');
-insert into sys_menu values('113',  '流水线',    '2',   '2', 'https://devops.zoudekang.cloud/jenkins/',  '',                '', '', 0, 0, 'C', '0', '0', 'monitor:server:list',     'job',           'admin', sysdate(), '', null, 'Jenkins流水线菜单');
-insert into sys_menu values('116',  '系统接口',       '2',   '3', '/swagger-ui/index.html', 'InnerLink', '', '', 0, 0, 'C', '0', '0', 'tool:swagger:list',       'swagger',       'admin', sysdate(), '', null, '系统接口菜单');
 -- 三级菜单
 -- 用户管理按钮
 insert into sys_menu values('1000', '用户查询', '100', '1',  '', '', '', '', 1, 0, 'F', '0', '0', 'system:user:query',          '#', 'admin', sysdate(), '', null, '');
