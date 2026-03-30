@@ -38,6 +38,37 @@ helm install aidevops-cloud ./deploy/helm/aidevops-cloud \
 
 - `deploy/helm/aidevops-cloud/values.current-cluster.yaml`
 
+## 当前集群注意事项（2026-03-30）
+
+### 1. MySQL PV 路径兼容说明
+
+当前线上 `aidevops-cloud` 已经完成应用层命名切换，但现网已存在的 MySQL PV 仍绑定旧 NFS 路径：
+
+- 现网实际生效路径：`/data/nfs/share/ruoyi-mysql`
+
+原因是 Kubernetes `PersistentVolume.spec.persistentVolumeSource` 不可变。
+如果直接把已创建 PV 的 NFS 路径从旧值改成：
+
+- `/data/nfs/share/aidevops-mysql`
+
+Helm 升级会失败。
+
+因此：
+- **新装环境**可以直接使用 `aidevops-mysql`
+- **升级现网环境**如果已经存在旧 PV，需继续沿用旧路径，或单独做一次数据迁移后再重建 PV
+
+### 2. 当前公网入口现状
+
+截至 2026-03-30 本次发布完成后，集群内 Helm 升级与 Pod rollout 已成功，但公网域名入口现状与 Helm 默认值不完全一致：
+
+- `nacos.zoudekang.cloud`：可正常访问
+- `devops.zoudekang.cloud/jenkins/`：可到 Jenkins
+- `devops.zoudekang.cloud/`：当前返回 404，需要继续检查公网 Nginx 到集群 UI 的转发
+- `devops.zoudekang.cloud/nacos/`：当前返回 404，需要继续检查单域名路径代理配置
+- `devops1.zoudekang.cloud`：当前公网侧解析未就绪
+
+所以如果你是按当前线上环境维护，建议把 **集群发布成功** 和 **公网入口已完全对齐** 视为两个独立步骤处理。
+
 ## SQL 初始化
 
 默认：

@@ -46,8 +46,9 @@ kubectl get pods -n aidevops-cloud -w
 
 1. 集群内已安装 `ingress-nginx`
 2. 域名已解析到入口机
-3. `192.168.1.104:/data/nfs/share/aidevops-mysql` 可被集群挂载
-4. 集群节点能拉取这些镜像：
+3. 对于**全新安装**，`192.168.1.104:/data/nfs/share/aidevops-mysql` 可被集群挂载
+4. 如果是从旧环境平滑升级，且已有 MySQL PV 已绑定旧路径，则需要注意：现网可能仍在使用 `/data/nfs/share/ruoyi-mysql`，不能直接在原 PV 上改 `persistentVolumeSource`
+5. 集群节点能拉取这些镜像：
    - `mysql:8.0`
    - `redis:7-alpine`
    - `nacos/nacos-server:v2.2.3`
