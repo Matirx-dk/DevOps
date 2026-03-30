@@ -30,10 +30,26 @@
       <el-col :xs="24" :lg="15">
         <el-card class="chat-card" shadow="hover">
           <div slot="header" class="chat-header">
-            <span>OpenClaw 运维对话面板</span>
-            <el-link href="/openclaw/" target="_blank" type="primary">新窗口打开</el-link>
+            <span>OpenClaw 运维对话入口</span>
+            <el-link href="/openclaw/" target="_blank" type="primary">打开 OpenClaw</el-link>
           </div>
-          <iframe class="openclaw-frame" src="/openclaw/" title="OpenClaw Control"></iframe>
+          <div class="openclaw-panel">
+            <div class="openclaw-intro">
+              <h3>AI 运维助手</h3>
+              <p>通过 OpenClaw 直接发起巡检、排障、发布分析和执行建议。</p>
+            </div>
+            <div class="openclaw-actions">
+              <el-button type="primary" icon="el-icon-chat-dot-round" @click="openOpenClaw">进入对话面板</el-button>
+              <el-button plain icon="el-icon-document" @click="fillPrompt('帮我检查 Kubernetes 集群、Harbor、Jenkins 和 NFS 当前状态。')">填入巡检示例</el-button>
+            </div>
+            <div class="prompt-box">
+              <div class="prompt-title">推荐问题</div>
+              <el-input type="textarea" :rows="6" v-model="draft" readonly />
+            </div>
+            <div class="tips">
+              <p>说明：OpenClaw Control 出于安全策略不能被 iframe 内嵌，因此这里改为原生入口方式。</p>
+            </div>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -42,7 +58,20 @@
 
 <script>
 export default {
-  name: 'AIDevOpsHome'
+  name: 'AIDevOpsHome',
+  data() {
+    return {
+      draft: '帮我检查 Kubernetes 集群、Harbor、Jenkins 和 NFS 当前状态。'
+    }
+  },
+  methods: {
+    openOpenClaw() {
+      window.open('/openclaw/', '_blank')
+    },
+    fillPrompt(text) {
+      this.draft = text
+    }
+  }
 }
 </script>
 
@@ -72,12 +101,40 @@ export default {
     align-items: center;
     justify-content: space-between;
   }
-  .openclaw-frame {
-    width: 100%;
-    height: 760px;
-    border: 0;
+  .openclaw-panel {
+    min-height: 520px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 4px;
+  }
+  .openclaw-intro h3 {
+    margin: 0 0 10px;
+    color: #303133;
+    font-size: 22px;
+  }
+  .openclaw-intro p,
+  .tips p {
+    margin: 0;
+    color: #606266;
+    line-height: 1.8;
+  }
+  .openclaw-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .prompt-box {
+    padding: 16px;
     border-radius: 12px;
-    background: #fff;
+    background: #f7f8fa;
+  }
+  .prompt-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 12px;
   }
 }
 </style>
