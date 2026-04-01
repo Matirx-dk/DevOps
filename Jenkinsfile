@@ -1,0 +1,188 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '20'))
+  }
+
+  environment {
+    REGISTRY = 'harbor.zoudekang.cloud'
+    TEST_PROJECT = 'aidevops-test'
+    K8S_NAMESPACE = 'aidevops-test'
+    HARBOR_CREDENTIALS_ID = 'harbor-admin'
+    // 可选：如果 Jenkins 已配置 SonarQube，可把凭据/工具接上
+    // SONARQUBE_ENV = 'sonarqube'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        script {
+          env.GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+          env.GIT_COMMIT_MSG_RAW = sh(script: "git log -1 --pretty=%s", returnStdout: true).trim()
+          env.GIT_COMMIT_TAG = sh(
+            script: '''
+              MSG=$(git log -1 --pretty=%s | tr '[:upper:]' '[:lower:]')
+              MSG=$(printf "%s" "$MSG" | sed 's/[^a-z0-9._-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
+              if [ -z "$MSG" ]; then MSG=commit; fi
+              printf "%s-%s" "$MSG" "$(git rev-parse --short HEAD)"
+            ''',
+            returnStdout: true
+          ).trim()
+          currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.GIT_COMMIT_TAG}"
+        }
+      }
+    }
+
+    stage('Detect Changed Services') {
+      steps {
+        script {
+          def changed = sh(
+            script: '''
+              if git rev-parse HEAD~1 >/dev/null 2>&1; then
+                git diff --name-only HEAD~1 HEAD
+              else
+                git ls-files
+              fi
+            ''',
+            returnStdout: true
+          ).trim().split('\n') as List
+
+          def targets = [] as Set
+          changed.each { f ->
+            if (!f?.trim()) return
+            if (f.startsWith('aidevops-auth/')) targets << 'auth'
+            if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
+            if (f.startsWith('aidevops-modules/aidevops-system/')) targets << 'system'
+            if (f.startsWith('aidevops-ui/')) targets << 'ui'
+            if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
+              targets << 'auth'; targets << 'gateway'; targets << 'system'
+            }
+            if (f.startsWith('docker/build/')) {
+              targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
+            }
+          }
+
+          env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
+          env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
+          env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
+          env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
+          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}"
+        }
+      }
+    }
+
+    stage('Build Backend Jars') {
+      when {
+        expression {
+          env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true'
+        }
+      }
+      steps {
+        sh '''
+          mvn -T 1C -DskipTests clean package -pl aidevops-auth,aidevops-gateway,aidevops-modules/aidevops-system -am
+        '''
+      }
+    }
+
+    stage('Build UI') {
+      when { expression { env.BUILD_UI == 'true' } }
+      steps {
+        sh '''
+          cd aidevops-ui
+          npm config set registry https://registry.npmmirror.com
+          npm install
+          npm run build:prod
+        '''
+      }
+    }
+
+    stage('Code Security / Quality Checks') {
+      steps {
+        sh '''
+          set +e
+          echo "[check] backend dependency scan (mvn dependency-check if installed)"
+          if command -v mvn >/dev/null 2>&1; then
+            mvn -q -DskipTests org.owasp:dependency-check-maven:check || true
+          fi
+          echo "[check] frontend npm audit"
+          if [ -f aidevops-ui/package.json ]; then
+            cd aidevops-ui && npm audit --audit-level=high || true
+          fi
+        '''
+      }
+    }
+
+    stage('Build & Push Changed Images') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: env.HARBOR_CREDENTIALS_ID, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
+          sh '''
+            echo "$HARBOR_PASS" | docker login ${REGISTRY} -u "$HARBOR_USER" --password-stdin
+
+            if [ "$BUILD_AUTH" = "true" ]; then
+              docker build -f docker/build/backend.Dockerfile \
+                --build-arg JAR_PATH=aidevops-auth/target/aidevops-auth.jar \
+                -t ${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG} .
+              docker push ${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
+            fi
+
+            if [ "$BUILD_GATEWAY" = "true" ]; then
+              docker build -f docker/build/backend.Dockerfile \
+                --build-arg JAR_PATH=aidevops-gateway/target/aidevops-gateway.jar \
+                -t ${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG} .
+              docker push ${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
+            fi
+
+            if [ "$BUILD_SYSTEM" = "true" ]; then
+              docker build -f docker/build/backend.Dockerfile \
+                --build-arg JAR_PATH=aidevops-modules/aidevops-system/target/aidevops-modules-system.jar \
+                -t ${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG} .
+              docker push ${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
+            fi
+
+            if [ "$BUILD_UI" = "true" ]; then
+              docker build -f docker/build/frontend.Dockerfile \
+                -t ${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG} .
+              docker push ${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
+            fi
+          '''
+        }
+      }
+    }
+
+    stage('Deploy Changed Services To Test') {
+      steps {
+        sh '''
+          if [ "$BUILD_AUTH" = "true" ]; then
+            kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
+            kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
+          fi
+
+          if [ "$BUILD_GATEWAY" = "true" ]; then
+            kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
+            kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
+          fi
+
+          if [ "$BUILD_SYSTEM" = "true" ]; then
+            kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
+            kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
+          fi
+
+          if [ "$BUILD_UI" = "true" ]; then
+            kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
+            kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
+          fi
+        '''
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker logout ${REGISTRY} || true'
+    }
+  }
+}
