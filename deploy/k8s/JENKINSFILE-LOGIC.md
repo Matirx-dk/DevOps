@@ -150,7 +150,7 @@ Jenkins 只更新有改动的 Deployment：
 当前 Jenkinsfile 已补入基础检测步骤：
 
 ### 后端
-- 尝试执行 OWASP Dependency Check（不阻断）
+- 当前联调阶段临时跳过 OWASP Dependency Check，优先验证构建、推镜像、部署主链路
 
 ### 前端
 - 执行 `npm audit --audit-level=high`（不阻断）
