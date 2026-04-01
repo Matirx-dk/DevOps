@@ -183,9 +183,52 @@ kind: Pod
 metadata:
   name: ${POD_NAME}
   namespace: ${BUILD_NAMESPACE}
+  labels:
+    app: jenkins-build-pod
 spec:
   restartPolicy: Never
   serviceAccountName: jenkins-agent
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["devops-2"]
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["devops-4"]
+        - weight: 70
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["devops-3"]
+        - weight: 30
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["devops-1"]
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values: ["jenkins-build-pod"]
   volumes:
     - name: workspace
       emptyDir: {}
@@ -242,9 +285,52 @@ kind: Pod
 metadata:
   name: ${POD_NAME}
   namespace: ${BUILD_NAMESPACE}
+  labels:
+    app: jenkins-build-pod
 spec:
   restartPolicy: Never
   serviceAccountName: jenkins-agent
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["devops-2"]
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["devops-4"]
+        - weight: 70
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["devops-3"]
+        - weight: 30
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["devops-1"]
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values: ["jenkins-build-pod"]
   volumes:
     - name: workspace
       emptyDir: {}
