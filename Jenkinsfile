@@ -427,25 +427,27 @@ YAML
       steps {
         container('maven') {
           sh '''
+            set -e
             export PATH=/tmp:$PATH
-            if [ "$BUILD_AUTH" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
+
+            HELM_VERSION=v3.16.4
+            if ! command -v helm >/dev/null 2>&1; then
+              curl -fsSL -o /tmp/helm.tgz https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
+              tar -xzf /tmp/helm.tgz -C /tmp
+              chmod +x /tmp/linux-amd64/helm
+              export PATH=/tmp/linux-amd64:/tmp:$PATH
             fi
 
-            if [ "$BUILD_GATEWAY" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
-            fi
-
-            if [ "$BUILD_SYSTEM" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
-            fi
-
-            if [ "$BUILD_UI" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
+            if [ "$BUILD_AUTH" = "true" ] || [ "$BUILD_GATEWAY" = "true" ] || [ "$BUILD_SYSTEM" = "true" ] || [ "$BUILD_UI" = "true" ]; then
+              helm upgrade --install aidevops-test "$WORKSPACE/deploy/helm/aidevops-cloud" \
+                -n ${K8S_NAMESPACE} \
+                -f "$WORKSPACE/deploy/helm/aidevops-cloud/values.test.yaml" \
+                --set auth.image=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG} \
+                --set gateway.image=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG} \
+                --set system.image=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG} \
+                --set ui.image=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG} \
+                --wait \
+                --timeout 10m
             fi
           '''
         }
