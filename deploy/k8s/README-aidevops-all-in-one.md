@@ -77,9 +77,14 @@ kubectl get pods -n aidevops-cloud -w
 
 ## 2026-04-01 迁移记录
 
-- Jenkins 已从手工 PV/PVC（`jenkins-home-pv` / `jenkins-home-pvc`）迁移到动态存储 PVC：`jenkins-home-dynamic-pvc`
 - 动态存储类：`nfs-client`
 - NFS dynamic provisioner 已部署在命名空间：`nfs-provisioner`
-- Jenkins 当前镜像与基础镜像统一切到：`harbor.zoudekang.cloud` / `dockerhub-proxy`
-- 旧 Jenkins PV/PVC 已下线删除
-- 当前建议：后续新建持久化工作负载优先使用 `storageClassName: nfs-client`，避免继续手工写死 NFS 路径
+- Jenkins 已从手工 PV/PVC（`jenkins-home-pv` / `jenkins-home-pvc`）迁移到动态存储 PVC：`jenkins-home-dynamic-pvc`，旧 Jenkins PV/PVC 已下线删除。
+- SonarQube（`aidevops-test`）已从手工 PV/PVC（`sonarqube-test-pv` / `sonarqube-test-pvc`）迁移到动态 PVC：`sonarqube-dynamic-pvc`，旧 SonarQube PV/PVC 已下线删除。
+- MySQL（`aidevops-cloud`）已从手工 PV/PVC 迁移到动态 PVC：`aidevops-mysql-dynamic-pvc`，旧 cloud MySQL PV/PVC 已下线删除。
+- MySQL（`aidevops-test`）已从手工 PV/PVC 迁移到动态 PVC：`aidevops-mysql-dynamic-pvc`，旧 test MySQL PV/PVC 已下线删除。
+- `aidevops-test-data-pv/pvc` 与 `aidevops-test-logs-pv/pvc` 已确认闲置并清理。
+- Harbor 已从手工共享卷（`harbor-shared-pv` / `harbor-shared-pvc`）迁移到动态 PVC：`harbor-shared-dynamic-pvc`。
+- Harbor 旧 NFS 数据未直接删除，已归档到：`/vol1/1000/Devops/backup/harbor-manual-backup-20260401-172058`
+- 当前镜像入口已统一收敛到：`harbor.zoudekang.cloud`
+- 当前建议：后续新建持久化工作负载优先使用 `storageClassName: nfs-client`，避免继续手工写死 NFS 路径。
