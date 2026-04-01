@@ -249,11 +249,12 @@ spec:
                   npm config set registry https://registry.npmmirror.com
                   npm config set cache "$PWD/.npm-cache" --global
                   if [ -f package-lock.json ]; then
-                    npm ci
+                    npm ci --legacy-peer-deps
                   else
-                    npm install
+                    npm install --legacy-peer-deps
                   fi
                   npm run build:prod
+                  test -d dist
                 '''
               }
               container('kaniko') {
