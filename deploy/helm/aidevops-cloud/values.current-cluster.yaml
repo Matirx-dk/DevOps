@@ -1,8 +1,8 @@
 images:
-  initPerms: 192.168.1.104/dockerhub-proxy/library/busybox:1.36
+  initPerms: harbor.zoudekang.cloud/dockerhub-proxy/library/busybox:1.36
 
 mysql:
-  image: 192.168.1.104/dockerhub-proxy/library/mysql:8.0
+  image: harbor.zoudekang.cloud/dockerhub-proxy/library/mysql:8.0
   rootPassword: password
   nfs:
     server: 192.168.1.104
@@ -10,10 +10,10 @@ mysql:
     size: 20Gi
 
 redis:
-  image: 192.168.1.104/dockerhub-proxy/library/redis:7-alpine
+  image: harbor.zoudekang.cloud/dockerhub-proxy/library/redis:7-alpine
 
 nacos:
-  image: 192.168.1.104/dockerhub-proxy/nacos/nacos-server:v2.2.3
+  image: harbor.zoudekang.cloud/dockerhub-proxy/nacos/nacos-server:v2.2.3
 
 auth:
   image: harbor.zoudekang.cloud/aidevops/aidevops-auth:restored-auth
