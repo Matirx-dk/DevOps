@@ -241,10 +241,6 @@ spec:
   volumes:
     - name: workspace
       emptyDir: {}
-    - name: m2-cache
-      nfs:
-        server: 192.168.1.104
-        path: /data/nfs/share/jenkins-cache/m2
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -260,12 +256,10 @@ spec:
           set -e
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          mvn -T 1C -DskipTests package -pl ${MODULE} -am
+          mvn -Dmaven.repo.local=/workspace/.m2/repository -T 1C -DskipTests package -pl ${MODULE} -am
       volumeMounts:
         - name: workspace
           mountPath: /workspace
-        - name: m2-cache
-          mountPath: /root/.m2
   containers:
     - name: kaniko
       image: gcr.io/kaniko-project/executor:v1.23.2-debug
