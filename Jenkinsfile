@@ -223,8 +223,7 @@ spec:
                 --destination "${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}" \
                 --snapshot-mode=redo \
                 --use-new-run \
-                --cache=true \
-                --cache-repo "${REGISTRY}/${TEST_PROJECT}/kaniko-cache" \
+                --cache=false \
                 --skip-tls-verify-registry "${REGISTRY}" \
                 --build-arg JAR_PATH=aidevops-auth/target/aidevops-auth.jar
             fi
@@ -236,8 +235,7 @@ spec:
                 --destination "${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}" \
                 --snapshot-mode=redo \
                 --use-new-run \
-                --cache=true \
-                --cache-repo "${REGISTRY}/${TEST_PROJECT}/kaniko-cache" \
+                --cache=false \
                 --skip-tls-verify-registry "${REGISTRY}" \
                 --build-arg JAR_PATH=aidevops-gateway/target/aidevops-gateway.jar
             fi
@@ -249,8 +247,7 @@ spec:
                 --destination "${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}" \
                 --snapshot-mode=redo \
                 --use-new-run \
-                --cache=true \
-                --cache-repo "${REGISTRY}/${TEST_PROJECT}/kaniko-cache" \
+                --cache=false \
                 --skip-tls-verify-registry "${REGISTRY}" \
                 --build-arg JAR_PATH=aidevops-modules/aidevops-system/target/aidevops-modules-system.jar
             fi
@@ -262,8 +259,7 @@ spec:
                 --destination "${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}" \
                 --snapshot-mode=redo \
                 --use-new-run \
-                --cache=true \
-                --cache-repo "${REGISTRY}/${TEST_PROJECT}/kaniko-cache" \
+                --cache=false \
                 --skip-tls-verify-registry "${REGISTRY}"
             fi
           '''
