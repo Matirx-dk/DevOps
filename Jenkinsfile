@@ -217,6 +217,7 @@ spec:
                   --snapshot-mode=redo \
                   --use-new-run \
                   --cache=false \
+                  --skip-tls-verify-registry ${REGISTRY} \
                   ${item.jarPath ? "--build-arg JAR_PATH=${item.jarPath}" : ''}
               """
             }

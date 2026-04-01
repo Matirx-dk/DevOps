@@ -124,6 +124,8 @@ Jenkinsfile 会根据 `git diff` 识别改动：
 
 ## 推送策略
 
+当前联调阶段，Kaniko 对 Harbor 临时启用按 registry 的 TLS 校验跳过（`--skip-tls-verify-registry harbor.zoudekang.cloud`），用于绕过现网证书域名不匹配问题；后续应在 Harbor 证书修复后移除。
+
 测试环境镜像统一推送到：
 
 - `harbor.zoudekang.cloud/aidevops-test/aidevops-auth:<tag>`
