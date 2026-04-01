@@ -176,8 +176,8 @@ spec:
         container('maven') {
           sh '''
             set +e
-            echo "[check] backend dependency scan (mvn dependency-check if available)"
-            mvn -q -DskipTests org.owasp:dependency-check-maven:check || true
+            echo "[check] backend dependency scan (timeout 5m, non-blocking)"
+            timeout 300s mvn -q -DskipTests org.owasp:dependency-check-maven:check || true
           '''
         }
         container('node') {
