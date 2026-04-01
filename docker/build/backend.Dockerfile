@@ -1,4 +1,4 @@
-FROM harbor.zoudekang.cloud/dockerhub-proxy/library/eclipse-temurin:17-jre
+FROM docker.io/library/eclipse-temurin:17-jre
 WORKDIR /app
 ARG JAR_PATH
 COPY ${JAR_PATH} app.jar
