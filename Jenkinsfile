@@ -13,7 +13,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: maven
-      image: docker.io/library/maven:3.9.9-eclipse-temurin-17
+      image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
       imagePullPolicy: IfNotPresent
       command: ["cat"]
       tty: true
@@ -146,12 +146,8 @@ spec:
       steps {
         container('maven') {
           sh '''
-            KUBECTL_VERSION=v1.28.15
-            if ! command -v kubectl >/dev/null 2>&1; then
-              curl -fsSL -o /tmp/kubectl https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-              chmod +x /tmp/kubectl
-              export PATH=/tmp:$PATH
-            fi
+            command -v kubectl >/dev/null 2>&1
+            command -v helm >/dev/null 2>&1 || true
           '''
         }
       }
@@ -428,15 +424,6 @@ YAML
         container('maven') {
           sh '''
             set -e
-            export PATH=/tmp:$PATH
-
-            HELM_VERSION=v3.16.4
-            if ! command -v helm >/dev/null 2>&1; then
-              curl -fsSL -o /tmp/helm.tgz https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
-              tar -xzf /tmp/helm.tgz -C /tmp
-              chmod +x /tmp/linux-amd64/helm
-              export PATH=/tmp/linux-amd64:/tmp:$PATH
-            fi
 
             if [ "$BUILD_AUTH" = "true" ] || [ "$BUILD_GATEWAY" = "true" ] || [ "$BUILD_SYSTEM" = "true" ] || [ "$BUILD_UI" = "true" ]; then
               helm upgrade --install aidevops-test "$WORKSPACE/deploy/helm/aidevops-cloud" \
