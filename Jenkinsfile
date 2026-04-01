@@ -128,7 +128,7 @@ spec:
             if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'
             }
-            if (f.startsWith('docker/build/')) {
+            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f.startsWith('deploy/k8s/')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
             }
           }

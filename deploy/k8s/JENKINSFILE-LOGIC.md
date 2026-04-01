@@ -91,6 +91,8 @@ Jenkinsfile 会根据 `git diff` 识别改动：
 - `aidevops-modules/pom.xml`
 - `aidevops-common/pom.xml`
 - `docker/build/`
+- `Jenkinsfile`
+- `deploy/k8s/`
 
 ## 构建逻辑
 
