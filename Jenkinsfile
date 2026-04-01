@@ -194,36 +194,57 @@ spec:
 
     stage('Build & Push Changed Images') {
       steps {
-        script {
-          def buildTargets = []
-          if (env.BUILD_AUTH == 'true') {
-            buildTargets << [name: 'aidevops-auth', dockerfile: 'docker/build/backend.Dockerfile', jarPath: 'aidevops-auth/target/aidevops-auth.jar']
-          }
-          if (env.BUILD_GATEWAY == 'true') {
-            buildTargets << [name: 'aidevops-gateway', dockerfile: 'docker/build/backend.Dockerfile', jarPath: 'aidevops-gateway/target/aidevops-gateway.jar']
-          }
-          if (env.BUILD_SYSTEM == 'true') {
-            buildTargets << [name: 'aidevops-system', dockerfile: 'docker/build/backend.Dockerfile', jarPath: 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar']
-          }
-          if (env.BUILD_UI == 'true') {
-            buildTargets << [name: 'aidevops-ui', dockerfile: 'docker/build/frontend.Dockerfile', jarPath: '']
-          }
+        container('kaniko') {
+          sh '''
+            set -e
 
-          buildTargets.each { item ->
-            container('kaniko') {
-              sh """
-                /kaniko/executor \
-                  --context ${WORKSPACE} \
-                  --dockerfile ${WORKSPACE}/${item.dockerfile} \
-                  --destination ${REGISTRY}/${TEST_PROJECT}/${item.name}:${GIT_COMMIT_TAG} \
-                  --snapshot-mode=redo \
-                  --use-new-run \
-                  --cache=false \
-                  --skip-tls-verify-registry ${REGISTRY} \
-                  ${item.jarPath ? "--build-arg JAR_PATH=${item.jarPath}" : ''}
-              """
-            }
-          }
+            if [ "$BUILD_AUTH" = "true" ]; then
+              /kaniko/executor \
+                --context "$WORKSPACE" \
+                --dockerfile "$WORKSPACE/docker/build/backend.Dockerfile" \
+                --destination "${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}" \
+                --snapshot-mode=redo \
+                --use-new-run \
+                --cache=false \
+                --skip-tls-verify-registry "${REGISTRY}" \
+                --build-arg JAR_PATH=aidevops-auth/target/aidevops-auth.jar
+            fi
+
+            if [ "$BUILD_GATEWAY" = "true" ]; then
+              /kaniko/executor \
+                --context "$WORKSPACE" \
+                --dockerfile "$WORKSPACE/docker/build/backend.Dockerfile" \
+                --destination "${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}" \
+                --snapshot-mode=redo \
+                --use-new-run \
+                --cache=false \
+                --skip-tls-verify-registry "${REGISTRY}" \
+                --build-arg JAR_PATH=aidevops-gateway/target/aidevops-gateway.jar
+            fi
+
+            if [ "$BUILD_SYSTEM" = "true" ]; then
+              /kaniko/executor \
+                --context "$WORKSPACE" \
+                --dockerfile "$WORKSPACE/docker/build/backend.Dockerfile" \
+                --destination "${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}" \
+                --snapshot-mode=redo \
+                --use-new-run \
+                --cache=false \
+                --skip-tls-verify-registry "${REGISTRY}" \
+                --build-arg JAR_PATH=aidevops-modules/aidevops-system/target/aidevops-modules-system.jar
+            fi
+
+            if [ "$BUILD_UI" = "true" ]; then
+              /kaniko/executor \
+                --context "$WORKSPACE" \
+                --dockerfile "$WORKSPACE/docker/build/frontend.Dockerfile" \
+                --destination "${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}" \
+                --snapshot-mode=redo \
+                --use-new-run \
+                --cache=false \
+                --skip-tls-verify-registry "${REGISTRY}"
+            fi
+          '''
         }
       }
     }
