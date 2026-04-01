@@ -89,7 +89,7 @@ spec:
           env.GIT_COMMIT_TAG = sh(
             script: '''
               MSG=$(git log -1 --pretty=%s | tr '[:upper:]' '[:lower:]')
-              MSG=$(printf "%s" "$MSG" | sed 's/[^a-z0-9._-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
+              MSG=$(printf "%s" "$MSG" | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//; s/-*$//')
               if [ -z "$MSG" ]; then MSG=commit; fi
               printf "%s-%s" "$MSG" "$(git rev-parse --short HEAD)"
             ''',
