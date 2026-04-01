@@ -216,7 +216,7 @@ spec:
           sh '''
             set -e
 
-            if [ "$BUILD_AUTH" = "true" ]; then
+            build_auth() {
               /kaniko/executor \
                 --context "$WORKSPACE" \
                 --dockerfile "$WORKSPACE/docker/build/backend.Dockerfile" \
@@ -226,9 +226,9 @@ spec:
                 --cache=false \
                 --skip-tls-verify-registry "${REGISTRY}" \
                 --build-arg JAR_PATH=aidevops-auth/target/aidevops-auth.jar
-            fi
+            }
 
-            if [ "$BUILD_GATEWAY" = "true" ]; then
+            build_gateway() {
               /kaniko/executor \
                 --context "$WORKSPACE" \
                 --dockerfile "$WORKSPACE/docker/build/backend.Dockerfile" \
@@ -238,9 +238,9 @@ spec:
                 --cache=false \
                 --skip-tls-verify-registry "${REGISTRY}" \
                 --build-arg JAR_PATH=aidevops-gateway/target/aidevops-gateway.jar
-            fi
+            }
 
-            if [ "$BUILD_SYSTEM" = "true" ]; then
+            build_system() {
               /kaniko/executor \
                 --context "$WORKSPACE" \
                 --dockerfile "$WORKSPACE/docker/build/backend.Dockerfile" \
@@ -250,9 +250,9 @@ spec:
                 --cache=false \
                 --skip-tls-verify-registry "${REGISTRY}" \
                 --build-arg JAR_PATH=aidevops-modules/aidevops-system/target/aidevops-modules-system.jar
-            fi
+            }
 
-            if [ "$BUILD_UI" = "true" ]; then
+            build_ui() {
               /kaniko/executor \
                 --context "$WORKSPACE" \
                 --dockerfile "$WORKSPACE/docker/build/frontend.Dockerfile" \
@@ -261,12 +261,23 @@ spec:
                 --use-new-run \
                 --cache=false \
                 --skip-tls-verify-registry "${REGISTRY}"
-            fi
+            }
+
+            pids=""
+            if [ "$BUILD_AUTH" = "true" ]; then build_auth & pids="$pids $!"; fi
+            if [ "$BUILD_GATEWAY" = "true" ]; then build_gateway & pids="$pids $!"; fi
+            for pid in $pids; do wait "$pid"; done
+
+            pids=""
+            if [ "$BUILD_SYSTEM" = "true" ]; then build_system & pids="$pids $!"; fi
+            if [ "$BUILD_UI" = "true" ]; then build_ui & pids="$pids $!"; fi
+            for pid in $pids; do wait "$pid"; done
           '''
         }
 
         container('maven') {
           sh '''
+            set -e
             KUBECTL_VERSION=v1.28.15
             if ! command -v kubectl >/dev/null 2>&1; then
               curl -fsSL -o /tmp/kubectl https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
@@ -274,25 +285,35 @@ spec:
               export PATH=/tmp:$PATH
             fi
 
-            if [ "$BUILD_AUTH" = "true" ]; then
+            rollout_auth() {
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
-            fi
+            }
 
-            if [ "$BUILD_GATEWAY" = "true" ]; then
+            rollout_gateway() {
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
-            fi
+            }
 
-            if [ "$BUILD_SYSTEM" = "true" ]; then
+            rollout_system() {
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
-            fi
+            }
 
-            if [ "$BUILD_UI" = "true" ]; then
+            rollout_ui() {
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
-            fi
+            }
+
+            pids=""
+            if [ "$BUILD_AUTH" = "true" ]; then rollout_auth & pids="$pids $!"; fi
+            if [ "$BUILD_GATEWAY" = "true" ]; then rollout_gateway & pids="$pids $!"; fi
+            for pid in $pids; do wait "$pid"; done
+
+            pids=""
+            if [ "$BUILD_SYSTEM" = "true" ]; then rollout_system & pids="$pids $!"; fi
+            if [ "$BUILD_UI" = "true" ]; then rollout_ui & pids="$pids $!"; fi
+            for pid in $pids; do wait "$pid"; done
           '''
         }
       }
