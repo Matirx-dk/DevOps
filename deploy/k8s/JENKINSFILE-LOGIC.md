@@ -50,6 +50,9 @@ Jenkinsfile 使用 Kubernetes 动态 agent Pod，Pod 内包含两个主要容器
 - 镜像构建
 - 镜像推送到 Harbor
 
+说明：
+- 当前将 kaniko 容器改为长驻 `sleep` 模式，以提高 Jenkins 在同一 Pod 内多次进入 `container('kaniko')` 执行多镜像构建时的稳定性。
+
 这样做的好处是：
 
 - controller 不需要安装 `docker / kubectl / mvn / npm`

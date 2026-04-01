@@ -44,7 +44,9 @@ spec:
       image: gcr.io/kaniko-project/executor:v1.23.2-debug
       imagePullPolicy: IfNotPresent
       command:
-        - /busybox/cat
+        - /busybox/sh
+        - -c
+        - sleep 999999
       tty: true
       volumeMounts:
         - name: kaniko-docker-config
