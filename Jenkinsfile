@@ -13,7 +13,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: maven
-      image: docker.io/library/maven:3.9.9-eclipse-temurin-17
+      image: harbor.zoudekang.cloud/dockerhub-proxy/library/maven:3.9.9-eclipse-temurin-17
       imagePullPolicy: IfNotPresent
       command: [\"cat\"]
       tty: true
@@ -21,7 +21,7 @@ spec:
         - name: m2-cache
           mountPath: /root/.m2
     - name: node
-      image: docker.io/library/node:18-alpine
+      image: harbor.zoudekang.cloud/dockerhub-proxy/library/node:18-alpine
       imagePullPolicy: IfNotPresent
       command: [\"sh\",\"-c\",\"cat\"]
       tty: true
@@ -29,7 +29,7 @@ spec:
         - name: npm-cache
           mountPath: /root/.npm
     - name: kaniko
-      image: gcr.io/kaniko-project/executor:v1.23.2-debug
+      image: harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug
       imagePullPolicy: IfNotPresent
       command: [\"sh\",\"-c\",\"cat\"]
       tty: true
@@ -37,7 +37,7 @@ spec:
         - name: harbor-config
           mountPath: /kaniko/.docker
     - name: helm
-      image: alpine/helm:3.16.4
+      image: harbor.zoudekang.cloud/ci-tools/helm:3.16.4
       imagePullPolicy: IfNotPresent
       command: [\"cat\"]
       tty: true
