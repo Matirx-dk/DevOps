@@ -1,7 +1,7 @@
 pipeline {
   agent {
     kubernetes {
-      defaultContainer 'builder'
+      defaultContainer 'maven'
       yaml """
 apiVersion: v1
 kind: Pod
@@ -12,8 +12,8 @@ spec:
   serviceAccountName: jenkins-agent
   restartPolicy: Never
   containers:
-    - name: builder
-      image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
+    - name: maven
+      image: docker.io/library/maven:3.9.9-eclipse-temurin-17
       imagePullPolicy: IfNotPresent
       command:
         - cat
@@ -25,8 +25,23 @@ spec:
         limits:
           cpu: \"2\"
           memory: \"4Gi\"
+    - name: node
+      image: docker.io/library/node:18-alpine
+      imagePullPolicy: IfNotPresent
+      command:
+        - sh
+        - -c
+        - cat
+      tty: true
+      resources:
+        requests:
+          cpu: \"300m\"
+          memory: \"512Mi\"
+        limits:
+          cpu: \"2\"
+          memory: \"2Gi\"
     - name: kaniko
-      image: harbor.zoudekang.cloud/google-containers-proxy/kaniko-project/executor:v1.23.2-debug
+      image: gcr.io/kaniko-project/executor:v1.23.2-debug
       imagePullPolicy: IfNotPresent
       command:
         - /busybox/cat
@@ -62,7 +77,6 @@ spec:
     REGISTRY = 'harbor.zoudekang.cloud'
     TEST_PROJECT = 'aidevops-test'
     K8S_NAMESPACE = 'aidevops-test'
-    AGENT_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
   }
 
   stages {
@@ -131,7 +145,7 @@ spec:
         }
       }
       steps {
-        container('builder') {
+        container('maven') {
           sh '''
             mvn -T 1C -DskipTests clean package -pl aidevops-auth,aidevops-gateway,aidevops-modules/aidevops-system -am
           '''
@@ -142,7 +156,7 @@ spec:
     stage('Build UI') {
       when { expression { env.BUILD_UI == 'true' } }
       steps {
-        container('builder') {
+        container('node') {
           sh '''
             cd aidevops-ui
             npm config set registry https://registry.npmmirror.com
@@ -155,11 +169,16 @@ spec:
 
     stage('Code Security / Quality Checks') {
       steps {
-        container('builder') {
+        container('maven') {
           sh '''
             set +e
             echo "[check] backend dependency scan (mvn dependency-check if available)"
             mvn -q -DskipTests org.owasp:dependency-check-maven:check || true
+          '''
+        }
+        container('node') {
+          sh '''
+            set +e
             echo "[check] frontend npm audit"
             if [ -f aidevops-ui/package.json ]; then
               cd aidevops-ui && npm audit --audit-level=high || true
@@ -206,8 +225,15 @@ spec:
 
     stage('Deploy Changed Services To Test') {
       steps {
-        container('builder') {
+        container('maven') {
           sh '''
+            KUBECTL_VERSION=v1.28.15
+            if ! command -v kubectl >/dev/null 2>&1; then
+              curl -fsSL -o /tmp/kubectl https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+              chmod +x /tmp/kubectl
+              export PATH=/tmp:$PATH
+            fi
+
             if [ "$BUILD_AUTH" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s

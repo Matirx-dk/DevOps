@@ -12,8 +12,8 @@
 ## 本次新增文件
 
 - `docker/build/jenkins-agent-tools.Dockerfile`
-  - 自定义 agent 工具镜像
-  - 内置：`git` `mvn` `node` `npm` `kubectl` `bash`
+  - 保留为备选自定义 agent 工具镜像
+  - 当前 Jenkinsfile 已切换为直接使用公共基础镜像，不再强依赖这份镜像
 - `deploy/k8s/jenkins-agent-rbac.yaml`
   - agent Pod 使用的 `ServiceAccount`
   - 对 `aidevops-test` 的 Deployment 更新权限
@@ -42,21 +42,15 @@
 - Jenkins tunnel：`jenkins.jenkins.svc.cluster.local:50000`
 - 命名空间：`jenkins`
 
-### 3. 准备 agent 工具镜像
+### 3. 当前 agent 基础镜像来源
 
-先构建并推送：
+当前 Jenkinsfile 直接使用公共镜像：
 
-```bash
-docker build -f docker/build/jenkins-agent-tools.Dockerfile -t harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401 .
-docker push harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
-```
+- `docker.io/library/maven:3.9.9-eclipse-temurin-17`
+- `docker.io/library/node:18-alpine`
+- `gcr.io/kaniko-project/executor:v1.23.2-debug`
 
-如果你想固定 latest，也可以再补一个 tag：
-
-```bash
-docker tag harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401 harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:latest
-docker push harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:latest
-```
+这样可以绕开 Harbor 代理仓库的基础镜像认证问题。
 
 ### 4. 应用 agent RBAC
 

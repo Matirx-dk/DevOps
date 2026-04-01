@@ -21,22 +21,30 @@
 - Jenkins agent namespace：`jenkins`
 - agent ServiceAccount：`jenkins-agent`
 - Harbor registry secret：`harbor-regcred`
-- agent 工具镜像：`harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401`
+- agent Pod 使用公共基础镜像：
+  - `docker.io/library/maven:3.9.9-eclipse-temurin-17`
+  - `docker.io/library/node:18-alpine`
+  - `gcr.io/kaniko-project/executor:v1.23.2-debug`
 
 ## agent 执行模型
 
 Jenkinsfile 使用 Kubernetes 动态 agent Pod，Pod 内包含两个主要容器：
 
-### 1. builder
+### 1. maven
 用于：
 
 - `git checkout`
 - Maven 编译
-- Node/NPM 前端构建
-- 基础代码安全检测
-- `kubectl` 发布
+- 后端基础安全检测
+- 动态下载 `kubectl` 后执行发布
 
-### 2. kaniko
+### 2. node
+用于：
+
+- Node/NPM 前端构建
+- 前端 `npm audit`
+
+### 3. kaniko
 用于：
 
 - 镜像构建
