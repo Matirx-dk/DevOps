@@ -1310,8 +1310,6 @@ spec:
       labels:
         app: aidevops-mysql
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: devops-1
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
