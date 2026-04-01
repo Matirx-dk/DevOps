@@ -1,4 +1,4 @@
-FROM harbor.zoudekang.cloud/dockerhub-proxy/library/node:18-alpine AS builder
+FROM harbor.zoudekang.cloud/dockerhub-proxy/node:18-alpine AS builder
 WORKDIR /src
 COPY aidevops-ui ./
 RUN npm config set registry https://registry.npmmirror.com \

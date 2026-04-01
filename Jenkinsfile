@@ -166,7 +166,11 @@ spec:
           sh '''
             cd aidevops-ui
             npm config set registry https://registry.npmmirror.com
-            npm install
+            if [ -f package-lock.json ]; then
+              npm ci
+            else
+              npm install
+            fi
             npm run build:prod
           '''
         }
