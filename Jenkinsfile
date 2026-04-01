@@ -84,6 +84,10 @@ spec:
       steps {
         checkout scm
         script {
+          sh '''
+            git config --global --add safe.directory "$WORKSPACE"
+            git config --global --add safe.directory "$(pwd)"
+          '''
           env.GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
           env.GIT_COMMIT_MSG_RAW = sh(script: "git log -1 --pretty=%s", returnStdout: true).trim()
           env.GIT_COMMIT_TAG = sh(
