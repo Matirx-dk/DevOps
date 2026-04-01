@@ -7,6 +7,30 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: jenkins-agent-runner
+  namespace: jenkins
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status", "secrets", "configmaps"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jenkins-agent-runner
+  namespace: jenkins
+subjects:
+  - kind: ServiceAccount
+    name: jenkins-agent
+    namespace: jenkins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jenkins-agent-runner
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: jenkins-agent-deployer
   namespace: aidevops-test
 rules:
