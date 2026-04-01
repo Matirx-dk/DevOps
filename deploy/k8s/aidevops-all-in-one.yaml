@@ -1520,7 +1520,7 @@ spec:
     spec:
       containers:
         - name: auth
-          image: 192.168.1.104/aidevops/aidevops-auth@sha256:2e88aaa875bc146e429da73b2a20c5004058efc0bcb2ca6f98668778ac062bf1
+          image: harbor.zoudekang.cloud/aidevops/aidevops-auth:restored-auth
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
@@ -1563,7 +1563,7 @@ spec:
     spec:
       containers:
         - name: system
-          image: 192.168.1.104/aidevops/aidevops-system@sha256:7a07142f0046c0bcfc9705057a03e2424ba90a0f2569d129144ef1ed87fe93f7
+          image: harbor.zoudekang.cloud/aidevops/aidevops-system:restored-system
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
@@ -1610,7 +1610,7 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: 192.168.1.104/aidevops/aidevops-gateway@sha256:be23b226c6c854ada39bd7088a317b21f70a8109d7a5ddd33389b01c9be2ea43
+          image: harbor.zoudekang.cloud/aidevops/aidevops-gateway:release-gateway-20260330-124936
           imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
@@ -1657,7 +1657,7 @@ spec:
     spec:
       containers:
         - name: ui
-          image: 192.168.1.104/aidevops/aidevops-ui:demo
+          image: harbor.zoudekang.cloud/aidevops/aidevops-ui:release-ui-20260330-155056
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
