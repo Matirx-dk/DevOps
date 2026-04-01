@@ -49,13 +49,13 @@ kubectl get pods -n aidevops-cloud -w
 3. 对于**全新安装**，`192.168.1.104:/data/nfs/share/aidevops-mysql` 可被集群挂载
 4. 如果是从旧环境平滑升级，且已有 MySQL PV 已绑定旧路径，则需要注意：现网可能仍在使用 `/data/nfs/share/ruoyi-mysql`，不能直接在原 PV 上改 `persistentVolumeSource`
 5. 集群节点能拉取这些镜像：
-   - `mysql:8.0`
-   - `redis:7-alpine`
-   - `nacos/nacos-server:v2.2.3`
-   - `192.168.1.104/aidevops/aidevops-auth@sha256:2e88aaa875bc146e429da73b2a20c5004058efc0bcb2ca6f98668778ac062bf1`
-   - `192.168.1.104/aidevops/aidevops-system@sha256:7a07142f0046c0bcfc9705057a03e2424ba90a0f2569d129144ef1ed87fe93f7`
-   - `192.168.1.104/aidevops/aidevops-gateway@sha256:be23b226c6c854ada39bd7088a317b21f70a8109d7a5ddd33389b01c9be2ea43`
-   - `192.168.1.104/aidevops/aidevops-ui:demo`
+   - `harbor.zoudekang.cloud/dockerhub-proxy/library/mysql:8.0`
+   - `harbor.zoudekang.cloud/dockerhub-proxy/library/redis:7-alpine`
+   - `harbor.zoudekang.cloud/dockerhub-proxy/nacos/nacos-server:v2.2.3`
+   - `harbor.zoudekang.cloud/aidevops/aidevops-auth:restored-auth`
+   - `harbor.zoudekang.cloud/aidevops/aidevops-system:restored-system`
+   - `harbor.zoudekang.cloud/aidevops/aidevops-gateway:release-gateway-20260330-124936`
+   - `harbor.zoudekang.cloud/aidevops/aidevops-ui:release-ui-20260330-155056`
 
 ## 说明
 
@@ -74,3 +74,12 @@ kubectl get pods -n aidevops-cloud -w
 - `middleware.yaml`
 - `apps.yaml`
 - `ingress.yaml`
+
+## 2026-04-01 迁移记录
+
+- Jenkins 已从手工 PV/PVC（`jenkins-home-pv` / `jenkins-home-pvc`）迁移到动态存储 PVC：`jenkins-home-dynamic-pvc`
+- 动态存储类：`nfs-client`
+- NFS dynamic provisioner 已部署在命名空间：`nfs-provisioner`
+- Jenkins 当前镜像与基础镜像统一切到：`harbor.zoudekang.cloud` / `dockerhub-proxy`
+- 旧 Jenkins PV/PVC 已下线删除
+- 当前建议：后续新建持久化工作负载优先使用 `storageClassName: nfs-client`，避免继续手工写死 NFS 路径
