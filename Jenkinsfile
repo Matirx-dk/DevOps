@@ -124,11 +124,20 @@ spec:
             }
           }
 
-          env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
-          env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
-          env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
-          env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
-          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}"
+          def anyChange = !targets.isEmpty()
+          if (anyChange) {
+            env.BUILD_AUTH = 'true'
+            env.BUILD_GATEWAY = 'true'
+            env.BUILD_SYSTEM = 'true'
+            env.BUILD_UI = 'true'
+            echo "Detected changes in ${targets}. To keep test environment version-aligned and avoid session/token mismatches, deploy all core services together."
+          } else {
+            env.BUILD_AUTH = 'false'
+            env.BUILD_GATEWAY = 'false'
+            env.BUILD_SYSTEM = 'false'
+            env.BUILD_UI = 'false'
+          }
+          echo "Build plan => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}"
         }
       }
     }
