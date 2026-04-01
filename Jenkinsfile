@@ -1,5 +1,56 @@
 pipeline {
-  agent any
+  agent {
+    kubernetes {
+      defaultContainer 'builder'
+      yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: aidevops-test-pipeline
+spec:
+  serviceAccountName: jenkins-agent
+  restartPolicy: Never
+  containers:
+    - name: builder
+      image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
+      imagePullPolicy: IfNotPresent
+      command:
+        - cat
+      tty: true
+      resources:
+        requests:
+          cpu: \"500m\"
+          memory: \"1Gi\"
+        limits:
+          cpu: \"2\"
+          memory: \"4Gi\"
+    - name: kaniko
+      image: harbor.zoudekang.cloud/google-containers-proxy/kaniko-project/executor:v1.23.2-debug
+      imagePullPolicy: IfNotPresent
+      command:
+        - /busybox/cat
+      tty: true
+      volumeMounts:
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+      resources:
+        requests:
+          cpu: \"500m\"
+          memory: \"1Gi\"
+        limits:
+          cpu: \"2\"
+          memory: \"4Gi\"
+  volumes:
+    - name: kaniko-docker-config
+      secret:
+        secretName: harbor-regcred
+        items:
+          - key: .dockerconfigjson
+            path: config.json
+"""
+    }
+  }
 
   options {
     timestamps()
@@ -11,9 +62,7 @@ pipeline {
     REGISTRY = 'harbor.zoudekang.cloud'
     TEST_PROJECT = 'aidevops-test'
     K8S_NAMESPACE = 'aidevops-test'
-    HARBOR_CREDENTIALS_ID = 'harbor-admin'
-    // 可选：如果 Jenkins 已配置 SonarQube，可把凭据/工具接上
-    // SONARQUBE_ENV = 'sonarqube'
+    AGENT_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
   }
 
   stages {
@@ -82,107 +131,105 @@ pipeline {
         }
       }
       steps {
-        sh '''
-          mvn -T 1C -DskipTests clean package -pl aidevops-auth,aidevops-gateway,aidevops-modules/aidevops-system -am
-        '''
+        container('builder') {
+          sh '''
+            mvn -T 1C -DskipTests clean package -pl aidevops-auth,aidevops-gateway,aidevops-modules/aidevops-system -am
+          '''
+        }
       }
     }
 
     stage('Build UI') {
       when { expression { env.BUILD_UI == 'true' } }
       steps {
-        sh '''
-          cd aidevops-ui
-          npm config set registry https://registry.npmmirror.com
-          npm install
-          npm run build:prod
-        '''
+        container('builder') {
+          sh '''
+            cd aidevops-ui
+            npm config set registry https://registry.npmmirror.com
+            npm install
+            npm run build:prod
+          '''
+        }
       }
     }
 
     stage('Code Security / Quality Checks') {
       steps {
-        sh '''
-          set +e
-          echo "[check] backend dependency scan (mvn dependency-check if installed)"
-          if command -v mvn >/dev/null 2>&1; then
-            mvn -q -DskipTests org.owasp:dependency-check-maven:check || true
-          fi
-          echo "[check] frontend npm audit"
-          if [ -f aidevops-ui/package.json ]; then
-            cd aidevops-ui && npm audit --audit-level=high || true
-          fi
-        '''
-      }
-    }
-
-    stage('Build & Push Changed Images') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: env.HARBOR_CREDENTIALS_ID, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
+        container('builder') {
           sh '''
-            echo "$HARBOR_PASS" | docker login ${REGISTRY} -u "$HARBOR_USER" --password-stdin
-
-            if [ "$BUILD_AUTH" = "true" ]; then
-              docker build -f docker/build/backend.Dockerfile \
-                --build-arg JAR_PATH=aidevops-auth/target/aidevops-auth.jar \
-                -t ${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG} .
-              docker push ${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
-            fi
-
-            if [ "$BUILD_GATEWAY" = "true" ]; then
-              docker build -f docker/build/backend.Dockerfile \
-                --build-arg JAR_PATH=aidevops-gateway/target/aidevops-gateway.jar \
-                -t ${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG} .
-              docker push ${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
-            fi
-
-            if [ "$BUILD_SYSTEM" = "true" ]; then
-              docker build -f docker/build/backend.Dockerfile \
-                --build-arg JAR_PATH=aidevops-modules/aidevops-system/target/aidevops-modules-system.jar \
-                -t ${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG} .
-              docker push ${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
-            fi
-
-            if [ "$BUILD_UI" = "true" ]; then
-              docker build -f docker/build/frontend.Dockerfile \
-                -t ${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG} .
-              docker push ${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
+            set +e
+            echo "[check] backend dependency scan (mvn dependency-check if available)"
+            mvn -q -DskipTests org.owasp:dependency-check-maven:check || true
+            echo "[check] frontend npm audit"
+            if [ -f aidevops-ui/package.json ]; then
+              cd aidevops-ui && npm audit --audit-level=high || true
             fi
           '''
         }
       }
     }
 
-    stage('Deploy Changed Services To Test') {
+    stage('Build & Push Changed Images') {
       steps {
-        sh '''
-          if [ "$BUILD_AUTH" = "true" ]; then
-            kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
-            kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
-          fi
+        script {
+          def buildTargets = []
+          if (env.BUILD_AUTH == 'true') {
+            buildTargets << [name: 'aidevops-auth', dockerfile: 'docker/build/backend.Dockerfile', jarPath: 'aidevops-auth/target/aidevops-auth.jar']
+          }
+          if (env.BUILD_GATEWAY == 'true') {
+            buildTargets << [name: 'aidevops-gateway', dockerfile: 'docker/build/backend.Dockerfile', jarPath: 'aidevops-gateway/target/aidevops-gateway.jar']
+          }
+          if (env.BUILD_SYSTEM == 'true') {
+            buildTargets << [name: 'aidevops-system', dockerfile: 'docker/build/backend.Dockerfile', jarPath: 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar']
+          }
+          if (env.BUILD_UI == 'true') {
+            buildTargets << [name: 'aidevops-ui', dockerfile: 'docker/build/frontend.Dockerfile', jarPath: '']
+          }
 
-          if [ "$BUILD_GATEWAY" = "true" ]; then
-            kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
-            kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
-          fi
-
-          if [ "$BUILD_SYSTEM" = "true" ]; then
-            kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
-            kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
-          fi
-
-          if [ "$BUILD_UI" = "true" ]; then
-            kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-            kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
-          fi
-        '''
+          buildTargets.each { item ->
+            container('kaniko') {
+              sh """
+                /kaniko/executor \
+                  --context ${WORKSPACE} \
+                  --dockerfile ${WORKSPACE}/${item.dockerfile} \
+                  --destination ${REGISTRY}/${TEST_PROJECT}/${item.name}:${GIT_COMMIT_TAG} \
+                  --snapshot-mode=redo \
+                  --use-new-run \
+                  --cache=false \
+                  ${item.jarPath ? "--build-arg JAR_PATH=${item.jarPath}" : ''}
+              """
+            }
+          }
+        }
       }
     }
-  }
 
-  post {
-    always {
-      sh 'docker logout ${REGISTRY} || true'
+    stage('Deploy Changed Services To Test') {
+      steps {
+        container('builder') {
+          sh '''
+            if [ "$BUILD_AUTH" = "true" ]; then
+              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
+              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
+            fi
+
+            if [ "$BUILD_GATEWAY" = "true" ]; then
+              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
+              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
+            fi
+
+            if [ "$BUILD_SYSTEM" = "true" ]; then
+              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
+              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
+            fi
+
+            if [ "$BUILD_UI" = "true" ]; then
+              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
+              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
+            fi
+          '''
+        }
+      }
     }
   }
 }
