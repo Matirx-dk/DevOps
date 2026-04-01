@@ -139,6 +139,8 @@ Jenkinsfile 会根据 `git diff` 识别改动：
 
 ## 部署策略
 
+当前联调阶段，为了避免 Kaniko 容器完成后被 Jenkins 提前判定为不健康导致 Pod/agent 回收，镜像构建推送和测试环境部署已合并到同一个后置阶段中连续执行。
+
 Jenkins 只更新有改动的 Deployment：
 
 - `deployment/aidevops-auth`

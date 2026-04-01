@@ -192,7 +192,7 @@ spec:
       }
     }
 
-    stage('Build & Push Changed Images') {
+    stage('Build Push And Deploy Changed Services') {
       steps {
         container('kaniko') {
           sh '''
@@ -246,11 +246,7 @@ spec:
             fi
           '''
         }
-      }
-    }
 
-    stage('Deploy Changed Services To Test') {
-      steps {
         container('maven') {
           sh '''
             KUBECTL_VERSION=v1.28.15
