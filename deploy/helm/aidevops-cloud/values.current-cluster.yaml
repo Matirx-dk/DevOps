@@ -30,7 +30,7 @@ ui:
 ingress:
   enabled: true
   className: nginx
-  host: harbor.zoudekang.cloud
+  host: devops.zoudekang.cloud
   uiPath: /
   nacosPath: /nacos
 
