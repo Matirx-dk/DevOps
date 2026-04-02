@@ -161,13 +161,13 @@ public class OpenClawGatewayClient {
         }
 
         try {
-            Map<String, Object> connectDraft = buildConnectDraft();
-            Map<String, Object> request = castMap(connectDraft.get("request"));
-            String requestJson = objectMapper.writeValueAsString(request);
+            Map<String, Object> exchange = sendConnectAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs());
+            Map<String, Object> request = castMap(exchange.get("request"));
+            result.put("challenge", exchange.get("challenge"));
             result.put("request", request);
-            result.put("requestJson", requestJson);
+            result.put("requestJson", exchange.get("requestJson"));
 
-            String responseFrame = sendConnectAndReceive(properties.getGatewayWsUrl(), requestJson, properties.getProbeTimeoutMs());
+            String responseFrame = String.valueOf(exchange.get("responseFrame"));
             result.put("ok", true);
             result.put("stage", "connect-response-received");
             result.put("responseFrame", responseFrame);
@@ -204,6 +204,48 @@ public class OpenClawGatewayClient {
             ? "已收到消息『" + message + "』。当前已补到 connect-test 阶段，下一步是根据 Gateway 返回码继续收敛 device auth。"
             : "已收到消息：" + message + "。当前仍处于 mock 回退模式，尚未启用真实 OpenClaw Gateway。"
         );
+        return result;
+    }
+
+    private Map<String, Object> buildConnectRequest(String nonce) {
+        long signedAt = System.currentTimeMillis();
+
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("type", "req");
+        request.put("id", "conn_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        request.put("method", "connect");
+
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("minProtocol", PROTOCOL_VERSION);
+        params.put("maxProtocol", PROTOCOL_VERSION);
+        params.put("client", buildClientInfo());
+        params.put("role", "operator");
+        params.put("scopes", buildScopes());
+        params.put("caps", new ArrayList<>());
+        params.put("commands", new ArrayList<>());
+        params.put("permissions", new LinkedHashMap<>());
+
+        Map<String, Object> auth = new LinkedHashMap<>();
+        auth.put("token", properties.getToken());
+        params.put("auth", auth);
+        params.put("locale", "zh-CN");
+        params.put("userAgent", "aidevops-system/ai-chat-gateway-bridge");
+        params.put("device", buildDeviceDraft(nonce, signedAt));
+        request.put("params", params);
+
+        Map<String, Object> signatureDraft = buildSignatureDraft(request, nonce, signedAt);
+        Map<String, Object> signatureResult = deviceSigner.sign(castMap(signatureDraft.get("payload")));
+        Map<String, Object> device = castMap(params.get("device"));
+        if (signatureResult.get("suggestedDeviceId") != null) {
+            device.put("id", signatureResult.get("suggestedDeviceId"));
+        }
+        device.put("publicKey", signatureResult.get("publicKey"));
+        device.put("signature", signatureResult.get("signature"));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("request", request);
+        result.put("signatureDraft", signatureDraft);
+        result.put("signatureResult", signatureResult);
         return result;
     }
 
@@ -356,7 +398,7 @@ public class OpenClawGatewayClient {
         }
     }
 
-    private String sendConnectAndReceive(String wsUrl, String requestJson, int timeoutMs) throws Exception {
+    private Map<String, Object> sendConnectAndReceive(String wsUrl, int timeoutMs) throws Exception {
         CompletableFuture<String> challengeFuture = new CompletableFuture<>();
         CompletableFuture<String> responseFuture = new CompletableFuture<>();
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
@@ -370,10 +412,8 @@ public class OpenClawGatewayClient {
                     String frame = textBuffer.toString();
                     textBuffer.setLength(0);
                     if (!challengeFuture.isDone()) challengeFuture.complete(frame); else if (!responseFuture.isDone()) responseFuture.complete(frame);
-                    webSocket.request(1);
-                } else {
-                    webSocket.request(1);
                 }
+                webSocket.request(1);
                 return CompletableFuture.completedFuture(null);
             }
             @Override public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
@@ -389,9 +429,26 @@ public class OpenClawGatewayClient {
 
         WebSocket webSocket = client.newWebSocketBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).buildAsync(URI.create(wsUrl), listener).get(timeoutMs, TimeUnit.MILLISECONDS);
         try {
-            challengeFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            String challengeFrame = challengeFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            Map<String, Object> challenge = objectMapper.readValue(challengeFrame, new TypeReference<Map<String, Object>>() {});
+            Map<String, Object> challengePayload = castMap(challenge.get("payload"));
+            String nonce = String.valueOf(challengePayload.get("nonce"));
+
+            Map<String, Object> requestData = buildConnectRequest(nonce);
+            Map<String, Object> request = castMap(requestData.get("request"));
+            String requestJson = objectMapper.writeValueAsString(request);
+
             webSocket.sendText(requestJson, true).get(timeoutMs, TimeUnit.MILLISECONDS);
-            return responseFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            String responseFrame = responseFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("challenge", challenge);
+            result.put("request", request);
+            result.put("requestJson", requestJson);
+            result.put("responseFrame", responseFrame);
+            result.put("signatureDraft", requestData.get("signatureDraft"));
+            result.put("signatureResult", requestData.get("signatureResult"));
+            return result;
         } finally {
             try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "connect-test-complete").get(2, TimeUnit.SECONDS); } catch (Exception ignore) { webSocket.abort(); }
         }
