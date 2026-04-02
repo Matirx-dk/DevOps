@@ -12,7 +12,7 @@ mysql:
   database: ry-cloud
   image: harbor.zoudekang.cloud/dockerhub-proxy/library/mysql:8.0
   nfs:
-    server: 192.168.1.104
+    server: 192.168.1.100
     path: /data/nfs/share/aidevops-mysql
     size: 20Gi
 

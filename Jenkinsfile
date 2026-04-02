@@ -30,11 +30,11 @@ spec:
   volumes:
     - name: m2-cache
       nfs:
-        server: 192.168.1.104
+        server: 192.168.1.100
         path: /data/nfs/share/jenkins-cache/m2
     - name: npm-cache
       nfs:
-        server: 192.168.1.104
+        server: 192.168.1.100
         path: /data/nfs/share/jenkins-cache/npm
 """
     }
@@ -204,7 +204,7 @@ spec:
       emptyDir: {}
     - name: m2-cache
       nfs:
-        server: 192.168.1.104
+        server: 192.168.1.100
         path: /data/nfs/share/jenkins-cache/m2
     - name: harbor-config
       secret:
@@ -288,7 +288,7 @@ spec:
       emptyDir: {}
     - name: npm-cache
       nfs:
-        server: 192.168.1.104
+        server: 192.168.1.100
         path: /data/nfs/share/jenkins-cache/npm
     - name: harbor-config
       secret:

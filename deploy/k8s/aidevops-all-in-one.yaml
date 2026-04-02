@@ -3,7 +3,7 @@
 #   kubectl apply -f deploy/k8s/aidevops-all-in-one.yaml
 # Notes:
 # - This file is tailored to the current cluster layout used on 2026-03-29.
-# - MySQL data uses an NFS PV at 192.168.1.104:/data/nfs/share/aidevops-mysql
+# - MySQL data uses an NFS PV at 192.168.1.100:/data/nfs/share/aidevops-mysql
 # - Images default to the registry/image tags currently running in cluster.
 ---
 apiVersion: v1
@@ -1279,7 +1279,7 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   nfs:
-    server: 192.168.1.104
+    server: 192.168.1.100
     path: /data/nfs/share/aidevops-mysql
 ---
 apiVersion: v1
