@@ -50,6 +50,8 @@
               <span>signature: {{ connectDraft.signatureReady ? 'ready' : 'pending' }}</span>
             </div>
             <pre class="draft-json">{{ formatJson(connectDraft.request || {}) }}</pre>
+            <div v-if="connectDraft.signatureDraft" class="draft-subtitle">待签名原文</div>
+            <pre v-if="connectDraft.signatureDraft" class="draft-json">{{ connectDraft.signatureDraft.payloadJson || formatJson(connectDraft.signatureDraft.payload || {}) }}</pre>
           </div>
 
           <div class="message-list" ref="messageList">
@@ -288,6 +290,12 @@ export default {
   font-size: 12px;
   color: rgba(234, 242, 255, 0.72);
   margin-bottom: 10px;
+}
+.draft-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 12px 0 8px;
+  color: #8fd3ff;
 }
 .draft-json {
   margin: 0;

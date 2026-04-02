@@ -131,13 +131,16 @@ public class OpenClawGatewayClient {
 
         request.put("params", params);
 
+        Map<String, Object> signatureDraft = buildSignatureDraft(request, nonce, signedAt);
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("ready", enabled());
         result.put("challengeOk", Boolean.TRUE.equals(challenge.get("ok")));
         result.put("challengeStage", challenge.get("stage"));
         result.put("signatureReady", false);
+        result.put("signatureDraft", signatureDraft);
         result.put("message", Boolean.TRUE.equals(challenge.get("ok"))
-            ? "connect 请求草稿已生成；当前还缺真实 device 签名算法。"
+            ? "connect 请求草稿已生成；待签名原文也已固定，当前还缺真实 device 签名算法。"
             : "connect 请求草稿已生成；但当前还未拿到 challenge，nonce 先用占位值。"
         );
         result.put("request", request);
@@ -145,6 +148,7 @@ public class OpenClawGatewayClient {
         result.put("todo", Arrays.asList(
             "用服务端返回的 connect.challenge.nonce 替换占位 nonce",
             "按 OpenClaw device auth 规则生成 publicKey/signature",
+            "将 signature/publicKey 回填到 connect 请求",
             "发送 connect 请求并接收 hello-ok",
             "在 connect 成功后再继续补 chat.send / history"
         ));
@@ -171,6 +175,50 @@ public class OpenClawGatewayClient {
             result.put("answer", "已收到消息『" + message + "』。当前 Gateway WS challenge 仍未探测成功，本次继续走本地回退。\n");
         }
         return result;
+    }
+
+    private Map<String, Object> buildSignatureDraft(Map<String, Object> request, String nonce, long signedAt) {
+        Map<String, Object> params = castMap(request.get("params"));
+        Map<String, Object> client = castMap(params.get("client"));
+        Map<String, Object> auth = castMap(params.get("auth"));
+        Map<String, Object> device = castMap(params.get("device"));
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("version", "v3");
+        payload.put("deviceId", device.get("id"));
+        payload.put("clientId", client.get("id"));
+        payload.put("clientVersion", client.get("version"));
+        payload.put("platform", client.get("platform"));
+        payload.put("deviceFamily", device.get("deviceFamily"));
+        payload.put("role", params.get("role"));
+        payload.put("scopes", params.get("scopes"));
+        payload.put("token", auth.get("token"));
+        payload.put("nonce", nonce);
+        payload.put("signedAt", signedAt);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("algorithm", "PENDING_DEVICE_SIGNATURE_ALGORITHM");
+        result.put("publicKeyFormat", "PENDING_PUBLIC_KEY_FORMAT");
+        result.put("payload", payload);
+        try {
+            result.put("payloadJson", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload));
+        } catch (Exception ex) {
+            result.put("payloadJson", String.valueOf(payload));
+        }
+        result.put("notes", Arrays.asList(
+            "当前根据 OpenClaw protocol.md 固定了 v3 待签名字段集合",
+            "真实签名算法、密钥生成方式、publicKey 编码格式仍需继续对齐 OpenClaw 实现",
+            "如果服务端拒绝 v3，可回退验证 legacy v2 payload"
+        ));
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> castMap(Object value) {
+        if (value instanceof Map<?, ?>) {
+            return (Map<String, Object>) value;
+        }
+        return new LinkedHashMap<>();
     }
 
     private Map<String, Object> buildClientInfo() {
