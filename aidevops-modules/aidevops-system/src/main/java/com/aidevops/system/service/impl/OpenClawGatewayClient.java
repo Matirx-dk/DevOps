@@ -247,10 +247,10 @@ public class OpenClawGatewayClient {
 
     private Map<String, Object> buildClientInfo() {
         Map<String, Object> client = new LinkedHashMap<>();
-        client.put("id", "openclaw-control-ui");
+        client.put("id", "gateway-client");
         client.put("version", "0.1.0");
         client.put("platform", "linux");
-        client.put("mode", "ui");
+        client.put("mode", "backend");
         return client;
     }
 
