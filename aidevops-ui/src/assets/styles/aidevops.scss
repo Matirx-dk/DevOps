@@ -343,3 +343,12 @@
 .el-year-table td .cell:hover {
   background: rgba(255,255,255,0.08) !important;
 }
+
+
+.el-dropdown-menu__item--divided {
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.el-dropdown-menu__item--divided:before {
+  background-color: transparent !important;
+}
