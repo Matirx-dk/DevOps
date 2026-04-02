@@ -33,10 +33,10 @@ public class AiChatServiceImpl implements IAiChatService {
             row.put("sessionId", "chat_demo_main");
             row.put("title", "AI运维对话");
             row.put("scene", properties.getDefaultScene());
-            row.put("lastMessage", "当前已接入会话存储与 Gateway challenge 探测能力。");
+            row.put("lastMessage", "当前已接入独立 OpenClaw 会话与真实 Gateway 通道。");
             row.put("createTime", new Date());
             row.put("updateTime", new Date());
-            row.put("openclawSessionKey", "main");
+            row.put("openclawSessionKey", "aidevops-chat:chat_demo_main");
             row.put("status", gatewayClient.enabled() ? "gateway-probe" : "mock");
             return row;
         });
@@ -66,7 +66,7 @@ public class AiChatServiceImpl implements IAiChatService {
         data.put("updateTime", new Date());
         data.put("status", gatewayClient.enabled() ? "gateway-probe" : "mock");
         data.put("lastMessage", "已创建会话，等待发送第一条消息。");
-        data.put("openclawSessionKey", sessionId);
+        data.put("openclawSessionKey", "aidevops-chat:" + sessionId);
         sessionStore.put(sessionId, data);
 
         List<Map<String, Object>> messages = new ArrayList<>();
