@@ -20,9 +20,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
-/**
- * OpenClaw Gateway 对接客户端（当前阶段：真实 challenge 探测 + connect 请求草稿生成）。
- */
 @Component
 public class OpenClawGatewayClient {
 
@@ -52,7 +49,7 @@ public class OpenClawGatewayClient {
         data.put("probe", probeChallenge());
         data.put("connectDraft", buildConnectDraft());
         data.put("message", enabled()
-            ? "已启用 Gateway 探测模式：当前先验证 WS challenge，并生成 connect 请求草稿。"
+            ? "已启用 Gateway 探测模式：当前可验证 challenge，并测试真实 connect。"
             : "当前未启用真实 Gateway 对接，系统继续使用本地 mock 会话回退。"
         );
         return data;
@@ -86,13 +83,9 @@ public class OpenClawGatewayClient {
                     result.put("nonce", payloadMap.get("nonce"));
                     result.put("ts", payloadMap.get("ts"));
                 }
-                if (!"connect.challenge".equals(String.valueOf(frame.get("event")))) {
-                    result.put("message", "WS 已连通，但首帧不是预期的 connect.challenge，需继续核对网关协议或入口地址。");
-                } else {
-                    result.put("message", "WS 已连通，已收到 connect.challenge。下一步需要补设备签名与 connect 请求。\n");
-                }
+                result.put("message", "connect.challenge 已收到，可继续测试真实 connect。");
             } catch (Exception parseEx) {
-                result.put("message", "WS 已连通并收到首帧，但首帧 JSON 解析失败。\n");
+                result.put("message", "WS 已连通并收到首帧，但首帧 JSON 解析失败。");
                 result.put("parseError", parseEx.getMessage());
             }
             return result;
@@ -131,7 +124,6 @@ public class OpenClawGatewayClient {
         params.put("locale", "zh-CN");
         params.put("userAgent", "aidevops-system/ai-chat-gateway-bridge");
         params.put("device", buildDeviceDraft(nonce, signedAt));
-
         request.put("params", params);
 
         Map<String, Object> signatureDraft = buildSignatureDraft(request, nonce, signedAt);
@@ -147,20 +139,54 @@ public class OpenClawGatewayClient {
         result.put("signatureReady", Boolean.TRUE.equals(signatureResult.get("ready")));
         result.put("signatureDraft", signatureDraft);
         result.put("signatureResult", signatureResult);
-        result.put("message", Boolean.TRUE.equals(challenge.get("ok"))
-            ? "connect 请求草稿已生成；待签名原文也已固定，当前还缺真实 device 签名算法。"
-            : "connect 请求草稿已生成；但当前还未拿到 challenge，nonce 先用占位值。"
-        );
         result.put("request", request);
         result.put("challenge", challenge);
-        result.put("todo", Arrays.asList(
-            "用服务端返回的 connect.challenge.nonce 替换占位 nonce",
-            "按 OpenClaw device auth 规则生成 publicKey/signature",
-            "将 signature/publicKey 回填到 connect 请求",
-            "发送 connect 请求并接收 hello-ok",
-            "在 connect 成功后再继续补 chat.send / history"
-        ));
+        result.put("message", "connect 请求草稿已生成。");
         return result;
+    }
+
+    public Map<String, Object> testConnect() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("wsUrl", properties.getGatewayWsUrl());
+        result.put("enabled", enabled());
+
+        if (!enabled()) {
+            result.put("ok", false);
+            result.put("stage", "disabled");
+            result.put("message", "未启用 Gateway，对 connect-test 直接跳过。");
+            return result;
+        }
+
+        try {
+            Map<String, Object> connectDraft = buildConnectDraft();
+            Map<String, Object> request = castMap(connectDraft.get("request"));
+            String requestJson = objectMapper.writeValueAsString(request);
+            result.put("request", request);
+            result.put("requestJson", requestJson);
+
+            String responseFrame = sendConnectAndReceive(properties.getGatewayWsUrl(), requestJson, properties.getProbeTimeoutMs());
+            result.put("ok", true);
+            result.put("stage", "connect-response-received");
+            result.put("responseFrame", responseFrame);
+            try {
+                Map<String, Object> response = objectMapper.readValue(responseFrame, new TypeReference<Map<String, Object>>() {});
+                result.put("response", response);
+                result.put("message", Boolean.TRUE.equals(response.get("ok"))
+                    ? "connect 测试成功，已收到 hello-ok / success response。"
+                    : "connect 已返回 response，但结果不是 ok，可根据 error/details 继续对齐签名。"
+                );
+            } catch (Exception ex) {
+                result.put("message", "connect 已返回 response frame，但 JSON 解析失败。");
+                result.put("parseError", ex.getMessage());
+            }
+            return result;
+        } catch (Exception ex) {
+            result.put("ok", false);
+            result.put("stage", "connect-test-failed");
+            result.put("error", ex.getClass().getSimpleName());
+            result.put("message", ex.getMessage());
+            return result;
+        }
     }
 
     public Map<String, Object> previewSend(String sessionKey, String message) {
@@ -170,18 +196,10 @@ public class OpenClawGatewayClient {
         result.put("gatewayMode", enabled() ? "probe" : "mock");
         result.put("probe", probeChallenge());
         result.put("connectDraft", buildConnectDraft());
-
-        if (!enabled()) {
-            result.put("answer", "已收到消息：" + message + "。当前仍处于 mock 回退模式，尚未启用真实 OpenClaw Gateway。");
-            return result;
-        }
-
-        Object probeOk = ((Map<?, ?>) result.get("probe")).get("ok");
-        if (Boolean.TRUE.equals(probeOk)) {
-            result.put("answer", "已收到消息『" + message + "』。当前已验证 Gateway WS challenge 可达，也已生成 connect 请求草稿；下一步只差 device 签名与真实 connect/chat.send。");
-        } else {
-            result.put("answer", "已收到消息『" + message + "』。当前 Gateway WS challenge 仍未探测成功，本次继续走本地回退。\n");
-        }
+        result.put("answer", enabled()
+            ? "已收到消息『" + message + "』。当前已补到 connect-test 阶段，下一步是根据 Gateway 返回码继续收敛 device auth。"
+            : "已收到消息：" + message + "。当前仍处于 mock 回退模式，尚未启用真实 OpenClaw Gateway。"
+        );
         return result;
     }
 
@@ -213,11 +231,6 @@ public class OpenClawGatewayClient {
         } catch (Exception ex) {
             result.put("payloadJson", String.valueOf(payload));
         }
-        result.put("notes", Arrays.asList(
-            "当前根据 OpenClaw protocol.md 固定了 v3 待签名字段集合",
-            "真实签名算法、密钥生成方式、publicKey 编码格式仍需继续对齐 OpenClaw 实现",
-            "如果服务端拒绝 v3，可回退验证 legacy v2 payload"
-        ));
         return result;
     }
 
@@ -256,8 +269,7 @@ public class OpenClawGatewayClient {
 
     private String buildDeviceId() {
         try {
-            String host = InetAddress.getLocalHost().getHostName();
-            return "aidevops-" + host;
+            return "aidevops-" + InetAddress.getLocalHost().getHostName();
         } catch (Exception ex) {
             return "aidevops-server";
         }
@@ -265,59 +277,69 @@ public class OpenClawGatewayClient {
 
     private String receiveFirstFrame(String wsUrl, int timeoutMs) throws Exception {
         CompletableFuture<String> firstFrameFuture = new CompletableFuture<>();
-        HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofMillis(timeoutMs))
-            .build();
+        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
+        WebSocket.Listener listener = new WebSocket.Listener() {
+            private final StringBuilder textBuffer = new StringBuilder();
+            @Override public void onOpen(WebSocket webSocket) { webSocket.request(1); }
+            @Override public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                textBuffer.append(data);
+                if (last) firstFrameFuture.complete(textBuffer.toString()); else webSocket.request(1);
+                return CompletableFuture.completedFuture(null);
+            }
+            @Override public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+                if (!firstFrameFuture.isDone()) firstFrameFuture.completeExceptionally(new IllegalStateException("WS closed before first frame, code=" + statusCode + ", reason=" + reason));
+                return CompletableFuture.completedFuture(null);
+            }
+            @Override public void onError(WebSocket webSocket, Throwable error) {
+                if (!firstFrameFuture.isDone()) firstFrameFuture.completeExceptionally(error);
+            }
+        };
+        WebSocket webSocket = client.newWebSocketBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).buildAsync(URI.create(wsUrl), listener).get(timeoutMs, TimeUnit.MILLISECONDS);
+        try {
+            return firstFrameFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+        } finally {
+            try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "probe-complete").get(2, TimeUnit.SECONDS); } catch (Exception ignore) { webSocket.abort(); }
+        }
+    }
+
+    private String sendConnectAndReceive(String wsUrl, String requestJson, int timeoutMs) throws Exception {
+        CompletableFuture<String> challengeFuture = new CompletableFuture<>();
+        CompletableFuture<String> responseFuture = new CompletableFuture<>();
+        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
 
         WebSocket.Listener listener = new WebSocket.Listener() {
             private final StringBuilder textBuffer = new StringBuilder();
-
-            @Override
-            public void onOpen(WebSocket webSocket) {
-                webSocket.request(1);
-                WebSocket.Listener.super.onOpen(webSocket);
-            }
-
-            @Override
-            public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+            @Override public void onOpen(WebSocket webSocket) { webSocket.request(1); }
+            @Override public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
                 textBuffer.append(data);
                 if (last) {
-                    firstFrameFuture.complete(textBuffer.toString());
+                    String frame = textBuffer.toString();
+                    textBuffer.setLength(0);
+                    if (!challengeFuture.isDone()) challengeFuture.complete(frame); else if (!responseFuture.isDone()) responseFuture.complete(frame);
+                    webSocket.request(1);
                 } else {
                     webSocket.request(1);
                 }
                 return CompletableFuture.completedFuture(null);
             }
-
-            @Override
-            public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
-                if (!firstFrameFuture.isDone()) {
-                    firstFrameFuture.completeExceptionally(new IllegalStateException("WS closed before first frame, code=" + statusCode + ", reason=" + reason));
-                }
+            @Override public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+                if (!challengeFuture.isDone()) challengeFuture.completeExceptionally(new IllegalStateException("WS closed before challenge, code=" + statusCode + ", reason=" + reason));
+                if (!responseFuture.isDone()) responseFuture.completeExceptionally(new IllegalStateException("WS closed before response, code=" + statusCode + ", reason=" + reason));
                 return CompletableFuture.completedFuture(null);
             }
-
-            @Override
-            public void onError(WebSocket webSocket, Throwable error) {
-                if (!firstFrameFuture.isDone()) {
-                    firstFrameFuture.completeExceptionally(error);
-                }
+            @Override public void onError(WebSocket webSocket, Throwable error) {
+                if (!challengeFuture.isDone()) challengeFuture.completeExceptionally(error);
+                if (!responseFuture.isDone()) responseFuture.completeExceptionally(error);
             }
         };
 
-        WebSocket webSocket = client.newWebSocketBuilder()
-            .connectTimeout(Duration.ofMillis(timeoutMs))
-            .buildAsync(URI.create(wsUrl), listener)
-            .get(timeoutMs, TimeUnit.MILLISECONDS);
-
+        WebSocket webSocket = client.newWebSocketBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).buildAsync(URI.create(wsUrl), listener).get(timeoutMs, TimeUnit.MILLISECONDS);
         try {
-            return firstFrameFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            challengeFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            webSocket.sendText(requestJson, true).get(timeoutMs, TimeUnit.MILLISECONDS);
+            return responseFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
         } finally {
-            try {
-                webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "probe-complete").get(2, TimeUnit.SECONDS);
-            } catch (Exception ignore) {
-                webSocket.abort();
-            }
+            try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "connect-test-complete").get(2, TimeUnit.SECONDS); } catch (Exception ignore) { webSocket.abort(); }
         }
     }
 

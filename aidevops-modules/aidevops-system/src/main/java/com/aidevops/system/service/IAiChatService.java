@@ -13,4 +13,5 @@ public interface IAiChatService {
     Map<String, Object> gatewayDiagnostics();
     Map<String, Object> probeGateway();
     Map<String, Object> connectDraft();
+    Map<String, Object> connectTest();
 }
