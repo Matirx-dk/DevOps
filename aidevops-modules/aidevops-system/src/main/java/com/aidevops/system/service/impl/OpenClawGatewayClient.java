@@ -219,7 +219,6 @@ public class OpenClawGatewayClient {
         payload.put("clientId", client.get("id"));
         payload.put("clientVersion", client.get("version"));
         payload.put("platform", client.get("platform"));
-        payload.put("deviceFamily", device.get("deviceFamily"));
         payload.put("role", params.get("role"));
         payload.put("scopes", params.get("scopes"));
         payload.put("token", auth.get("token"));
@@ -248,10 +247,10 @@ public class OpenClawGatewayClient {
 
     private Map<String, Object> buildClientInfo() {
         Map<String, Object> client = new LinkedHashMap<>();
-        client.put("id", "cli");
+        client.put("id", "openclaw-control-ui");
         client.put("version", "0.1.0");
         client.put("platform", "linux");
-        client.put("mode", "operator");
+        client.put("mode", "ui");
         return client;
     }
 
