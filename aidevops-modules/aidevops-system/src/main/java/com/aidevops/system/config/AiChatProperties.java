@@ -16,8 +16,8 @@ public class AiChatProperties {
     private String token;
     /** 默认场景 */
     private String defaultScene = "ops";
-    /** WS 探测超时时间 */
-    private int probeTimeoutMs = 5000;
+    /** WS / chat 请求超时时间 */
+    private int probeTimeoutMs = 15000;
     /** 是否启用实验型 Ed25519 签名器 */
     private boolean experimentalSignerEnabled = false;
 

@@ -1,28 +1,7 @@
 <template>
   <div class="ai-chat-page app-container">
     <el-row :gutter="20">
-      <el-col :xs="24" :lg="5">
-        <el-card shadow="hover" class="chat-card session-card">
-          <div slot="header" class="chat-header">
-            <span>AI 对话</span>
-            <el-button type="primary" size="mini" @click="handleCreateSession">新建会话</el-button>
-          </div>
-          <div class="session-list">
-            <div
-              v-for="item in sessionList"
-              :key="item.sessionId"
-              class="session-item"
-              :class="{ active: currentSessionId === item.sessionId }"
-              @click="handleSelectSession(item)"
-            >
-              <div class="session-title">{{ item.title }}</div>
-              <div class="session-last">{{ item.lastMessage }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="24" :lg="19">
+      <el-col :xs="24" :lg="24">
         <el-card shadow="hover" class="chat-card message-card">
           <div slot="header" class="chat-header header-main">
             <div>
@@ -82,10 +61,10 @@
             <el-input
               v-model="inputMessage"
               type="textarea"
-              :rows="4"
+              :rows="3"
               resize="none"
-              placeholder="请输入消息，当前已推进到 Gateway connect-test 阶段..."
-              @keyup.ctrl.enter.native="handleSend"
+              placeholder="输入消息，按 Enter 发送，Shift + Enter 换行"
+              @keydown.native="handleInputKeydown"
             />
             <div class="message-actions">
               <el-button @click="inputMessage = ''">清空</el-button>
@@ -137,9 +116,10 @@ export default {
     },
     statusText() {
       if (!this.diagnostics) return '正在加载会话状态...'
-      if (this.connectResult && this.connectResult.stage) return '当前已进入 connect-test 联调阶段'
-      if (this.probeOk) return '当前已拿到 Gateway challenge，下一步是看 connect-test 返回码'
-      if (this.diagnostics.enabled) return '已启用 Gateway 探测，但当前仍未探测成功'
+      if (this.sending) return '消息发送中，请稍候...'
+      if (this.connectResult && this.connectResult.ok) return 'Gateway connect 已打通，当前走真实会话收发'
+      if (this.probeOk) return 'Gateway 已可达，可直接发送消息'
+      if (this.diagnostics.enabled) return '已启用 Gateway，但当前探测还未成功'
       return '当前未启用真实 Gateway，对话先走本地回退'
     }
   },
@@ -207,6 +187,12 @@ export default {
         }
       })
     },
+    handleInputKeydown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        this.handleSend()
+      }
+    },
     handleSelectSession(item) {
       this.currentSessionId = item.sessionId
       this.currentTitle = item.title
@@ -217,23 +203,29 @@ export default {
       })
     },
     handleSend() {
-      if (!this.inputMessage || !this.currentSessionId) return
+      if (this.sending || !this.inputMessage || !this.currentSessionId) return
       const text = this.inputMessage.trim()
       if (!text) return
+      const userId = 'local_user_' + Date.now()
+      const assistantId = 'local_assistant_' + (Date.now() + 1)
+      this.messages.push({ messageId: userId, role: 'user', content: text })
+      this.messages.push({ messageId: assistantId, role: 'assistant', content: '正在生成回复，请稍候...' })
       this.inputMessage = ''
       this.sending = true
+      this.$nextTick(() => this.scrollToBottom())
       sendAiMessage({ sessionId: this.currentSessionId, message: text, stream: false }).then(res => {
-        const answer = res.data ? res.data.answer : '暂无返回'
-        this.messages.push({ messageId: 'local_user_' + Date.now(), role: 'user', content: text })
-        this.messages.push({ messageId: 'local_assistant_' + (Date.now() + 1), role: 'assistant', content: answer })
-        if (res.data && res.data.probe) {
-          this.diagnostics = Object.assign({}, this.diagnostics || {}, { probe: res.data.probe })
-        }
-        if (res.data && res.data.connectDraft) {
-          this.connectDraft = res.data.connectDraft
+        const answer = res.data && res.data.answer ? res.data.answer : '暂无返回'
+        const idx = this.messages.findIndex(item => item.messageId === assistantId)
+        if (idx >= 0) {
+          this.$set(this.messages, idx, { messageId: assistantId, role: 'assistant', content: answer })
         }
         this.loadSessions()
         this.$nextTick(() => this.scrollToBottom())
+      }).catch(() => {
+        const idx = this.messages.findIndex(item => item.messageId === assistantId)
+        if (idx >= 0) {
+          this.$set(this.messages, idx, { messageId: assistantId, role: 'assistant', content: '请求超时或发送失败，请重试。' })
+        }
       }).finally(() => {
         this.sending = false
       })
@@ -251,8 +243,8 @@ export default {
 .chat-card { margin-bottom: 20px; border-radius: 18px; }
 .chat-header { display: flex; align-items: center; justify-content: space-between; }
 .header-main { gap: 12px; }
-.header-actions { display: flex; align-items: center; gap: 8px; }
-.header-title { font-size: 16px; font-weight: 600; }
+.header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.header-title { font-size: 18px; font-weight: 700; }
 .chat-tip { color: #8fd3ff; font-size: 12px; margin-top: 4px; }
 .diagnostics-bar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .diag-item { padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); font-size: 12px; }
@@ -262,19 +254,19 @@ export default {
 .draft-meta { display: flex; gap: 14px; font-size: 12px; color: rgba(234, 242, 255, 0.72); margin-bottom: 10px; }
 .draft-subtitle { font-size: 13px; font-weight: 600; margin: 12px 0 8px; color: #8fd3ff; }
 .draft-json { margin: 0; max-height: 240px; overflow: auto; padding: 12px; border-radius: 12px; background: rgba(2, 6, 23, 0.72); color: #cde7ff; font-size: 12px; line-height: 1.6; }
-.session-list { display: flex; flex-direction: column; gap: 12px; }
-.session-item { padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; }
-.session-item.active { border-color: rgba(63,169,255,0.4); box-shadow: inset 0 0 0 1px rgba(63,169,255,0.16); }
-.session-title { font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 8px; }
-.session-last { font-size: 12px; color: rgba(234, 242, 255, 0.66); line-height: 1.7; }
-.message-list { height: 420px; overflow-y: auto; padding: 8px 2px; }
-.message-row { display: flex; margin-bottom: 14px; }
+.message-list { height: 520px; overflow-y: auto; padding: 12px 4px; border-radius: 16px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04)); }
+.message-row { display: flex; margin-bottom: 16px; }
 .message-row.user { justify-content: flex-end; }
 .message-row.assistant { justify-content: flex-start; }
-.message-bubble { max-width: 82%; padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); }
+.message-bubble { max-width: 78%; padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
 .message-row.user .message-bubble { background: linear-gradient(135deg, #3fa9ff 0%, #215cff 100%); border: none; }
 .message-role { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
 .message-content { line-height: 1.9; white-space: pre-wrap; word-break: break-word; }
 .message-input-bar { margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); }
-.message-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.message-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+
+@media (max-width: 768px) {
+  .message-list { height: 440px; }
+  .message-bubble { max-width: 88%; }
+}
 </style>
