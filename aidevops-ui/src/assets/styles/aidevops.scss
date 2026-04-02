@@ -301,3 +301,45 @@
   border: none;
   box-shadow: 0 10px 24px rgba(33, 92, 255, 0.22);
 }
+
+
+.el-popper[x-placement],
+.el-select-dropdown,
+.el-dropdown-menu,
+.el-picker-panel,
+.el-date-range-picker,
+.el-time-panel,
+.el-popover {
+  background: linear-gradient(135deg, #0f1728 0%, #18243a 55%, #203456 100%) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: #dbe7ff !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24) !important;
+}
+
+.el-popper[x-placement] .popper__arrow::after,
+.el-select-dropdown .popper__arrow::after,
+.el-dropdown-menu .popper__arrow::after,
+.el-picker-panel .popper__arrow::after {
+  border-bottom-color: #18243a !important;
+  border-top-color: #18243a !important;
+}
+
+.el-select-dropdown__item,
+.el-dropdown-menu__item,
+.el-date-range-picker__content,
+.el-picker-panel__content,
+.el-time-spinner__item,
+.el-popover {
+  color: #dbe7ff !important;
+}
+
+.el-select-dropdown__item.hover,
+.el-select-dropdown__item:hover,
+.el-dropdown-menu__item:focus,
+.el-dropdown-menu__item:not(.is-disabled):hover,
+.el-time-spinner__item:hover,
+.el-date-table td.available:hover,
+.el-month-table td .cell:hover,
+.el-year-table td .cell:hover {
+  background: rgba(255,255,255,0.08) !important;
+}
