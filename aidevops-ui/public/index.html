@@ -15,54 +15,27 @@
         padding: 0;
       }
       body {
-        background: #0f172a;
+        background: #f4f7fb;
       }
       #loader-wrapper {
         position: fixed;
         inset: 0;
         z-index: 999999;
-        overflow: hidden;
-        background:
-          radial-gradient(circle at 20% 20%, rgba(63, 169, 255, 0.22), transparent 28%),
-          radial-gradient(circle at 80% 30%, rgba(33, 92, 255, 0.18), transparent 24%),
-          linear-gradient(135deg, #0b1220 0%, #131d33 45%, #18284b 100%);
+        background: linear-gradient(180deg, #f4f7fb 0%, #eef3fb 100%);
       }
       #loader {
         display: block;
         position: relative;
         left: 50%;
         top: 50%;
-        width: 130px;
-        height: 130px;
-        margin: -90px 0 0 -65px;
+        width: 84px;
+        height: 84px;
+        margin: -86px 0 0 -42px;
         border-radius: 50%;
-        border: 3px solid transparent;
-        border-top-color: #72d3ff;
-        animation: spin 1.8s linear infinite;
+        border: 3px solid #dbe8f7;
+        border-top-color: #409eff;
+        animation: spin 1s linear infinite;
         z-index: 1001;
-      }
-      #loader:before,
-      #loader:after {
-        content: "";
-        position: absolute;
-        border-radius: 50%;
-        border: 3px solid transparent;
-      }
-      #loader:before {
-        top: 8px;
-        left: 8px;
-        right: 8px;
-        bottom: 8px;
-        border-top-color: #3fa9ff;
-        animation: spin 2.4s linear infinite;
-      }
-      #loader:after {
-        top: 18px;
-        left: 18px;
-        right: 18px;
-        bottom: 18px;
-        border-top-color: #ffffff;
-        animation: spin 1.2s linear infinite;
       }
       @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -81,43 +54,40 @@
         position: absolute;
         left: 50%;
         top: 50%;
-        width: 360px;
-        margin-left: -180px;
-        margin-top: 40px;
+        width: 320px;
+        margin-left: -160px;
+        margin-top: 18px;
         padding: 18px 20px;
-        border-radius: 18px;
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.1);
-        backdrop-filter: blur(8px);
+        border-radius: 14px;
+        background: #ffffff;
+        border: 1px solid #e8eef7;
+        box-shadow: 0 10px 28px rgba(31, 45, 61, 0.08);
         text-align: center;
-        color: #eaf2ff;
+        color: #1f2d3d;
       }
       #loader-wrapper .load-title {
-        font-size: 22px;
+        font-size: 18px;
         font-weight: 700;
-        letter-spacing: .5px;
         margin-bottom: 8px;
       }
       #loader-wrapper .load-subtitle {
         font-size: 13px;
         line-height: 1.8;
-        color: rgba(234, 242, 255, 0.76);
+        color: #7a8aa0;
       }
       #loader-wrapper .load-badge {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 92px;
-        height: 30px;
-        margin-bottom: 14px;
-        padding: 0 14px;
+        min-width: 88px;
+        height: 28px;
+        margin-bottom: 12px;
+        padding: 0 12px;
         border-radius: 999px;
-        background: rgba(63, 169, 255, 0.16);
-        color: #9edcff;
-        border: 1px solid rgba(63, 169, 255, 0.3);
+        background: #edf5ff;
+        color: #409eff;
         font-size: 12px;
         font-weight: 700;
-        letter-spacing: 1px;
       }
       .no-js #loader-wrapper {
         display: none;
@@ -130,8 +100,8 @@
         <div id="loader"></div>
         <div class="load-card">
           <div class="load-badge">AIDevOps</div>
-          <div class="load-title">智能运维平台正在启动</div>
-          <div class="load-subtitle">正在加载前端资源、菜单路由与运行环境，请稍候片刻。</div>
+          <div class="load-title">正在加载系统</div>
+          <div class="load-subtitle">正在初始化页面资源与菜单配置，请稍候。</div>
         </div>
       </div>
     </div>
