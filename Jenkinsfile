@@ -19,9 +19,9 @@ spec:
       tty: true
       volumeMounts:
         - name: m2-cache
-          mountPath: /root/.m2
+          mountPath: /home/ubuntu/.m2
         - name: npm-cache
-          mountPath: /root/.npm
+          mountPath: /home/ubuntu/.npm
     - name: helm
       image: harbor.zoudekang.cloud/ci-tools/helm:3.16.4
       imagePullPolicy: IfNotPresent
@@ -234,7 +234,7 @@ spec:
         - name: workspace
           mountPath: /workspace
         - name: m2-cache
-          mountPath: /root/.m2
+          mountPath: /home/ubuntu/.m2
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
@@ -311,8 +311,7 @@ spec:
           set -e
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src/aidevops-ui
-          npm config set registry https://registry.npmmirror.com
-          npm config set cache /root/.npm --global
+          npm config set registry https://registry.npmmirror.com --location=user
           if [ -f package-lock.json ]; then
             npm ci --legacy-peer-deps
           else
@@ -324,7 +323,7 @@ spec:
         - name: workspace
           mountPath: /workspace
         - name: npm-cache
-          mountPath: /root/.npm
+          mountPath: /home/ubuntu/.npm
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
