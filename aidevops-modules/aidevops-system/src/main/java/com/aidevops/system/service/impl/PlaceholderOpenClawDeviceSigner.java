@@ -4,7 +4,6 @@ import com.aidevops.system.config.AiChatProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -12,8 +11,6 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.interfaces.EdECPublicKey;
-import java.security.spec.EdECPoint;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -128,23 +125,22 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
         return signature.sign();
     }
 
+    private static final byte[] ED25519_SPKI_PREFIX = new byte[] {
+        0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00
+    };
+
     private byte[] exportRawEd25519PublicKey(PublicKey publicKey) {
-        if (!(publicKey instanceof EdECPublicKey edECPublicKey)) {
-            byte[] encoded = publicKey.getEncoded();
-            if (encoded == null || encoded.length < 32) {
-                throw new IllegalStateException("Ed25519 public key encoding is invalid");
-            }
+        byte[] encoded = publicKey.getEncoded();
+        if (encoded == null || encoded.length == 0) {
+            throw new IllegalStateException("Ed25519 public key encoding is invalid");
+        }
+        if (encoded.length == ED25519_SPKI_PREFIX.length + 32 && startsWith(encoded, ED25519_SPKI_PREFIX)) {
+            return Arrays.copyOfRange(encoded, ED25519_SPKI_PREFIX.length, encoded.length);
+        }
+        if (encoded.length >= 32) {
             return Arrays.copyOfRange(encoded, encoded.length - 32, encoded.length);
         }
-
-        EdECPoint point = edECPublicKey.getPoint();
-        byte[] y = toLittleEndian32(point.getY());
-        if (point.isXOdd()) {
-            y[31] = (byte) (y[31] | 0x80);
-        } else {
-            y[31] = (byte) (y[31] & 0x7F);
-        }
-        return y;
+        throw new IllegalStateException("Ed25519 public key encoding is too short");
     }
 
     private String buildCanonicalPayload(Map<String, Object> signaturePayload) {
@@ -161,14 +157,16 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
         return String.join("|", "v3", deviceId, clientId, clientMode, role, scopes, signedAt, token, nonce, platform, deviceFamily);
     }
 
-    private byte[] toLittleEndian32(BigInteger value) {
-        byte[] bigEndian = value.toByteArray();
-        byte[] out = new byte[32];
-        int copy = Math.min(bigEndian.length, 32);
-        for (int i = 0; i < copy; i++) {
-            out[i] = bigEndian[bigEndian.length - 1 - i];
+    private boolean startsWith(byte[] value, byte[] prefix) {
+        if (value.length < prefix.length) {
+            return false;
         }
-        return out;
+        for (int i = 0; i < prefix.length; i++) {
+            if (value[i] != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String normalizeDeviceMetadataForAuth(String value) {
