@@ -171,9 +171,10 @@ public class OpenClawGatewayClient {
             try {
                 Map<String, Object> response = objectMapper.readValue(responseFrame, new TypeReference<Map<String, Object>>() {});
                 result.put("response", response);
+                result.put("summary", summarizeConnectResponse(response));
                 result.put("message", Boolean.TRUE.equals(response.get("ok"))
                     ? "connect 测试成功，已收到 hello-ok / success response。"
-                    : "connect 已返回 response，但结果不是 ok，可根据 error/details 继续对齐签名。"
+                    : "connect 已返回 response，但结果不是 ok，已提取 error/details 摘要。"
                 );
             } catch (Exception ex) {
                 result.put("message", "connect 已返回 response frame，但 JSON 解析失败。");
@@ -299,6 +300,59 @@ public class OpenClawGatewayClient {
             return firstFrameFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
         } finally {
             try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "probe-complete").get(2, TimeUnit.SECONDS); } catch (Exception ignore) { webSocket.abort(); }
+        }
+    }
+
+    private Map<String, Object> summarizeConnectResponse(Map<String, Object> response) {
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("ok", response.get("ok"));
+        summary.put("type", response.get("type"));
+        summary.put("id", response.get("id"));
+
+        Map<String, Object> payload = castMap(response.get("payload"));
+        Map<String, Object> error = castMap(response.get("error"));
+        Map<String, Object> details = castMap(error.get("details"));
+
+        if (!payload.isEmpty()) {
+            summary.put("payloadType", payload.get("type"));
+            summary.put("protocol", payload.get("protocol"));
+            summary.put("policy", payload.get("policy"));
+            summary.put("auth", payload.get("auth"));
+        }
+        if (!error.isEmpty()) {
+            summary.put("errorMessage", error.get("message"));
+            summary.put("errorCode", details.get("code"));
+            summary.put("errorReason", details.get("reason"));
+            summary.put("recommendedNextStep", details.get("recommendedNextStep"));
+            summary.put("canRetryWithDeviceToken", details.get("canRetryWithDeviceToken"));
+            summary.put("details", details);
+            summary.put("diagnosis", diagnoseConnectError(details));
+        }
+        return summary;
+    }
+
+    private String diagnoseConnectError(Map<String, Object> details) {
+        String code = String.valueOf(details.get("code"));
+        if (code == null) {
+            return "未返回标准 error.details.code，需直接查看原始 response。";
+        }
+        switch (code) {
+            case "DEVICE_AUTH_NONCE_REQUIRED":
+                return "缺少 device.nonce，说明 connect 请求未正确带上 challenge nonce。";
+            case "DEVICE_AUTH_NONCE_MISMATCH":
+                return "device.nonce 与服务端 challenge 不匹配，需要检查 connect-test 中的 nonce 回填。";
+            case "DEVICE_AUTH_SIGNATURE_INVALID":
+                return "签名原文、签名算法或签名字节编码与 OpenClaw 不一致。优先检查 payload 结构与 Base64 编码。";
+            case "DEVICE_AUTH_SIGNATURE_EXPIRED":
+                return "signedAt 超出允许时间窗，需要检查服务器时间和签名生成时间。";
+            case "DEVICE_AUTH_DEVICE_ID_MISMATCH":
+                return "device.id 与 publicKey 指纹不一致，说明 OpenClaw 可能要求 deviceId 来源于密钥指纹。";
+            case "DEVICE_AUTH_PUBLIC_KEY_INVALID":
+                return "publicKey 编码格式不对。当前实验 signer 使用的是 Base64(SPKI DER)，可能需要 raw key 或 JWK 对应格式。";
+            case "AUTH_TOKEN_MISMATCH":
+                return "Gateway token 不匹配，需要检查 aidevops.ai.chat.token 是否正确。";
+            default:
+                return "已拿到标准错误码，可继续按 error.details 进行定向修正。";
         }
     }
 

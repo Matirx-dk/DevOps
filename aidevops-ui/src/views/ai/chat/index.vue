@@ -64,6 +64,8 @@
               <span>stage: {{ connectResult.stage || '-' }}</span>
               <span>ok: {{ connectResult.ok ? 'true' : 'false' }}</span>
             </div>
+            <div v-if="connectResult.summary" class="draft-subtitle">结果摘要</div>
+            <pre v-if="connectResult.summary" class="draft-json">{{ formatJson(connectResult.summary) }}</pre>
             <pre class="draft-json">{{ formatJson(connectResult) }}</pre>
           </div>
 
