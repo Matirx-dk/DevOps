@@ -4,6 +4,7 @@ import com.aidevops.system.config.AiChatProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -11,6 +12,8 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.interfaces.EdECPublicKey;
+import java.security.spec.EdECPoint;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -126,11 +129,22 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
     }
 
     private byte[] exportRawEd25519PublicKey(PublicKey publicKey) {
-        byte[] encoded = publicKey.getEncoded();
-        if (encoded == null || encoded.length < 32) {
-            throw new IllegalStateException("Ed25519 public key encoding is invalid");
+        if (!(publicKey instanceof EdECPublicKey edECPublicKey)) {
+            byte[] encoded = publicKey.getEncoded();
+            if (encoded == null || encoded.length < 32) {
+                throw new IllegalStateException("Ed25519 public key encoding is invalid");
+            }
+            return Arrays.copyOfRange(encoded, encoded.length - 32, encoded.length);
         }
-        return Arrays.copyOfRange(encoded, encoded.length - 32, encoded.length);
+
+        EdECPoint point = edECPublicKey.getPoint();
+        byte[] y = toLittleEndian32(point.getY());
+        if (point.isXOdd()) {
+            y[31] = (byte) (y[31] | 0x80);
+        } else {
+            y[31] = (byte) (y[31] & 0x7F);
+        }
+        return y;
     }
 
     private String buildCanonicalPayload(Map<String, Object> signaturePayload) {
@@ -143,6 +157,16 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
         String token = stringValue(signaturePayload.get("token"));
         String nonce = stringValue(signaturePayload.get("nonce"));
         return String.join("|", "v2", deviceId, clientId, clientMode, role, scopes, signedAt, token, nonce);
+    }
+
+    private byte[] toLittleEndian32(BigInteger value) {
+        byte[] bigEndian = value.toByteArray();
+        byte[] out = new byte[32];
+        int copy = Math.min(bigEndian.length, 32);
+        for (int i = 0; i < copy; i++) {
+            out[i] = bigEndian[bigEndian.length - 1 - i];
+        }
+        return out;
     }
 
     private String stringValue(Object value) {
