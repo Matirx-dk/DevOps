@@ -248,7 +248,7 @@ public class OpenClawGatewayClient {
 
     private Map<String, Object> buildClientInfo() {
         Map<String, Object> client = new LinkedHashMap<>();
-        client.put("id", "aidevops-ai-chat");
+        client.put("id", "cli");
         client.put("version", "0.1.0");
         client.put("platform", "linux");
         client.put("mode", "operator");
@@ -262,8 +262,6 @@ public class OpenClawGatewayClient {
         device.put("signature", "PENDING_DEVICE_SIGNATURE");
         device.put("signedAt", signedAt);
         device.put("nonce", nonce);
-        device.put("deviceFamily", "server");
-        device.put("signatureVersion", "v3");
         return device;
     }
 
