@@ -260,6 +260,7 @@ public class OpenClawGatewayClient {
         payload.put("deviceId", device.get("id"));
         payload.put("clientId", client.get("id"));
         payload.put("clientVersion", client.get("version"));
+        payload.put("clientMode", client.get("mode"));
         payload.put("platform", client.get("platform"));
         payload.put("role", params.get("role"));
         payload.put("scopes", params.get("scopes"));
