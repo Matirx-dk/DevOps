@@ -35,6 +35,13 @@ auth:
 system:
   image: CHANGE_ME_REGISTRY/aidevops-system:CHANGE_ME_TAG
   servicePort: 9201
+  aiChat:
+    enabled: false
+    gatewayUrl: https://ai.zoudekang.cloud/
+    gatewayWsUrl: wss://ai.zoudekang.cloud/
+    token: ""
+    experimentalSignerEnabled: false
+    probeTimeoutMs: 5000
 
 gateway:
   image: CHANGE_ME_REGISTRY/aidevops-gateway:CHANGE_ME_TAG

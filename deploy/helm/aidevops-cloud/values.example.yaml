@@ -19,6 +19,13 @@ auth:
 
 system:
   image: harbor.zoudekang.cloud/aidevops/aidevops-system:demo
+  aiChat:
+    enabled: false
+    gatewayUrl: https://ai.zoudekang.cloud/
+    gatewayWsUrl: wss://ai.zoudekang.cloud/
+    token: ""
+    experimentalSignerEnabled: false
+    probeTimeoutMs: 5000
 
 gateway:
   image: harbor.zoudekang.cloud/aidevops/aidevops-gateway:demo
