@@ -1,15 +1,19 @@
 package com.aidevops.system.service.impl;
 
+import com.aidevops.system.config.AiChatProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.aidevops.system.config.AiChatProperties;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -17,15 +21,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 /**
- * OpenClaw Gateway 对接客户端（当前阶段：先做真实 challenge 探测，不直接硬上完整 connect）。
- *
- * 说明：
- * - 按 OpenClaw Gateway 协议，WS 连接建立后服务端会先推送 connect.challenge。
- * - 完整 connect 还需要 device 签名与鉴权，这里先把 challenge 探测能力补上，
- *   便于后续继续接真实 auth/connect/chat.send。
+ * OpenClaw Gateway 对接客户端（当前阶段：真实 challenge 探测 + connect 请求草稿生成）。
  */
 @Component
 public class OpenClawGatewayClient {
+
+    private static final int PROTOCOL_VERSION = 3;
 
     private final AiChatProperties properties;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -46,8 +47,9 @@ public class OpenClawGatewayClient {
         data.put("tokenConfigured", hasText(properties.getToken()));
         data.put("mode", enabled() ? "gateway-probe" : "mock-fallback");
         data.put("probe", probeChallenge());
+        data.put("connectDraft", buildConnectDraft());
         data.put("message", enabled()
-            ? "已启用 Gateway 探测模式：当前先验证 WS challenge，下一步补 connect/auth/chat.send。"
+            ? "已启用 Gateway 探测模式：当前先验证 WS challenge，并生成 connect 请求草稿。"
             : "当前未启用真实 Gateway 对接，系统继续使用本地 mock 会话回退。"
         );
         return data;
@@ -100,12 +102,62 @@ public class OpenClawGatewayClient {
         }
     }
 
+    public Map<String, Object> buildConnectDraft() {
+        Map<String, Object> challenge = probeChallenge();
+        String nonce = challenge.get("nonce") == null ? "PENDING_SERVER_CHALLENGE" : String.valueOf(challenge.get("nonce"));
+        long signedAt = System.currentTimeMillis();
+
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("type", "req");
+        request.put("id", "conn_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        request.put("method", "connect");
+
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("minProtocol", PROTOCOL_VERSION);
+        params.put("maxProtocol", PROTOCOL_VERSION);
+        params.put("client", buildClientInfo());
+        params.put("role", "operator");
+        params.put("scopes", buildScopes());
+        params.put("caps", new ArrayList<>());
+        params.put("commands", new ArrayList<>());
+        params.put("permissions", new LinkedHashMap<>());
+
+        Map<String, Object> auth = new LinkedHashMap<>();
+        auth.put("token", hasText(properties.getToken()) ? properties.getToken() : "PENDING_GATEWAY_TOKEN");
+        params.put("auth", auth);
+        params.put("locale", "zh-CN");
+        params.put("userAgent", "aidevops-system/ai-chat-gateway-bridge");
+        params.put("device", buildDeviceDraft(nonce, signedAt));
+
+        request.put("params", params);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("ready", enabled());
+        result.put("challengeOk", Boolean.TRUE.equals(challenge.get("ok")));
+        result.put("challengeStage", challenge.get("stage"));
+        result.put("signatureReady", false);
+        result.put("message", Boolean.TRUE.equals(challenge.get("ok"))
+            ? "connect 请求草稿已生成；当前还缺真实 device 签名算法。"
+            : "connect 请求草稿已生成；但当前还未拿到 challenge，nonce 先用占位值。"
+        );
+        result.put("request", request);
+        result.put("challenge", challenge);
+        result.put("todo", Arrays.asList(
+            "用服务端返回的 connect.challenge.nonce 替换占位 nonce",
+            "按 OpenClaw device auth 规则生成 publicKey/signature",
+            "发送 connect 请求并接收 hello-ok",
+            "在 connect 成功后再继续补 chat.send / history"
+        ));
+        return result;
+    }
+
     public Map<String, Object> previewSend(String sessionKey, String message) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("sessionKey", sessionKey);
         result.put("sent", false);
         result.put("gatewayMode", enabled() ? "probe" : "mock");
         result.put("probe", probeChallenge());
+        result.put("connectDraft", buildConnectDraft());
 
         if (!enabled()) {
             result.put("answer", "已收到消息：" + message + "。当前仍处于 mock 回退模式，尚未启用真实 OpenClaw Gateway。");
@@ -114,11 +166,45 @@ public class OpenClawGatewayClient {
 
         Object probeOk = ((Map<?, ?>) result.get("probe")).get("ok");
         if (Boolean.TRUE.equals(probeOk)) {
-            result.put("answer", "已收到消息『" + message + "』。当前已验证 Gateway WS challenge 可达，但完整 connect/auth/chat.send 还未补齐，因此这次先不直发真实 OpenClaw 会话。");
+            result.put("answer", "已收到消息『" + message + "』。当前已验证 Gateway WS challenge 可达，也已生成 connect 请求草稿；下一步只差 device 签名与真实 connect/chat.send。");
         } else {
             result.put("answer", "已收到消息『" + message + "』。当前 Gateway WS challenge 仍未探测成功，本次继续走本地回退。\n");
         }
         return result;
+    }
+
+    private Map<String, Object> buildClientInfo() {
+        Map<String, Object> client = new LinkedHashMap<>();
+        client.put("id", "aidevops-ai-chat");
+        client.put("version", "0.1.0");
+        client.put("platform", "linux");
+        client.put("mode", "operator");
+        return client;
+    }
+
+    private Map<String, Object> buildDeviceDraft(String nonce, long signedAt) {
+        Map<String, Object> device = new LinkedHashMap<>();
+        device.put("id", buildDeviceId());
+        device.put("publicKey", "PENDING_DEVICE_PUBLIC_KEY");
+        device.put("signature", "PENDING_DEVICE_SIGNATURE");
+        device.put("signedAt", signedAt);
+        device.put("nonce", nonce);
+        device.put("deviceFamily", "server");
+        device.put("signatureVersion", "v3");
+        return device;
+    }
+
+    private List<String> buildScopes() {
+        return Arrays.asList("operator.read", "operator.write");
+    }
+
+    private String buildDeviceId() {
+        try {
+            String host = InetAddress.getLocalHost().getHostName();
+            return "aidevops-" + host;
+        } catch (Exception ex) {
+            return "aidevops-server";
+        }
     }
 
     private String receiveFirstFrame(String wsUrl, int timeoutMs) throws Exception {

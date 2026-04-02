@@ -55,6 +55,11 @@ public class AiChatController extends BaseController {
         return success(aiChatService.probeGateway());
     }
 
+    @GetMapping("/gateway/connect-draft")
+    public AjaxResult connectDraft() {
+        return success(aiChatService.connectDraft());
+    }
+
     @PutMapping("/session/{sessionId}")
     public AjaxResult rename(@PathVariable String sessionId, @RequestBody Map<String, Object> req) {
         return success(aiChatService.renameSession(sessionId, req));

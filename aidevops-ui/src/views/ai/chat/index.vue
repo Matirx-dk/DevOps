@@ -31,6 +31,7 @@
             </div>
             <div class="header-actions">
               <el-button size="mini" :loading="probing" @click="handleProbe">重新探测</el-button>
+              <el-button size="mini" @click="showConnectDraft = !showConnectDraft">{{ showConnectDraft ? '收起草稿' : '查看 connect 草稿' }}</el-button>
               <el-tag size="mini" :type="probeOk ? 'success' : 'info'">{{ probeOk ? 'WS可达' : '本地回退' }}</el-tag>
             </div>
           </div>
@@ -40,6 +41,15 @@
             <div class="diag-item"><span>WS</span><strong>{{ diagnostics.gatewayWsUrl || '-' }}</strong></div>
             <div class="diag-item"><span>探测</span><strong>{{ probeStage }}</strong></div>
             <div class="diag-item"><span>Token</span><strong>{{ diagnostics.tokenConfigured ? '已配置' : '未配置' }}</strong></div>
+          </div>
+
+          <div v-if="showConnectDraft && connectDraft" class="connect-draft-panel">
+            <div class="draft-title">Connect 请求草稿</div>
+            <div class="draft-meta">
+              <span>challenge: {{ connectDraft.challengeStage || '-' }}</span>
+              <span>signature: {{ connectDraft.signatureReady ? 'ready' : 'pending' }}</span>
+            </div>
+            <pre class="draft-json">{{ formatJson(connectDraft.request || {}) }}</pre>
           </div>
 
           <div class="message-list" ref="messageList">
@@ -78,7 +88,8 @@ import {
   getAiHistory,
   sendAiMessage,
   getAiGatewayDiagnostics,
-  probeAiGateway
+  probeAiGateway,
+  getAiConnectDraft
 } from '@/api/ai/chat'
 
 export default {
@@ -90,6 +101,8 @@ export default {
       currentTitle: '',
       messages: [],
       diagnostics: null,
+      connectDraft: null,
+      showConnectDraft: false,
       inputMessage: '',
       sending: false,
       probing: false
@@ -104,7 +117,7 @@ export default {
     },
     statusText() {
       if (!this.diagnostics) return '正在加载会话状态...'
-      if (this.probeOk) return '当前已进入 Gateway challenge 探测可达阶段'
+      if (this.probeOk) return '当前已拿到 Gateway challenge，下一步是 device 签名 + connect'
       if (this.diagnostics.enabled) return '已启用 Gateway 探测，但当前仍未探测成功'
       return '当前未启用真实 Gateway，对话先走本地回退'
     }
@@ -112,8 +125,12 @@ export default {
   created() {
     this.loadSessions()
     this.loadDiagnostics()
+    this.loadConnectDraft()
   },
   methods: {
+    formatJson(obj) {
+      return JSON.stringify(obj, null, 2)
+    },
     loadSessions() {
       listAiSession().then(res => {
         this.sessionList = res.rows || []
@@ -127,6 +144,11 @@ export default {
         this.diagnostics = res.data || null
       })
     },
+    loadConnectDraft() {
+      getAiConnectDraft().then(res => {
+        this.connectDraft = res.data || null
+      })
+    },
     handleProbe() {
       this.probing = true
       probeAiGateway().then(res => {
@@ -135,6 +157,7 @@ export default {
           mode: data.mode || (this.diagnostics && this.diagnostics.mode),
           probe: data.probe || null
         })
+        this.loadConnectDraft()
         if (data.message) {
           this.$modal && this.$modal.msgSuccess ? this.$modal.msgSuccess('探测已完成') : this.$message.success('探测已完成')
         }
@@ -182,6 +205,9 @@ export default {
         })
         if (res.data && res.data.probe) {
           this.diagnostics = Object.assign({}, this.diagnostics || {}, { probe: res.data.probe })
+        }
+        if (res.data && res.data.connectDraft) {
+          this.connectDraft = res.data.connectDraft
         }
         this.loadSessions()
         this.$nextTick(() => this.scrollToBottom())
@@ -244,6 +270,36 @@ export default {
   opacity: 0.65;
   margin-right: 8px;
 }
+.connect-draft-panel {
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(143, 211, 255, 0.16);
+}
+.draft-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.draft-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: rgba(234, 242, 255, 0.72);
+  margin-bottom: 10px;
+}
+.draft-json {
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.72);
+  color: #cde7ff;
+  font-size: 12px;
+  line-height: 1.6;
+}
 .session-list {
   display: flex;
   flex-direction: column;
@@ -272,7 +328,7 @@ export default {
   line-height: 1.7;
 }
 .message-list {
-  height: 520px;
+  height: 460px;
   overflow-y: auto;
   padding: 8px 2px;
 }

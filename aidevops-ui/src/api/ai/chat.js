@@ -44,3 +44,10 @@ export function probeAiGateway() {
     method: 'post'
   })
 }
+
+export function getAiConnectDraft() {
+  return request({
+    url: '/system/ai/chat/gateway/connect-draft',
+    method: 'get'
+  })
+}

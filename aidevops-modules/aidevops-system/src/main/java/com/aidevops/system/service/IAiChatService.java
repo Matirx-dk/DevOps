@@ -12,4 +12,5 @@ public interface IAiChatService {
     String deleteSession(String sessionId);
     Map<String, Object> gatewayDiagnostics();
     Map<String, Object> probeGateway();
+    Map<String, Object> connectDraft();
 }

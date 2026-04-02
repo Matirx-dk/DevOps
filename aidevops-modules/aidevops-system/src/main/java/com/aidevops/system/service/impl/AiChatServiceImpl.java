@@ -148,6 +148,11 @@ public class AiChatServiceImpl implements IAiChatService {
     }
 
     @Override
+    public Map<String, Object> connectDraft() {
+        return gatewayClient.buildConnectDraft();
+    }
+
+    @Override
     public Map<String, Object> renameSession(String sessionId, Map<String, Object> req) {
         Map<String, Object> session = sessionStore.get(sessionId);
         String title = valueOrDefault(req, "title", "未命名会话");
