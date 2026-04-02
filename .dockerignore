@@ -2,3 +2,13 @@
 **/.idea
 **/target
 **/node_modules
+
+# Allow CI build artifacts needed by Kaniko image build
+!aidevops-auth/target/
+!aidevops-auth/target/*.jar
+!aidevops-gateway/target/
+!aidevops-gateway/target/*.jar
+!aidevops-modules/aidevops-system/target/
+!aidevops-modules/aidevops-system/target/*.jar
+!aidevops-ui/dist/
+!aidevops-ui/dist/**
