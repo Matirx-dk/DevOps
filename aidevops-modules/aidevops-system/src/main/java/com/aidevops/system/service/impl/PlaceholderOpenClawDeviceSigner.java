@@ -156,7 +156,9 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
         String signedAt = stringValue(signaturePayload.get("signedAt"));
         String token = stringValue(signaturePayload.get("token"));
         String nonce = stringValue(signaturePayload.get("nonce"));
-        return String.join("|", "v2", deviceId, clientId, clientMode, role, scopes, signedAt, token, nonce);
+        String platform = normalizeDeviceMetadataForAuth(stringValue(signaturePayload.get("platform")));
+        String deviceFamily = normalizeDeviceMetadataForAuth(stringValue(signaturePayload.get("deviceFamily")));
+        return String.join("|", "v3", deviceId, clientId, clientMode, role, scopes, signedAt, token, nonce, platform, deviceFamily);
     }
 
     private byte[] toLittleEndian32(BigInteger value) {
@@ -167,6 +169,23 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
             out[i] = bigEndian[bigEndian.length - 1 - i];
         }
         return out;
+    }
+
+    private String normalizeDeviceMetadataForAuth(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(trimmed.length());
+        for (int i = 0; i < trimmed.length(); i++) {
+            char c = trimmed.charAt(i);
+            if (c >= 'A' && c <= 'Z') {
+                sb.append((char) (c + 32));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     private String stringValue(Object value) {

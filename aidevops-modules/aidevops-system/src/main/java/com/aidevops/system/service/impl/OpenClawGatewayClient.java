@@ -262,6 +262,7 @@ public class OpenClawGatewayClient {
         payload.put("clientVersion", client.get("version"));
         payload.put("clientMode", client.get("mode"));
         payload.put("platform", client.get("platform"));
+        payload.put("deviceFamily", client.get("deviceFamily"));
         payload.put("role", params.get("role"));
         payload.put("scopes", params.get("scopes"));
         payload.put("token", auth.get("token"));
@@ -293,6 +294,7 @@ public class OpenClawGatewayClient {
         client.put("id", "gateway-client");
         client.put("version", "0.1.0");
         client.put("platform", "linux");
+        client.put("deviceFamily", "server");
         client.put("mode", "backend");
         return client;
     }
