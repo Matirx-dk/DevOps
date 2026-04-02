@@ -372,6 +372,23 @@ YAML
       }
     }
 
+    stage('Apply Helm ConfigMaps To Test') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' }
+      }
+      steps {
+        container('helm') {
+          sh '''
+            set -eu
+            helm template aidevops-cloud deploy/helm/aidevops-cloud \
+              -n ${K8S_NAMESPACE} \
+              -f deploy/helm/aidevops-cloud/values.current-cluster.yaml \
+              --show-only templates/configmaps.yaml | kubectl apply -f -
+          '''
+        }
+      }
+    }
+
     stage('Rollout Changed Services To Test') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
