@@ -494,6 +494,7 @@ public class OpenClawGatewayClient {
         CompletableFuture<String> connectFuture = new CompletableFuture<>();
         CompletableFuture<String> chatAckFuture = new CompletableFuture<>();
         CompletableFuture<String> chatFinalFuture = new CompletableFuture<>();
+        CompletableFuture<String> historyFuture = new CompletableFuture<>();
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
         final String[] runIdHolder = new String[1];
         final StringBuilder latestDelta = new StringBuilder();
@@ -518,6 +519,8 @@ public class OpenClawGatewayClient {
                             Map<String, Object> payload = castMap(parsed.get("payload"));
                             Object runId = payload.get("runId");
                             if (runId != null) runIdHolder[0] = String.valueOf(runId);
+                        } else if (!historyFuture.isDone() && "res".equals(type) && String.valueOf(parsed.get("id")).startsWith("hist_")) {
+                            historyFuture.complete(frame);
                         } else if ("event".equals(type) && "chat".equals(String.valueOf(parsed.get("event")))) {
                             Map<String, Object> payload = castMap(parsed.get("payload"));
                             String state = String.valueOf(payload.get("state"));
@@ -601,9 +604,25 @@ public class OpenClawGatewayClient {
             Map<String, Object> chatAck = objectMapper.readValue(chatAckFrame, new TypeReference<Map<String, Object>>() {});
             String chatFinalFrame = chatFinalFuture.get(timeoutMs * 4L, TimeUnit.MILLISECONDS);
             Map<String, Object> chatFinal = objectMapper.readValue(chatFinalFrame, new TypeReference<Map<String, Object>>() {});
-            Map<String, Object> chatPayload = castMap(chatFinal.get("payload"));
-            Map<String, Object> finalMessage = castMap(chatPayload.get("message"));
-            String finalText = finalMessage.get("text") == null ? latestDelta.toString() : String.valueOf(finalMessage.get("text"));
+
+            Map<String, Object> historyRequest = new LinkedHashMap<>();
+            historyRequest.put("type", "req");
+            historyRequest.put("id", "hist_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+            historyRequest.put("method", "chat.history");
+            Map<String, Object> historyParams = new LinkedHashMap<>();
+            historyParams.put("sessionKey", hasText(sessionKey) ? sessionKey : "main");
+            historyParams.put("limit", 20);
+            historyRequest.put("params", historyParams);
+            String historyJson = objectMapper.writeValueAsString(historyRequest);
+            webSocket.sendText(historyJson, true).get(timeoutMs, TimeUnit.MILLISECONDS);
+            String historyFrame = historyFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            Map<String, Object> historyResponse = objectMapper.readValue(historyFrame, new TypeReference<Map<String, Object>>() {});
+            String finalText = extractLatestAssistantText(historyResponse);
+            if (!hasText(finalText)) {
+                Map<String, Object> chatPayload = castMap(chatFinal.get("payload"));
+                Map<String, Object> finalMessage = castMap(chatPayload.get("message"));
+                finalText = finalMessage.get("text") == null ? latestDelta.toString() : String.valueOf(finalMessage.get("text"));
+            }
 
             Map<String, Object> ok = new LinkedHashMap<>();
             ok.put("ok", true);
@@ -614,6 +633,8 @@ public class OpenClawGatewayClient {
             ok.put("chatRequest", chatRequest);
             ok.put("chatAck", chatAck);
             ok.put("chatFinal", chatFinal);
+            ok.put("historyRequest", historyRequest);
+            ok.put("historyResponse", historyResponse);
             ok.put("runId", runIdHolder[0]);
             ok.put("finalText", finalText == null ? "" : finalText);
             ok.put("signatureDraft", connectData.get("signatureDraft"));
@@ -622,6 +643,49 @@ public class OpenClawGatewayClient {
         } finally {
             try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "chat-send-complete").get(2, TimeUnit.SECONDS); } catch (Exception ignore) { webSocket.abort(); }
         }
+    }
+
+    private String extractLatestAssistantText(Map<String, Object> historyResponse) {
+        Map<String, Object> payload = castMap(historyResponse.get("payload"));
+        Object messagesObj = payload.get("messages");
+        if (!(messagesObj instanceof List<?> messages)) {
+            return "";
+        }
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            Object item = messages.get(i);
+            if (!(item instanceof Map<?, ?> raw)) {
+                continue;
+            }
+            Map<String, Object> message = castMap(raw);
+            String role = String.valueOf(message.get("role"));
+            if (!"assistant".equalsIgnoreCase(role)) {
+                continue;
+            }
+            Object text = message.get("text");
+            if (text != null && hasText(String.valueOf(text))) {
+                return String.valueOf(text);
+            }
+            Object contentObj = message.get("content");
+            if (contentObj instanceof List<?> contentList) {
+                StringBuilder sb = new StringBuilder();
+                for (Object block : contentList) {
+                    if (!(block instanceof Map<?, ?> rawBlock)) {
+                        continue;
+                    }
+                    Map<String, Object> content = castMap(rawBlock);
+                    if ("text".equals(String.valueOf(content.get("type"))) && content.get("text") != null) {
+                        if (sb.length() > 0) {
+                            sb.append("\n");
+                        }
+                        sb.append(String.valueOf(content.get("text")));
+                    }
+                }
+                if (hasText(sb.toString())) {
+                    return sb.toString();
+                }
+            }
+        }
+        return "";
     }
 
     private boolean hasText(String value) {
