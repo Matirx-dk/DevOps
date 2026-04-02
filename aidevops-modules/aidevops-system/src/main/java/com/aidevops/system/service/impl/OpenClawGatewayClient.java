@@ -49,6 +49,7 @@ public class OpenClawGatewayClient {
         data.put("mode", enabled() ? "gateway-probe" : "mock-fallback");
         data.put("experimentalSignerEnabled", properties.isExperimentalSignerEnabled());
         data.put("connectionPoolSize", connections.size());
+        data.put("connectionMode", "pooled-scaffold");
         data.put("probe", probeChallenge());
         data.put("connectDraft", buildConnectDraft());
         data.put("message", enabled()
@@ -235,6 +236,7 @@ public class OpenClawGatewayClient {
             connection.touch();
             result.put("connection", connection.snapshot());
             result.put("connectionPoolSize", connections.size());
+            result.put("connectionMode", "pooled-scaffold-singleflight");
             result.putAll(exchange);
             result.put("ok", Boolean.TRUE.equals(exchange.get("ok")));
             if (Boolean.TRUE.equals(exchange.get("ok"))) {
