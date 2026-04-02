@@ -62,19 +62,19 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
         Map<String, Object> result = new LinkedHashMap<>();
         try {
             KeyPair keyPair = getOrCreateKeyPair();
-            String payloadJson = objectMapper.writeValueAsString(signaturePayload);
-            byte[] payloadBytes = payloadJson.getBytes(StandardCharsets.UTF_8);
-            byte[] publicKeyDer = exportPublicKey(keyPair.getPublic());
+            String canonicalPayload = buildCanonicalPayload(signaturePayload);
+            byte[] payloadBytes = canonicalPayload.getBytes(StandardCharsets.UTF_8);
+            byte[] publicKeyRaw = exportRawEd25519PublicKey(keyPair.getPublic());
             byte[] signatureBytes = signEd25519(keyPair.getPrivate(), payloadBytes);
-            String fingerprintSha256 = sha256Hex(publicKeyDer);
+            String fingerprintSha256 = sha256Hex(publicKeyRaw);
             String suggestedDeviceId = fingerprintSha256;
 
             result.put("ready", true);
             result.put("mode", "experimental-ed25519");
             result.put("algorithm", "Ed25519");
-            result.put("publicKeyFormat", "base64-spki-der");
-            result.put("publicKey", Base64.getEncoder().encodeToString(publicKeyDer));
-            result.put("signature", Base64.getEncoder().encodeToString(signatureBytes));
+            result.put("publicKeyFormat", "base64url-raw-ed25519-32" );
+            result.put("publicKey", base64UrlNoPadding(publicKeyRaw));
+            result.put("signature", base64UrlNoPadding(signatureBytes));
             result.put("publicKeyFingerprintSha256", fingerprintSha256);
             result.put("suggestedDeviceId", suggestedDeviceId);
             result.put("deviceIdCandidates", Arrays.asList(
@@ -83,12 +83,11 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
                 "aidevops-server"
             ));
             result.put("payload", signaturePayload);
-            result.put("payloadJson", payloadJson);
+            result.put("payloadCanonical", canonicalPayload);
             result.put("notes", Arrays.asList(
                 "这是实验型 Ed25519 signer，用于验证 AI 对话后端到 OpenClaw Gateway 的签名字段链路",
-                "当前 publicKey 使用 Base64(SPKI DER) 编码，是否与 OpenClaw device auth 最终格式完全一致，仍需继续对齐",
-                "如果 Gateway 返回 DEVICE_AUTH_DEVICE_ID_MISMATCH，可优先尝试 fingerprint 派生的 deviceId",
-                "如果 Gateway 返回 DEVICE_AUTH_PUBLIC_KEY_INVALID，需要继续调整 publicKey 编码格式"
+                "已按 OpenClaw 控制端源码切到 v2 canonical payload + raw Ed25519 publicKey + base64url(no padding) 编码",
+                "如果 Gateway 仍返回 DEVICE_AUTH_SIGNATURE_INVALID，需要继续检查 canonical payload 字段顺序或 Java Ed25519 原始公钥提取方式"
             ));
             return result;
         } catch (Exception ex) {
@@ -126,8 +125,45 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
         return signature.sign();
     }
 
-    private byte[] exportPublicKey(PublicKey publicKey) {
-        return publicKey.getEncoded();
+    private byte[] exportRawEd25519PublicKey(PublicKey publicKey) {
+        byte[] encoded = publicKey.getEncoded();
+        if (encoded == null || encoded.length < 32) {
+            throw new IllegalStateException("Ed25519 public key encoding is invalid");
+        }
+        return Arrays.copyOfRange(encoded, encoded.length - 32, encoded.length);
+    }
+
+    private String buildCanonicalPayload(Map<String, Object> signaturePayload) {
+        String deviceId = stringValue(signaturePayload.get("deviceId"));
+        String clientId = stringValue(signaturePayload.get("clientId"));
+        String clientMode = stringValue(signaturePayload.get("clientMode"));
+        String role = stringValue(signaturePayload.get("role"));
+        String scopes = stringValue(signaturePayload.get("scopes")).replace(" ", "");
+        String signedAt = stringValue(signaturePayload.get("signedAt"));
+        String token = stringValue(signaturePayload.get("token"));
+        String nonce = stringValue(signaturePayload.get("nonce"));
+        return String.join("|", "v2", deviceId, clientId, clientMode, role, scopes, signedAt, token, nonce);
+    }
+
+    private String stringValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+        if (value instanceof Iterable<?> iterable) {
+            StringBuilder sb = new StringBuilder();
+            for (Object item : iterable) {
+                if (sb.length() > 0) {
+                    sb.append(',');
+                }
+                sb.append(stringValue(item).trim());
+            }
+            return sb.toString();
+        }
+        return String.valueOf(value);
+    }
+
+    private String base64UrlNoPadding(byte[] bytes) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private String sha256Hex(byte[] bytes) throws Exception {
