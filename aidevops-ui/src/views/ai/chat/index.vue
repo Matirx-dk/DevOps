@@ -24,9 +24,18 @@
 
       <el-col :xs="24" :lg="19">
         <el-card shadow="hover" class="chat-card message-card">
-          <div slot="header" class="chat-header">
-            <span>{{ currentTitle || 'AI 运维对话' }}</span>
-            <span class="chat-tip">当前为原生聊天页第一版骨架</span>
+          <div slot="header" class="chat-header header-main">
+            <div>
+              <div class="header-title">{{ currentTitle || 'AI 运维对话' }}</div>
+              <div class="chat-tip">{{ statusText }}</div>
+            </div>
+            <el-tag size="mini" :type="probeOk ? 'success' : 'info'">{{ probeOk ? 'WS可达' : '本地回退' }}</el-tag>
+          </div>
+
+          <div v-if="diagnostics" class="diagnostics-bar">
+            <div class="diag-item"><span>模式</span><strong>{{ diagnostics.mode || '-' }}</strong></div>
+            <div class="diag-item"><span>WS</span><strong>{{ diagnostics.gatewayWsUrl || '-' }}</strong></div>
+            <div class="diag-item"><span>探测</span><strong>{{ probeStage }}</strong></div>
           </div>
 
           <div class="message-list" ref="messageList">
@@ -44,7 +53,8 @@
               type="textarea"
               :rows="4"
               resize="none"
-              placeholder="请输入消息，后续这里将直接接 OpenClaw 原生会话..."
+              placeholder="请输入消息，当前会先做 Gateway challenge 探测，再继续推进真实对接..."
+              @keyup.ctrl.enter.native="handleSend"
             />
             <div class="message-actions">
               <el-button @click="inputMessage = ''">清空</el-button>
@@ -68,8 +78,23 @@ export default {
       currentSessionId: '',
       currentTitle: '',
       messages: [],
+      diagnostics: null,
       inputMessage: '',
       sending: false
+    }
+  },
+  computed: {
+    probeOk() {
+      return !!(this.diagnostics && this.diagnostics.probe && this.diagnostics.probe.ok)
+    },
+    probeStage() {
+      return (this.diagnostics && this.diagnostics.probe && this.diagnostics.probe.stage) || '-'
+    },
+    statusText() {
+      if (!this.diagnostics) return '正在加载会话状态...'
+      if (this.probeOk) return '当前已进入 Gateway challenge 探测可达阶段'
+      if (this.diagnostics.enabled) return '已启用 Gateway 探测，但当前仍未探测成功'
+      return '当前未启用真实 Gateway，对话先走本地回退'
     }
   },
   created() {
@@ -85,8 +110,11 @@ export default {
       })
     },
     handleCreateSession() {
-      createAiSession({ title: '新会话', scene: 'ops' }).then(() => {
+      createAiSession({ title: '新会话', scene: 'ops' }).then(res => {
         this.loadSessions()
+        if (res.data && res.data.sessionId) {
+          this.currentSessionId = res.data.sessionId
+        }
       })
     },
     handleSelectSession(item) {
@@ -94,26 +122,30 @@ export default {
       this.currentTitle = item.title
       getAiHistory(item.sessionId).then(res => {
         this.messages = (res.data && res.data.messages) || []
+        this.diagnostics = res.data ? res.data.diagnostics : null
         this.$nextTick(() => this.scrollToBottom())
       })
     },
     handleSend() {
       if (!this.inputMessage || !this.currentSessionId) return
-      const text = this.inputMessage
-      this.messages.push({
-        messageId: 'local_' + Date.now(),
-        role: 'user',
-        content: text
-      })
+      const text = this.inputMessage.trim()
+      if (!text) return
       this.inputMessage = ''
       this.sending = true
-      this.$nextTick(() => this.scrollToBottom())
       sendAiMessage({ sessionId: this.currentSessionId, message: text, stream: false }).then(res => {
-        this.messages.push({
-          messageId: 'assistant_' + Date.now(),
+        this.messages = [...this.messages, {
+          messageId: 'local_user_' + Date.now(),
+          role: 'user',
+          content: text
+        }, {
+          messageId: 'local_assistant_' + (Date.now() + 1),
           role: 'assistant',
           content: res.data ? res.data.answer : '暂无返回'
-        })
+        }]
+        if (res.data && res.data.probe) {
+          this.diagnostics = Object.assign({}, this.diagnostics || {}, { probe: res.data.probe })
+        }
+        this.loadSessions()
         this.$nextTick(() => this.scrollToBottom())
       }).finally(() => {
         this.sending = false
@@ -140,9 +172,34 @@ export default {
   align-items: center;
   justify-content: space-between;
 }
+.header-main {
+  gap: 12px;
+}
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+}
 .chat-tip {
   color: #8fd3ff;
   font-size: 12px;
+  margin-top: 4px;
+}
+.diagnostics-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.diag-item {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 12px;
+}
+.diag-item span {
+  opacity: 0.65;
+  margin-right: 8px;
 }
 .session-list {
   display: flex;
@@ -172,7 +229,7 @@ export default {
   line-height: 1.7;
 }
 .message-list {
-  height: 540px;
+  height: 520px;
   overflow-y: auto;
   padding: 8px 2px;
 }
