@@ -109,6 +109,16 @@ spec:
             }
           }
 
+          env.AI_CHAT_CONFIG_CHANGED = changed.any { f ->
+            f?.startsWith('deploy/helm/aidevops-cloud/') ||
+            f == 'Jenkinsfile' ||
+            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/controller/AiChatController.java') ||
+            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/config/AiChatProperties.java') ||
+            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/service/') ||
+            f?.startsWith('aidevops-ui/src/views/ai/chat/') ||
+            f?.startsWith('aidevops-ui/src/api/ai/chat.js')
+          } ? 'true' : 'false'
+
           env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
           env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
           env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
@@ -118,7 +128,7 @@ spec:
           if (env.SKIP_PIPELINE == 'true') {
             currentBuild.description = 'No relevant changes detected'
           }
-          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}"
+          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
         }
       }
     }
@@ -372,7 +382,7 @@ YAML
       }
     }
 
-    stage('Apply Helm ConfigMaps To Test') {
+    stage('Render And Apply Helm ConfigMaps To Test') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -383,7 +393,9 @@ YAML
             helm template aidevops-cloud deploy/helm/aidevops-cloud \
               -n ${K8S_NAMESPACE} \
               -f deploy/helm/aidevops-cloud/values.current-cluster.yaml \
-              --show-only templates/configmaps.yaml | kubectl apply -f -
+              --show-only templates/configmaps.yaml >/tmp/aidevops-configmaps.yaml
+            test -s /tmp/aidevops-configmaps.yaml
+            kubectl apply -f /tmp/aidevops-configmaps.yaml
           '''
         }
       }
