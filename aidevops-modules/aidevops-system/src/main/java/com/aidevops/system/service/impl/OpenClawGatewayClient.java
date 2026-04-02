@@ -129,6 +129,9 @@ public class OpenClawGatewayClient {
         Map<String, Object> signatureDraft = buildSignatureDraft(request, nonce, signedAt);
         Map<String, Object> signatureResult = deviceSigner.sign(castMap(signatureDraft.get("payload")));
         Map<String, Object> device = castMap(params.get("device"));
+        if (signatureResult.get("suggestedDeviceId") != null) {
+            device.put("id", signatureResult.get("suggestedDeviceId"));
+        }
         device.put("publicKey", signatureResult.get("publicKey"));
         device.put("signature", signatureResult.get("signature"));
 

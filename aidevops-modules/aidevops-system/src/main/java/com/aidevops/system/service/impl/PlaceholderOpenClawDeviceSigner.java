@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -63,20 +64,31 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
             KeyPair keyPair = getOrCreateKeyPair();
             String payloadJson = objectMapper.writeValueAsString(signaturePayload);
             byte[] payloadBytes = payloadJson.getBytes(StandardCharsets.UTF_8);
+            byte[] publicKeyDer = exportPublicKey(keyPair.getPublic());
             byte[] signatureBytes = signEd25519(keyPair.getPrivate(), payloadBytes);
+            String fingerprintSha256 = sha256Hex(publicKeyDer);
+            String suggestedDeviceId = "aidevops-" + fingerprintSha256.substring(0, 16);
 
             result.put("ready", true);
             result.put("mode", "experimental-ed25519");
             result.put("algorithm", "Ed25519");
             result.put("publicKeyFormat", "base64-spki-der");
-            result.put("publicKey", Base64.getEncoder().encodeToString(exportPublicKey(keyPair.getPublic())));
+            result.put("publicKey", Base64.getEncoder().encodeToString(publicKeyDer));
             result.put("signature", Base64.getEncoder().encodeToString(signatureBytes));
+            result.put("publicKeyFingerprintSha256", fingerprintSha256);
+            result.put("suggestedDeviceId", suggestedDeviceId);
+            result.put("deviceIdCandidates", Arrays.asList(
+                suggestedDeviceId,
+                "fingerprint:" + fingerprintSha256,
+                "aidevops-server"
+            ));
             result.put("payload", signaturePayload);
             result.put("payloadJson", payloadJson);
             result.put("notes", Arrays.asList(
                 "这是实验型 Ed25519 signer，用于验证 AI 对话后端到 OpenClaw Gateway 的签名字段链路",
                 "当前 publicKey 使用 Base64(SPKI DER) 编码，是否与 OpenClaw device auth 最终格式完全一致，仍需继续对齐",
-                "如果 Gateway 返回 DEVICE_AUTH_SIGNATURE_INVALID 或 DEVICE_AUTH_PUBLIC_KEY_INVALID，需要继续调整 payload/编码格式"
+                "如果 Gateway 返回 DEVICE_AUTH_DEVICE_ID_MISMATCH，可优先尝试 fingerprint 派生的 deviceId",
+                "如果 Gateway 返回 DEVICE_AUTH_PUBLIC_KEY_INVALID，需要继续调整 publicKey 编码格式"
             ));
             return result;
         } catch (Exception ex) {
@@ -116,5 +128,15 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
 
     private byte[] exportPublicKey(PublicKey publicKey) {
         return publicKey.getEncoded();
+    }
+
+    private String sha256Hex(byte[] bytes) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hashed = digest.digest(bytes);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : hashed) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 }
