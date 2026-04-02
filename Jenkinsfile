@@ -58,8 +58,25 @@ spec:
   stages {
     stage('Acquire Shared Release Lock') {
       steps {
-        lock(resource: 'aidevops-shared-release', inversePrecedence: true) {
-          echo 'Acquired shared release lock: aidevops-shared-release'
+        container('builder') {
+          sh '''
+            set -eu
+            LOCK_NAME=aidevops-shared-release-lock
+            LOCK_HOLDER="${JOB_NAME}-${BUILD_NUMBER}"
+            echo "trying to acquire $LOCK_NAME as $LOCK_HOLDER"
+            while true; do
+              if kubectl -n ${BUILD_NAMESPACE} create configmap "$LOCK_NAME" \
+                --from-literal=holder="$LOCK_HOLDER" \
+                --from-literal=job="${JOB_NAME}" \
+                --from-literal=build="${BUILD_NUMBER}" >/dev/null 2>&1; then
+                echo "acquired shared release lock: $LOCK_NAME"
+                break
+              fi
+              CURRENT=$(kubectl -n ${BUILD_NAMESPACE} get configmap "$LOCK_NAME" -o jsonpath='{.data.holder}' 2>/dev/null || true)
+              echo "lock busy, current holder=${CURRENT:-unknown}, waiting..."
+              sleep 10
+            done
+          '''
         }
       }
     }
@@ -452,6 +469,12 @@ YAML
     always {
       container('builder') {
         sh '''
+          LOCK_NAME=aidevops-shared-release-lock
+          LOCK_HOLDER="${JOB_NAME}-${BUILD_NUMBER}"
+          CURRENT=$(kubectl -n ${BUILD_NAMESPACE} get configmap "$LOCK_NAME" -o jsonpath='{.data.holder}' 2>/dev/null || true)
+          if [ "$CURRENT" = "$LOCK_HOLDER" ]; then
+            kubectl -n ${BUILD_NAMESPACE} delete configmap "$LOCK_NAME" --ignore-not-found=true >/dev/null 2>&1 || true
+          fi
           kubectl -n ${BUILD_NAMESPACE} delete pod build-auth-${BUILD_NUMBER} build-gateway-${BUILD_NUMBER} build-system-${BUILD_NUMBER} build-ui-${BUILD_NUMBER} --ignore-not-found=true >/dev/null 2>&1 || true
         '''
       }
