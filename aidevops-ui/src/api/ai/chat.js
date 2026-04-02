@@ -16,6 +16,10 @@ export function sendAiMessage(data) {
   return request({ url: '/system/ai/chat/send', method: 'post', data: data })
 }
 
+export function getAiSendResult(sessionId, runId) {
+  return request({ url: '/system/ai/chat/send/result/' + sessionId + '/' + runId, method: 'get' })
+}
+
 export function getAiGatewayDiagnostics() {
   return request({ url: '/system/ai/chat/gateway/diagnostics', method: 'get' })
 }

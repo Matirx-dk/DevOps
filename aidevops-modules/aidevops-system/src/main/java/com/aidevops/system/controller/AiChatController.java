@@ -42,6 +42,11 @@ public class AiChatController extends BaseController {
         return success(aiChatService.sendMessage(req));
     }
 
+    @GetMapping("/send/result/{sessionId}/{runId}")
+    public AjaxResult sendResult(@PathVariable String sessionId, @PathVariable String runId) {
+        return success(aiChatService.getSendResult(sessionId, runId));
+    }
+
     @GetMapping("/gateway/diagnostics")
     public AjaxResult gatewayDiagnostics() {
         return success(aiChatService.gatewayDiagnostics());

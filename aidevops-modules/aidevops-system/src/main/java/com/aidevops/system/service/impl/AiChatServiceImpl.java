@@ -20,6 +20,7 @@ public class AiChatServiceImpl implements IAiChatService {
     private final OpenClawGatewayClient gatewayClient;
     private final Map<String, Map<String, Object>> sessionStore = new ConcurrentHashMap<>();
     private final Map<String, List<Map<String, Object>>> messageStore = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, Object>> pendingRuns = new ConcurrentHashMap<>();
 
     public AiChatServiceImpl(AiChatProperties properties, OpenClawGatewayClient gatewayClient) {
         this.properties = properties;
@@ -116,21 +117,64 @@ public class AiChatServiceImpl implements IAiChatService {
         Map<String, Object> session = sessionStore.get(sessionId);
         session.put("lastMessage", message);
         session.put("updateTime", new Date());
-        session.put("status", gatewayClient.enabled() ? "gateway-probe" : "mock");
+        session.put("status", gatewayClient.enabled() ? "sending" : "mock");
 
-        Map<String, Object> sendResult = gatewayClient.sendMessage(String.valueOf(session.get("openclawSessionKey")), message);
-        String answer = String.valueOf(sendResult.getOrDefault("answer", ""));
-        messages.add(buildMessage("assistant", answer));
+        String runId = "run_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        Map<String, Object> pending = new LinkedHashMap<>();
+        pending.put("sessionId", sessionId);
+        pending.put("runId", runId);
+        pending.put("status", "started");
+        pending.put("answer", "");
+        pending.put("createTime", new Date());
+        pending.put("message", message);
+        pendingRuns.put(sessionId + ":" + runId, pending);
 
-        session.put("status", Boolean.TRUE.equals(sendResult.get("ok")) ? "gateway-connected" : (gatewayClient.enabled() ? "gateway-probe" : "mock"));
+        final String finalSessionId = sessionId;
+        final String finalRunId = runId;
+        final String finalMessage = message;
+        final String openclawSessionKey = String.valueOf(session.get("openclawSessionKey"));
+        new Thread(() -> {
+            try {
+                Map<String, Object> sendResult = gatewayClient.sendMessage(openclawSessionKey, finalMessage);
+                String answer = String.valueOf(sendResult.getOrDefault("answer", ""));
+                messageStore.computeIfAbsent(finalSessionId, key -> new ArrayList<>()).add(buildMessage("assistant", answer));
+                Map<String, Object> sessionRow = sessionStore.get(finalSessionId);
+                if (sessionRow != null) {
+                    sessionRow.put("status", Boolean.TRUE.equals(sendResult.get("ok")) ? "gateway-connected" : (gatewayClient.enabled() ? "gateway-probe" : "mock"));
+                    sessionRow.put("lastMessage", hasText(answer) ? answer : finalMessage);
+                    sessionRow.put("updateTime", new Date());
+                }
+                pending.put("status", Boolean.TRUE.equals(sendResult.get("ok")) ? "completed" : "failed");
+                pending.put("answer", answer);
+                pending.put("gateway", sendResult);
+                pending.put("responseTime", new Date());
+            } catch (Exception ex) {
+                pending.put("status", "failed");
+                pending.put("error", ex.getClass().getSimpleName());
+                pending.put("message", ex.getMessage());
+                pending.put("responseTime", new Date());
+            }
+        }, "aidevops-ai-chat-" + finalRunId).start();
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("sessionId", sessionId);
-        data.put("requestId", "req_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16));
-        data.put("answer", answer);
+        data.put("runId", runId);
+        data.put("accepted", true);
+        data.put("status", "started");
         data.put("responseTime", new Date());
-        data.put("status", session.get("status"));
-        data.put("gateway", sendResult);
+        return data;
+    }
+
+    @Override
+    public Map<String, Object> getSendResult(String sessionId, String runId) {
+        initDefaultSession();
+        String key = sessionId + ":" + runId;
+        Map<String, Object> data = pendingRuns.getOrDefault(key, new LinkedHashMap<>());
+        if (data.isEmpty()) {
+            data.put("sessionId", sessionId);
+            data.put("runId", runId);
+            data.put("status", "not_found");
+        }
         return data;
     }
 
@@ -197,5 +241,9 @@ public class AiChatServiceImpl implements IAiChatService {
         }
         String value = String.valueOf(req.get(key));
         return value == null || value.trim().isEmpty() ? defaultValue : value.trim();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

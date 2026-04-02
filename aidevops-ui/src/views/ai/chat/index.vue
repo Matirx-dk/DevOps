@@ -83,6 +83,7 @@ import {
   listAiSession,
   getAiHistory,
   sendAiMessage,
+  getAiSendResult,
   getAiGatewayDiagnostics,
   probeAiGateway,
   getAiConnectDraft,
@@ -214,19 +215,42 @@ export default {
       this.sending = true
       this.$nextTick(() => this.scrollToBottom())
       sendAiMessage({ sessionId: this.currentSessionId, message: text, stream: false }).then(res => {
-        const answer = res.data && res.data.answer ? res.data.answer : '暂无返回'
-        const idx = this.messages.findIndex(item => item.messageId === assistantId)
-        if (idx >= 0) {
-          this.$set(this.messages, idx, { messageId: assistantId, role: 'assistant', content: answer })
+        const runId = res.data && res.data.runId
+        if (!runId) {
+          throw new Error('missing runId')
         }
-        this.loadSessions()
-        this.$nextTick(() => this.scrollToBottom())
+        const poll = (count = 0) => {
+          getAiSendResult(this.currentSessionId, runId).then(result => {
+            const data = result.data || {}
+            if (data.status === 'completed' || data.status === 'failed') {
+              const answer = data.answer || (data.status === 'failed' ? '请求失败，请重试。' : '暂无返回')
+              const idx = this.messages.findIndex(item => item.messageId === assistantId)
+              if (idx >= 0) {
+                this.$set(this.messages, idx, { messageId: assistantId, role: 'assistant', content: answer })
+              }
+              this.loadSessions()
+              this.$nextTick(() => this.scrollToBottom())
+              this.sending = false
+              return
+            }
+            if (count >= 59) {
+              throw new Error('poll timeout')
+            }
+            setTimeout(() => poll(count + 1), 1000)
+          }).catch(() => {
+            const idx = this.messages.findIndex(item => item.messageId === assistantId)
+            if (idx >= 0) {
+              this.$set(this.messages, idx, { messageId: assistantId, role: 'assistant', content: '请求超时或发送失败，请重试。' })
+            }
+            this.sending = false
+          })
+        }
+        poll()
       }).catch(() => {
         const idx = this.messages.findIndex(item => item.messageId === assistantId)
         if (idx >= 0) {
           this.$set(this.messages, idx, { messageId: assistantId, role: 'assistant', content: '请求超时或发送失败，请重试。' })
         }
-      }).finally(() => {
         this.sending = false
       })
     },

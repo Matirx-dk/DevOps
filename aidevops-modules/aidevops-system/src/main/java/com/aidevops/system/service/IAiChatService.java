@@ -8,6 +8,7 @@ public interface IAiChatService {
     List<Map<String, Object>> listSessions();
     Map<String, Object> getHistory(String sessionId);
     Map<String, Object> sendMessage(Map<String, Object> req);
+    Map<String, Object> getSendResult(String sessionId, String runId);
     Map<String, Object> renameSession(String sessionId, Map<String, Object> req);
     String deleteSession(String sessionId);
     Map<String, Object> gatewayDiagnostics();
