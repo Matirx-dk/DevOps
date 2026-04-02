@@ -232,7 +232,7 @@ public class OpenClawGatewayClient {
             connection.touch();
             result.put("connection", connection.snapshot());
             Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), effectiveSessionKey, message);
-            connection.connected = Boolean.TRUE.equals(exchange.get("ok"));
+            connection.markConnected(Boolean.TRUE.equals(exchange.get("ok")));
             connection.touch();
             result.put("connection", connection.snapshot());
             result.put("connectionPoolSize", connections.size());
@@ -244,6 +244,10 @@ public class OpenClawGatewayClient {
             }
             return result;
         } catch (Exception ex) {
+            String effectiveSessionKey = hasText(sessionKey) ? sessionKey : "main";
+            GatewayConnection connection = getOrCreateConnection(effectiveSessionKey);
+            connection.markFailure(ex);
+            result.put("connection", connection.snapshot());
             result.put("ok", false);
             result.put("stage", "chat-send-failed");
             result.put("error", ex.getClass().getSimpleName());
@@ -709,6 +713,9 @@ public class OpenClawGatewayClient {
         private final String sessionKey;
         private volatile long lastUsedAt = System.currentTimeMillis();
         private volatile boolean connected;
+        private volatile boolean everConnected;
+        private volatile int failureCount;
+        private volatile String lastError;
 
         private GatewayConnection(String sessionKey) {
             this.sessionKey = sessionKey;
@@ -718,10 +725,28 @@ public class OpenClawGatewayClient {
             this.lastUsedAt = System.currentTimeMillis();
         }
 
+        private void markConnected(boolean ok) {
+            this.connected = ok;
+            if (ok) {
+                this.everConnected = true;
+                this.lastError = null;
+            }
+        }
+
+        private void markFailure(Exception ex) {
+            this.connected = false;
+            this.failureCount += 1;
+            this.lastError = ex.getClass().getSimpleName() + ": " + ex.getMessage();
+            this.lastUsedAt = System.currentTimeMillis();
+        }
+
         private Map<String, Object> snapshot() {
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("sessionKey", sessionKey);
             data.put("connected", connected);
+            data.put("everConnected", everConnected);
+            data.put("failureCount", failureCount);
+            data.put("lastError", lastError);
             data.put("lastUsedAt", lastUsedAt);
             return data;
         }
