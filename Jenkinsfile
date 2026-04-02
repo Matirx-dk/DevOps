@@ -29,13 +29,11 @@ spec:
       tty: true
   volumes:
     - name: m2-cache
-      nfs:
-        server: 192.168.1.100
-        path: /data/nfs/share/jenkins-cache/m2
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
     - name: npm-cache
-      nfs:
-        server: 192.168.1.100
-        path: /data/nfs/share/jenkins-cache/npm
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
 """
     }
   }
@@ -136,6 +134,8 @@ spec:
 
             wait_pod() {
               local pod_name="$1"
+              local timeout_secs="${2:-1800}"
+              local elapsed=0
               while true; do
                 phase=$(kubectl -n ${BUILD_NAMESPACE} get pod "$pod_name" -o jsonpath='{.status.phase}' 2>/dev/null || true)
                 case "$phase" in
@@ -145,6 +145,7 @@ spec:
                     ;;
                   Failed)
                     echo "[fail] $pod_name failed"
+                    kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                     kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                     return 1
                     ;;
@@ -155,7 +156,14 @@ spec:
                     echo "[wait] $pod_name phase=$phase"
                     ;;
                 esac
+                if [ "$elapsed" -ge "$timeout_secs" ]; then
+                  echo "[timeout] $pod_name exceeded ${timeout_secs}s"
+                  kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
+                  kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
+                  return 1
+                fi
                 sleep 5
+                elapsed=$((elapsed + 5))
               done
             }
 
@@ -203,9 +211,8 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: m2-cache
-      nfs:
-        server: 192.168.1.100
-        path: /data/nfs/share/jenkins-cache/m2
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -222,7 +229,6 @@ spec:
           set -e
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          export MAVEN_OPTS="-Dmaven.repo.local=/workspace/.m2/repository"
           mvn -T 1C -DskipTests package -pl ${module} -am
       volumeMounts:
         - name: workspace
@@ -287,9 +293,8 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: npm-cache
-      nfs:
-        server: 192.168.1.100
-        path: /data/nfs/share/jenkins-cache/npm
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -307,7 +312,7 @@ spec:
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src/aidevops-ui
           npm config set registry https://registry.npmmirror.com
-          npm config set cache /workspace/.npm-cache --global
+          npm config set cache /root/.npm --global
           if [ -f package-lock.json ]; then
             npm ci --legacy-peer-deps
           else
