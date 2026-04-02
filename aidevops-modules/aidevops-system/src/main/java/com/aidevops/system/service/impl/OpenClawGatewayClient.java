@@ -711,11 +711,13 @@ public class OpenClawGatewayClient {
 
     private final class GatewayConnection {
         private final String sessionKey;
+        private final Object monitor = new Object();
         private volatile long lastUsedAt = System.currentTimeMillis();
         private volatile boolean connected;
         private volatile boolean everConnected;
         private volatile int failureCount;
         private volatile String lastError;
+        private volatile WebSocket webSocket;
 
         private GatewayConnection(String sessionKey) {
             this.sessionKey = sessionKey;
@@ -733,6 +735,24 @@ public class OpenClawGatewayClient {
             }
         }
 
+        private boolean hasLiveSocket() {
+            return this.webSocket != null && this.connected;
+        }
+
+        private void attachSocket(WebSocket webSocket) {
+            this.webSocket = webSocket;
+            this.connected = true;
+            this.everConnected = true;
+            this.lastError = null;
+            this.lastUsedAt = System.currentTimeMillis();
+        }
+
+        private void clearSocket() {
+            this.webSocket = null;
+            this.connected = false;
+            this.lastUsedAt = System.currentTimeMillis();
+        }
+
         private void markFailure(Exception ex) {
             this.connected = false;
             this.failureCount += 1;
@@ -745,6 +765,7 @@ public class OpenClawGatewayClient {
             data.put("sessionKey", sessionKey);
             data.put("connected", connected);
             data.put("everConnected", everConnected);
+            data.put("hasLiveSocket", hasLiveSocket());
             data.put("failureCount", failureCount);
             data.put("lastError", lastError);
             data.put("lastUsedAt", lastUsedAt);
