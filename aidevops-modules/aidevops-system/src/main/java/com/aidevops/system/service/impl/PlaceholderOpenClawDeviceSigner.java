@@ -67,7 +67,7 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
             byte[] publicKeyDer = exportPublicKey(keyPair.getPublic());
             byte[] signatureBytes = signEd25519(keyPair.getPrivate(), payloadBytes);
             String fingerprintSha256 = sha256Hex(publicKeyDer);
-            String suggestedDeviceId = "aidevops-" + fingerprintSha256.substring(0, 16);
+            String suggestedDeviceId = fingerprintSha256;
 
             result.put("ready", true);
             result.put("mode", "experimental-ed25519");
