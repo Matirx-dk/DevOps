@@ -229,8 +229,11 @@ public class OpenClawGatewayClient {
             String effectiveSessionKey = hasText(sessionKey) ? sessionKey : "main";
             GatewayConnection connection = getOrCreateConnection(effectiveSessionKey);
             connection.touch();
+            result.put("connection", connection.snapshot());
             Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), effectiveSessionKey, message);
             connection.connected = Boolean.TRUE.equals(exchange.get("ok"));
+            connection.touch();
+            result.put("connection", connection.snapshot());
             result.put("connectionPoolSize", connections.size());
             result.putAll(exchange);
             result.put("ok", Boolean.TRUE.equals(exchange.get("ok")));
@@ -711,6 +714,14 @@ public class OpenClawGatewayClient {
 
         private void touch() {
             this.lastUsedAt = System.currentTimeMillis();
+        }
+
+        private Map<String, Object> snapshot() {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("sessionKey", sessionKey);
+            data.put("connected", connected);
+            data.put("lastUsedAt", lastUsedAt);
+            return data;
         }
     }
 
