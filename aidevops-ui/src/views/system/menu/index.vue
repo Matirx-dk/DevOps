@@ -538,8 +538,135 @@ export default {
 }
 </script>
 
+
 <style lang="scss" scoped>
 .page-shell {
-  .ml5 { color: #dbe7ff; }
+  ::v-deep .el-form {
+    color: #dbe7ff;
+  }
+  ::v-deep .el-form-item__label,
+  ::v-deep .el-radio,
+  ::v-deep .el-checkbox,
+  ::v-deep .el-tabs__item,
+  ::v-deep .el-input__inner,
+  ::v-deep .el-textarea__inner,
+  ::v-deep .el-input-group__append,
+  ::v-deep .el-input-group__prepend,
+  ::v-deep .el-select .el-input__inner,
+  ::v-deep .el-date-editor .el-range-input,
+  ::v-deep .el-date-editor .el-range-separator,
+  ::v-deep .el-pagination,
+  ::v-deep .el-pagination__total,
+  ::v-deep .el-pagination__jump,
+  ::v-deep .el-dropdown,
+  ::v-deep .el-link,
+  ::v-deep .el-descriptions__label,
+  ::v-deep .el-descriptions__content {
+    color: #dbe7ff !important;
+  }
+
+  ::v-deep .el-input__inner,
+  ::v-deep .el-textarea__inner,
+  ::v-deep .el-select .el-input__inner,
+  ::v-deep .el-date-editor,
+  ::v-deep .el-range-editor {
+    background: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+  }
+
+  ::v-deep .el-range-editor .el-range-input,
+  ::v-deep .el-range-editor .el-range-separator {
+    background: transparent !important;
+  }
+
+  ::v-deep .el-table,
+  ::v-deep .el-table__expanded-cell,
+  ::v-deep .el-table tr,
+  ::v-deep .el-table th,
+  ::v-deep .el-table td,
+  ::v-deep .el-table__body-wrapper,
+  ::v-deep .el-table__header-wrapper,
+  ::v-deep .el-table__fixed,
+  ::v-deep .el-table__fixed-body-wrapper,
+  ::v-deep .el-table__fixed-header-wrapper {
+    background-color: transparent !important;
+  }
+
+  ::v-deep .el-table::before,
+  ::v-deep .el-table__fixed::before {
+    background-color: rgba(255,255,255,0.08) !important;
+  }
+
+  ::v-deep .el-table td,
+  ::v-deep .el-table th.is-leaf {
+    border-bottom-color: rgba(255,255,255,0.08) !important;
+  }
+
+  ::v-deep .el-dialog {
+    background: linear-gradient(135deg, #0f1728 0%, #18243a 55%, #203456 100%) !important;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  ::v-deep .el-dialog__header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  }
+
+  ::v-deep .el-dialog__title,
+  ::v-deep .el-dialog__body,
+  ::v-deep .el-dialog__footer {
+    color: #eaf2ff !important;
+  }
+
+  ::v-deep .el-dialog__body,
+  ::v-deep .el-dialog__footer {
+    background: transparent !important;
+  }
+
+  ::v-deep .el-upload-dragger,
+  ::v-deep .el-transfer-panel,
+  ::v-deep .el-transfer-panel__body,
+  ::v-deep .el-transfer-panel__list,
+  ::v-deep .vue-treeselect__control,
+  ::v-deep .vue-treeselect__menu,
+  ::v-deep .vue-treeselect__single-value,
+  ::v-deep .vue-treeselect__placeholder,
+  ::v-deep .el-tree,
+  ::v-deep .el-tree-node__content,
+  ::v-deep .splitpanes,
+  ::v-deep .splitpanes__pane {
+    background: transparent !important;
+    color: #dbe7ff !important;
+  }
+
+  ::v-deep .el-upload-dragger,
+  ::v-deep .vue-treeselect__control,
+  ::v-deep .el-transfer-panel {
+    border-color: rgba(255,255,255,0.12) !important;
+  }
+
+  ::v-deep .el-button--default,
+  ::v-deep .el-button--info.is-plain,
+  ::v-deep .el-button--warning.is-plain,
+  ::v-deep .el-button--danger.is-plain,
+  ::v-deep .el-button--success.is-plain,
+  ::v-deep .el-button--primary.is-plain {
+    background: rgba(255,255,255,0.04) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+    color: #dbe7ff !important;
+  }
+
+  ::v-deep .el-button--text {
+    color: #8fd3ff !important;
+  }
+
+  ::v-deep .el-switch__core,
+  ::v-deep .el-switch.is-checked .el-switch__core {
+    border-color: transparent !important;
+  }
+
+  ::v-deep .el-tag {
+    border-color: rgba(255,255,255,0.12) !important;
+  }
 }
 </style>
