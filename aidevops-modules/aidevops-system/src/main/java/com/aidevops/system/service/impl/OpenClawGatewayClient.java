@@ -48,6 +48,7 @@ public class OpenClawGatewayClient {
         data.put("gatewayWsUrl", properties.getGatewayWsUrl());
         data.put("tokenConfigured", hasText(properties.getToken()));
         data.put("mode", enabled() ? "gateway-probe" : "mock-fallback");
+        data.put("experimentalSignerEnabled", properties.isExperimentalSignerEnabled());
         data.put("probe", probeChallenge());
         data.put("connectDraft", buildConnectDraft());
         data.put("message", enabled()

@@ -18,6 +18,8 @@ public class AiChatProperties {
     private String defaultScene = "ops";
     /** WS 探测超时时间 */
     private int probeTimeoutMs = 5000;
+    /** 是否启用实验型 Ed25519 签名器 */
+    private boolean experimentalSignerEnabled = false;
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -31,4 +33,6 @@ public class AiChatProperties {
     public void setDefaultScene(String defaultScene) { this.defaultScene = defaultScene; }
     public int getProbeTimeoutMs() { return probeTimeoutMs; }
     public void setProbeTimeoutMs(int probeTimeoutMs) { this.probeTimeoutMs = probeTimeoutMs; }
+    public boolean isExperimentalSignerEnabled() { return experimentalSignerEnabled; }
+    public void setExperimentalSignerEnabled(boolean experimentalSignerEnabled) { this.experimentalSignerEnabled = experimentalSignerEnabled; }
 }

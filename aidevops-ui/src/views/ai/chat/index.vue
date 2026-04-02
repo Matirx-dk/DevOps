@@ -41,6 +41,7 @@
             <div class="diag-item"><span>WS</span><strong>{{ diagnostics.gatewayWsUrl || '-' }}</strong></div>
             <div class="diag-item"><span>探测</span><strong>{{ probeStage }}</strong></div>
             <div class="diag-item"><span>Token</span><strong>{{ diagnostics.tokenConfigured ? '已配置' : '未配置' }}</strong></div>
+            <div class="diag-item"><span>Signer</span><strong>{{ diagnostics.experimentalSignerEnabled ? '实验Ed25519' : '占位' }}</strong></div>
           </div>
 
           <div v-if="showConnectDraft && connectDraft" class="connect-draft-panel">
