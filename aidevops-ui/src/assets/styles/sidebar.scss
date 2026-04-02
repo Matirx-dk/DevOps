@@ -15,7 +15,7 @@
     -webkit-transition: width .28s;
     transition: width 0.28s;
     width: $base-sidebar-width !important;
-    background: linear-gradient(180deg, #172033 0%, #1d2940 100%);
+    background-color: $base-menu-background;
     height: 100%;
     position: fixed;
     font-size: 0px;
@@ -25,7 +25,7 @@
     z-index: 1001;
     overflow: hidden;
     -webkit-box-shadow: 2px 0 6px rgba(0,21,41,.35);
-    box-shadow: 12px 0 32px rgba(15, 23, 42, 0.12); border-right: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.1);
 
     // reset element-ui css
     .horizontal-collapse-transition {
@@ -74,17 +74,15 @@
       overflow: hidden !important;
       text-overflow: ellipsis !important;
       white-space: nowrap !important;
-      height: 42px !important;
-      line-height: 42px !important;
-      border-radius: 10px;
-      margin: 4px 8px !important;
+      height: 44px !important;
+      line-height: 44px !important;
     }
 
     // menu hover
     .submenu-title-noDropdown,
     .el-submenu__title {
       &:hover {
-        background-color: rgba(255, 255, 255, 0.06) !important;
+        background-color: rgba(0, 0, 0, 0.06) !important;
       }
     }
 
@@ -97,7 +95,7 @@
       min-width: $base-sidebar-width !important;
 
       &:hover {
-        background-color: rgba(255, 255, 255, 0.06) !important;
+        background-color: rgba(0, 0, 0, 0.06) !important;
       }
     }
 
@@ -318,7 +316,7 @@
   .el-menu-item {
     &:hover {
       // you can use $subMenuHover
-      background-color: rgba(255, 255, 255, 0.06) !important;
+      background-color: rgba(0, 0, 0, 0.06) !important;
     }
   }
 

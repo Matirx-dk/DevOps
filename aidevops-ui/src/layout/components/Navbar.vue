@@ -11,13 +11,17 @@
     <div class="right-menu">
       <template v-if="device!=='mobile'">
         <search id="header-search" class="right-menu-item" />
+
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
+
         <el-tooltip content="布局大小" effect="dark" placement="bottom">
           <size-select id="size-select" class="right-menu-item hover-effect" />
         </el-tooltip>
+
         <el-tooltip content="消息通知" effect="dark" placement="bottom">
           <header-notice id="header-notice" class="right-menu-item hover-effect" />
         </el-tooltip>
+
       </template>
 
       <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="hover">
@@ -127,19 +131,18 @@ export default {
 }
 
 .navbar {
-  height: 56px;
+  height: 50px;
   overflow: hidden;
   position: relative;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid #e9eef6;
-  box-shadow: 0 6px 18px rgba(31, 45, 61, 0.04);
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,21,41,.08);
   display: flex;
   align-items: center;
+  // padding: 0 8px;
   box-sizing: border-box;
 
   .hamburger-container {
-    line-height: 52px;
+    line-height: 46px;
     height: 100%;
     cursor: pointer;
     transition: background .3s;
@@ -148,10 +151,9 @@ export default {
     align-items: center;
     flex-shrink: 0;
     margin-right: 8px;
-    border-radius: 10px;
 
     &:hover {
-      background: #f5f8fd;
+      background: rgba(0, 0, 0, .025)
     }
   }
 
@@ -161,7 +163,7 @@ export default {
 
   .topmenu-container {
     position: absolute;
-    left: 56px;
+    left: 50px;
   }
 
   .topbar-container {
@@ -175,7 +177,7 @@ export default {
 
   .right-menu {
     height: 100%;
-    line-height: 56px;
+    line-height: 50px;
     display: flex;
     align-items: center;
     margin-left: auto;
@@ -186,10 +188,10 @@ export default {
 
     .right-menu-item {
       display: inline-block;
-      padding: 0 10px;
+      padding: 0 8px;
       height: 100%;
       font-size: 18px;
-      color: #5a6b85;
+      color: #5a5e66;
       vertical-align: text-bottom;
 
       &.hover-effect {
@@ -197,38 +199,33 @@ export default {
         transition: background .3s;
 
         &:hover {
-          background: #f5f8fd;
+          background: rgba(0, 0, 0, .025)
         }
       }
     }
 
     .avatar-container {
-      margin-right: 0;
-      padding-right: 6px;
+      margin-right: 0px;
+      padding-right: 0px;
 
       .avatar-wrapper {
-        margin-top: 11px;
+        margin-top: 10px;
         right: 8px;
         position: relative;
-        display: flex;
-        align-items: center;
-        gap: 8px;
 
         .user-avatar {
           cursor: pointer;
-          width: 32px;
-          height: 32px;
+          width: 30px;
+          height: 30px;
           border-radius: 50%;
-          border: 2px solid #e8eef7;
         }
 
-        .user-nickname {
+        .user-nickname{
           position: relative;
-          bottom: 0;
-          left: 0;
+          bottom: 10px;
+          left: 2px;
           font-size: 14px;
-          font-weight: 600;
-          color: #344054;
+          font-weight: bold;
         }
 
         .el-icon-caret-bottom {
