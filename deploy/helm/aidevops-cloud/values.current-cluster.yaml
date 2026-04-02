@@ -20,6 +20,13 @@ auth:
 
 system:
   image: harbor.zoudekang.cloud/aidevops/aidevops-system:restored-system
+  aiChat:
+    enabled: true
+    gatewayUrl: https://ai.zoudekang.cloud/
+    gatewayWsUrl: wss://ai.zoudekang.cloud/
+    token: 99564a20e8fc7847ad34ed17ca86cc150b99eaa12849fa60ae894eef9a5a9e5b
+    experimentalSignerEnabled: true
+    probeTimeoutMs: 8000
 
 gateway:
   image: harbor.zoudekang.cloud/aidevops/aidevops-gateway:release-gateway-20260330-124936

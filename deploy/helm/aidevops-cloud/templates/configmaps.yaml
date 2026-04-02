@@ -106,6 +106,15 @@ data:
       gatewayUrl: http://aidevops-gateway.{{ .Release.Namespace }}.svc.cluster.local:8080/${spring.application.name}
       api-docs:
         enabled: true
+    aidevops:
+      ai:
+        chat:
+          enabled: {{ .Values.system.aiChat.enabled | default false }}
+          gatewayUrl: {{ .Values.system.aiChat.gatewayUrl | default "https://ai.zoudekang.cloud/" | quote }}
+          gatewayWsUrl: {{ .Values.system.aiChat.gatewayWsUrl | default "wss://ai.zoudekang.cloud/" | quote }}
+          token: {{ .Values.system.aiChat.token | default "" | quote }}
+          experimentalSignerEnabled: {{ .Values.system.aiChat.experimentalSignerEnabled | default false }}
+          probeTimeoutMs: {{ .Values.system.aiChat.probeTimeoutMs | default 5000 }}
 {{- if .Values.sqlInit.enabled }}
 ---
 apiVersion: v1
