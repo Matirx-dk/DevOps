@@ -133,6 +133,21 @@ public class AiChatServiceImpl implements IAiChatService {
     }
 
     @Override
+    public Map<String, Object> gatewayDiagnostics() {
+        return gatewayClient.diagnostics();
+    }
+
+    @Override
+    public Map<String, Object> probeGateway() {
+        Map<String, Object> probe = gatewayClient.probeChallenge();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("probe", probe);
+        result.put("mode", gatewayClient.enabled() ? "gateway-probe" : "mock-fallback");
+        result.put("message", probe.get("message"));
+        return result;
+    }
+
+    @Override
     public Map<String, Object> renameSession(String sessionId, Map<String, Object> req) {
         Map<String, Object> session = sessionStore.get(sessionId);
         String title = valueOrDefault(req, "title", "未命名会话");

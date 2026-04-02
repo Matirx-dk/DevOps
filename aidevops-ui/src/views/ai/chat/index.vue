@@ -29,13 +29,17 @@
               <div class="header-title">{{ currentTitle || 'AI 运维对话' }}</div>
               <div class="chat-tip">{{ statusText }}</div>
             </div>
-            <el-tag size="mini" :type="probeOk ? 'success' : 'info'">{{ probeOk ? 'WS可达' : '本地回退' }}</el-tag>
+            <div class="header-actions">
+              <el-button size="mini" :loading="probing" @click="handleProbe">重新探测</el-button>
+              <el-tag size="mini" :type="probeOk ? 'success' : 'info'">{{ probeOk ? 'WS可达' : '本地回退' }}</el-tag>
+            </div>
           </div>
 
           <div v-if="diagnostics" class="diagnostics-bar">
             <div class="diag-item"><span>模式</span><strong>{{ diagnostics.mode || '-' }}</strong></div>
             <div class="diag-item"><span>WS</span><strong>{{ diagnostics.gatewayWsUrl || '-' }}</strong></div>
             <div class="diag-item"><span>探测</span><strong>{{ probeStage }}</strong></div>
+            <div class="diag-item"><span>Token</span><strong>{{ diagnostics.tokenConfigured ? '已配置' : '未配置' }}</strong></div>
           </div>
 
           <div class="message-list" ref="messageList">
@@ -68,7 +72,14 @@
 </template>
 
 <script>
-import { createAiSession, listAiSession, getAiHistory, sendAiMessage } from '@/api/ai/chat'
+import {
+  createAiSession,
+  listAiSession,
+  getAiHistory,
+  sendAiMessage,
+  getAiGatewayDiagnostics,
+  probeAiGateway
+} from '@/api/ai/chat'
 
 export default {
   name: 'AiChatPage',
@@ -80,7 +91,8 @@ export default {
       messages: [],
       diagnostics: null,
       inputMessage: '',
-      sending: false
+      sending: false,
+      probing: false
     }
   },
   computed: {
@@ -99,21 +111,45 @@ export default {
   },
   created() {
     this.loadSessions()
+    this.loadDiagnostics()
   },
   methods: {
     loadSessions() {
       listAiSession().then(res => {
         this.sessionList = res.rows || []
-        if (this.sessionList.length > 0) {
+        if (this.sessionList.length > 0 && !this.currentSessionId) {
           this.handleSelectSession(this.sessionList[0])
         }
       })
     },
+    loadDiagnostics() {
+      getAiGatewayDiagnostics().then(res => {
+        this.diagnostics = res.data || null
+      })
+    },
+    handleProbe() {
+      this.probing = true
+      probeAiGateway().then(res => {
+        const data = res.data || {}
+        this.diagnostics = Object.assign({}, this.diagnostics || {}, {
+          mode: data.mode || (this.diagnostics && this.diagnostics.mode),
+          probe: data.probe || null
+        })
+        if (data.message) {
+          this.$modal && this.$modal.msgSuccess ? this.$modal.msgSuccess('探测已完成') : this.$message.success('探测已完成')
+        }
+      }).finally(() => {
+        this.probing = false
+      })
+    },
     handleCreateSession() {
       createAiSession({ title: '新会话', scene: 'ops' }).then(res => {
+        const created = res.data || {}
+        this.currentSessionId = created.sessionId || ''
+        this.currentTitle = created.title || '新会话'
         this.loadSessions()
-        if (res.data && res.data.sessionId) {
-          this.currentSessionId = res.data.sessionId
+        if (this.currentSessionId) {
+          this.handleSelectSession({ sessionId: this.currentSessionId, title: this.currentTitle })
         }
       })
     },
@@ -122,7 +158,7 @@ export default {
       this.currentTitle = item.title
       getAiHistory(item.sessionId).then(res => {
         this.messages = (res.data && res.data.messages) || []
-        this.diagnostics = res.data ? res.data.diagnostics : null
+        this.diagnostics = res.data ? res.data.diagnostics : this.diagnostics
         this.$nextTick(() => this.scrollToBottom())
       })
     },
@@ -133,15 +169,17 @@ export default {
       this.inputMessage = ''
       this.sending = true
       sendAiMessage({ sessionId: this.currentSessionId, message: text, stream: false }).then(res => {
-        this.messages = [...this.messages, {
+        const answer = res.data ? res.data.answer : '暂无返回'
+        this.messages.push({
           messageId: 'local_user_' + Date.now(),
           role: 'user',
           content: text
-        }, {
+        })
+        this.messages.push({
           messageId: 'local_assistant_' + (Date.now() + 1),
           role: 'assistant',
-          content: res.data ? res.data.answer : '暂无返回'
-        }]
+          content: answer
+        })
         if (res.data && res.data.probe) {
           this.diagnostics = Object.assign({}, this.diagnostics || {}, { probe: res.data.probe })
         }
@@ -174,6 +212,11 @@ export default {
 }
 .header-main {
   gap: 12px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .header-title {
   font-size: 16px;

@@ -10,4 +10,6 @@ public interface IAiChatService {
     Map<String, Object> sendMessage(Map<String, Object> req);
     Map<String, Object> renameSession(String sessionId, Map<String, Object> req);
     String deleteSession(String sessionId);
+    Map<String, Object> gatewayDiagnostics();
+    Map<String, Object> probeGateway();
 }

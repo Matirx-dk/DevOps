@@ -16,7 +16,7 @@ import com.aidevops.common.core.web.page.TableDataInfo;
 import com.aidevops.system.service.IAiChatService;
 
 /**
- * AI对话接口（第一版骨架）
+ * AI对话接口
  */
 @RestController
 @RequestMapping("/ai/chat")
@@ -43,6 +43,16 @@ public class AiChatController extends BaseController {
     @PostMapping("/send")
     public AjaxResult send(@RequestBody Map<String, Object> req) {
         return success(aiChatService.sendMessage(req));
+    }
+
+    @GetMapping("/gateway/diagnostics")
+    public AjaxResult gatewayDiagnostics() {
+        return success(aiChatService.gatewayDiagnostics());
+    }
+
+    @PostMapping("/gateway/probe")
+    public AjaxResult probeGateway() {
+        return success(aiChatService.probeGateway());
     }
 
     @PutMapping("/session/{sessionId}")

@@ -30,3 +30,17 @@ export function sendAiMessage(data) {
     data: data
   })
 }
+
+export function getAiGatewayDiagnostics() {
+  return request({
+    url: '/system/ai/chat/gateway/diagnostics',
+    method: 'get'
+  })
+}
+
+export function probeAiGateway() {
+  return request({
+    url: '/system/ai/chat/gateway/probe',
+    method: 'post'
+  })
+}
