@@ -4,6 +4,8 @@ import com.aidevops.system.config.AiChatProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -36,7 +38,17 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
     @Override
     public Map<String, Object> sign(Map<String, Object> signaturePayload) {
         if (properties.isExperimentalSignerEnabled()) {
-            return experimentalEd25519Sign(signaturePayload);
+            Map<String, Object> nodeResult = nodeOfficialSigner(signaturePayload);
+            if (Boolean.TRUE.equals(nodeResult.get("ready"))) {
+                return nodeResult;
+            }
+            Map<String, Object> javaResult = experimentalEd25519Sign(signaturePayload);
+            if (!Boolean.TRUE.equals(javaResult.get("ready"))) {
+                javaResult.put("nodeFallback", nodeResult);
+            } else {
+                javaResult.put("nodeFallback", nodeResult);
+            }
+            return javaResult;
         }
         return placeholder(signaturePayload);
     }
@@ -56,6 +68,56 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
             "建议保留当前返回结构，避免前后端联调字段再次变动"
         ));
         return result;
+    }
+
+    private Map<String, Object> nodeOfficialSigner(Map<String, Object> signaturePayload) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        try {
+            String nodeScript = "const crypto=require('node:crypto');"
+                + "const fs=require('node:fs');"
+                + "const input=JSON.parse(fs.readFileSync(0,'utf8'));"
+                + "const norm=v=>typeof v==='string'&&v.trim()?v.trim().replace(/[A-Z]/g,c=>String.fromCharCode(c.charCodeAt(0)+32)) : '';"
+                + "const b64u=b=>Buffer.from(b).toString('base64').replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/g,'');"
+                + "const prefix=Buffer.from('302a300506032b6570032100','hex');"
+                + "const kp=crypto.generateKeyPairSync('ed25519');"
+                + "const publicKeyPem=kp.publicKey.export({type:'spki',format:'pem'}).toString();"
+                + "const privateKeyPem=kp.privateKey.export({type:'pkcs8',format:'pem'}).toString();"
+                + "const spki=crypto.createPublicKey(publicKeyPem).export({type:'spki',format:'der'});"
+                + "const raw=(spki.length===prefix.length+32&&spki.subarray(0,prefix.length).equals(prefix))?spki.subarray(prefix.length):spki;"
+                + "const deviceId=crypto.createHash('sha256').update(raw).digest('hex');"
+                + "const payload=['v3',deviceId,String(input.clientId||''),String(input.clientMode||''),String(input.role||''),Array.isArray(input.scopes)?input.scopes.map(x=>String(x).trim()).join(','):String(input.scopes||'').replace(/ /g,''),String(input.signedAt||''),String(input.token||''),String(input.nonce||''),norm(String(input.platform||'')),norm(String(input.deviceFamily||''))].join('|');"
+                + "const sig=crypto.sign(null,Buffer.from(payload,'utf8'),crypto.createPrivateKey(privateKeyPem));"
+                + "process.stdout.write(JSON.stringify({ready:true,mode:'node-official-ed25519',algorithm:'Ed25519',publicKeyFormat:'base64url-raw-ed25519-32',publicKey:b64u(raw),signature:b64u(sig),publicKeyFingerprintSha256:deviceId,suggestedDeviceId:deviceId,payloadCanonical:payload,privateKeyPem,publicKeyPem}));";
+
+            Process process = new ProcessBuilder("node", "-e", nodeScript).start();
+            process.getOutputStream().write(objectMapper.writeValueAsBytes(signaturePayload));
+            process.getOutputStream().close();
+
+            String stdout = readAll(process.getInputStream());
+            String stderr = readAll(process.getErrorStream());
+            int exit = process.waitFor();
+            if (exit != 0) {
+                result.put("ready", false);
+                result.put("mode", "node-official-ed25519-failed");
+                result.put("error", "NodeSignerExit" + exit);
+                result.put("message", stderr.isBlank() ? stdout : stderr);
+                return result;
+            }
+            Map<String, Object> parsed = objectMapper.readValue(stdout, Map.class);
+            parsed.put("payload", signaturePayload);
+            parsed.put("notes", Arrays.asList(
+                "已走本地 Node 官方同构 signer",
+                "签名路径对齐 OpenClaw Node client: crypto.sign(null, payloadUtf8, privateKeyPem)",
+                "若此结果可过签，则说明 Java JCA signer 确实是根因"
+            ));
+            return parsed;
+        } catch (Exception ex) {
+            result.put("ready", false);
+            result.put("mode", "node-official-ed25519-failed");
+            result.put("error", ex.getClass().getSimpleName());
+            result.put("message", ex.getMessage());
+            return result;
+        }
     }
 
     private Map<String, Object> experimentalEd25519Sign(Map<String, Object> signaturePayload) {
@@ -85,9 +147,9 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
             result.put("payload", signaturePayload);
             result.put("payloadCanonical", canonicalPayload);
             result.put("notes", Arrays.asList(
-                "这是实验型 Ed25519 signer，用于验证 AI 对话后端到 OpenClaw Gateway 的签名字段链路",
-                "已按 OpenClaw 控制端源码切到 v2 canonical payload + raw Ed25519 publicKey + base64url(no padding) 编码",
-                "如果 Gateway 仍返回 DEVICE_AUTH_SIGNATURE_INVALID，需要继续检查 canonical payload 字段顺序或 Java Ed25519 原始公钥提取方式"
+                "这是 Java 实验型 Ed25519 signer 回退路径",
+                "仅在本地 Node signer 不可用或执行失败时启用",
+                "若 Gateway 仍返回 DEVICE_AUTH_SIGNATURE_INVALID，优先使用 Node 官方同构 signer 结果判断"
             ));
             return result;
         } catch (Exception ex) {
@@ -205,6 +267,16 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
 
     private String base64UrlNoPadding(byte[] bytes) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String readAll(InputStream inputStream) throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int n;
+        while ((n = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, n);
+        }
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     private String sha256Hex(byte[] bytes) throws Exception {
