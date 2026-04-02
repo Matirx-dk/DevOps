@@ -1,7 +1,7 @@
 pipeline {
   agent {
     kubernetes {
-      defaultContainer 'maven'
+      defaultContainer 'builder'
       yaml """
 apiVersion: v1
 kind: Pod
@@ -12,30 +12,16 @@ spec:
   serviceAccountName: jenkins-agent
   restartPolicy: Never
   containers:
-    - name: maven
-      image: harbor.zoudekang.cloud/dockerhub-proxy/library/maven:3.9.9-eclipse-temurin-17
-      imagePullPolicy: IfNotPresent
+    - name: builder
+      image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
+      imagePullPolicy: Always
       command: [\"cat\"]
       tty: true
       volumeMounts:
         - name: m2-cache
           mountPath: /root/.m2
-    - name: node
-      image: harbor.zoudekang.cloud/dockerhub-proxy/library/node:18-alpine
-      imagePullPolicy: IfNotPresent
-      command: [\"sh\",\"-c\",\"cat\"]
-      tty: true
-      volumeMounts:
         - name: npm-cache
           mountPath: /root/.npm
-    - name: kaniko
-      image: harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug
-      imagePullPolicy: IfNotPresent
-      command: [\"sh\",\"-c\",\"cat\"]
-      tty: true
-      volumeMounts:
-        - name: harbor-config
-          mountPath: /kaniko/.docker
     - name: helm
       image: harbor.zoudekang.cloud/ci-tools/helm:3.16.4
       imagePullPolicy: IfNotPresent
@@ -50,12 +36,6 @@ spec:
       nfs:
         server: 192.168.1.104
         path: /data/nfs/share/jenkins-cache/npm
-    - name: harbor-config
-      secret:
-        secretName: harbor-regcred
-        items:
-          - key: .dockerconfigjson
-            path: config.json
 """
     }
   }
@@ -70,7 +50,11 @@ spec:
     REGISTRY = 'harbor.zoudekang.cloud'
     TEST_PROJECT = 'aidevops-test'
     K8S_NAMESPACE = 'aidevops-test'
+    BUILD_NAMESPACE = 'jenkins'
+    GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
     GIT_BRANCH = 'test'
+    CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
+    KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug'
   }
 
   stages {
@@ -95,7 +79,6 @@ spec:
           ).trim()
           currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.GIT_COMMIT_TAG}"
         }
-        stash name: 'src', includes: '**/*', useDefaultExcludes: false
       }
     }
 
@@ -128,176 +111,303 @@ spec:
             }
           }
 
-          def anyChange = !targets.isEmpty()
-          env.SKIP_PIPELINE = anyChange ? 'false' : 'true'
-          if (anyChange) {
-            env.BUILD_AUTH = 'true'
-            env.BUILD_GATEWAY = 'true'
-            env.BUILD_SYSTEM = 'true'
-            env.BUILD_UI = 'true'
-            echo "Detected changes in ${targets}. Build and deploy all core services together for version alignment."
-          } else {
-            env.BUILD_AUTH = 'false'
-            env.BUILD_GATEWAY = 'false'
-            env.BUILD_SYSTEM = 'false'
-            env.BUILD_UI = 'false'
+          env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
+          env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
+          env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
+          env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
+          env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
+
+          if (env.SKIP_PIPELINE == 'true') {
             currentBuild.description = 'No relevant changes detected'
           }
-          echo "Build plan => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}"
+          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}"
         }
       }
     }
 
-    stage('Build And Push Images') {
-      when {
-        expression { env.SKIP_PIPELINE != 'true' }
-      }
-      parallel {
-        stage('Build Auth') {
-          when { expression { env.BUILD_AUTH == 'true' } }
-          steps {
-            ws("${env.WORKSPACE}@auth") {
-              deleteDir()
-              unstash 'src'
-              container('maven') {
-                sh '''
-                  mvn -Dmaven.repo.local=$PWD/.m2/repository -T 1C -DskipTests package -pl aidevops-auth -am
-                '''
-              }
-              container('kaniko') {
-                sh '''
-                  /kaniko/executor \
-                    --context="$PWD" \
-                    --dockerfile="$PWD/docker/build/backend.Dockerfile" \
-                    --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG} \
-                    --snapshot-mode=redo \
-                    --use-new-run \
-                    --cache=false \
-                    --skip-tls-verify-registry=${REGISTRY} \
-                    --build-arg=JAR_PATH=aidevops-auth/target/aidevops-auth.jar
-                '''
-              }
-            }
-          }
-        }
-
-        stage('Build Gateway') {
-          when { expression { env.BUILD_GATEWAY == 'true' } }
-          steps {
-            ws("${env.WORKSPACE}@gateway") {
-              deleteDir()
-              unstash 'src'
-              container('maven') {
-                sh '''
-                  mvn -Dmaven.repo.local=$PWD/.m2/repository -T 1C -DskipTests package -pl aidevops-gateway -am
-                '''
-              }
-              container('kaniko') {
-                sh '''
-                  /kaniko/executor \
-                    --context="$PWD" \
-                    --dockerfile="$PWD/docker/build/backend.Dockerfile" \
-                    --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG} \
-                    --snapshot-mode=redo \
-                    --use-new-run \
-                    --cache=false \
-                    --skip-tls-verify-registry=${REGISTRY} \
-                    --build-arg=JAR_PATH=aidevops-gateway/target/aidevops-gateway.jar
-                '''
-              }
-            }
-          }
-        }
-
-        stage('Build System') {
-          when { expression { env.BUILD_SYSTEM == 'true' } }
-          steps {
-            ws("${env.WORKSPACE}@system") {
-              deleteDir()
-              unstash 'src'
-              container('maven') {
-                sh '''
-                  mvn -Dmaven.repo.local=$PWD/.m2/repository -T 1C -DskipTests package -pl aidevops-modules/aidevops-system -am
-                '''
-              }
-              container('kaniko') {
-                sh '''
-                  /kaniko/executor \
-                    --context="$PWD" \
-                    --dockerfile="$PWD/docker/build/backend.Dockerfile" \
-                    --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG} \
-                    --snapshot-mode=redo \
-                    --use-new-run \
-                    --cache=false \
-                    --skip-tls-verify-registry=${REGISTRY} \
-                    --build-arg=JAR_PATH=aidevops-modules/aidevops-system/target/aidevops-modules-system.jar
-                '''
-              }
-            }
-          }
-        }
-
-        stage('Build UI') {
-          when { expression { env.BUILD_UI == 'true' } }
-          steps {
-            ws("${env.WORKSPACE}@ui") {
-              deleteDir()
-              unstash 'src'
-              container('node') {
-                sh '''
-                  cd aidevops-ui
-                  npm config set registry https://registry.npmmirror.com
-                  npm config set cache "$PWD/.npm-cache" --global
-                  if [ -f package-lock.json ]; then
-                    npm ci --legacy-peer-deps
-                  else
-                    npm install --legacy-peer-deps
-                  fi
-                  npm run build:prod
-                  test -d dist
-                '''
-              }
-              container('kaniko') {
-                sh '''
-                  /kaniko/executor \
-                    --context="$PWD" \
-                    --dockerfile="$PWD/docker/build/frontend.Dockerfile" \
-                    --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG} \
-                    --snapshot-mode=redo \
-                    --use-new-run \
-                    --cache=false \
-                    --skip-tls-verify-registry=${REGISTRY}
-                '''
-              }
-            }
-          }
-        }
-      }
-    }
-
-    stage('Deploy Changed Services To Test') {
+    stage('Build And Push In Dedicated Pods') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
       steps {
-        ws("${env.WORKSPACE}@deploy") {
-          deleteDir()
-          unstash 'src'
-          container('helm') {
-            sh '''
-              helm upgrade --install aidevops-test deploy/helm/aidevops-cloud \
-                -n ${K8S_NAMESPACE} \
-                --create-namespace \
-                -f deploy/helm/aidevops-cloud/values.test.yaml \
-                --set auth.image=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG} \
-                --set gateway.image=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG} \
-                --set system.image=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG} \
-                --set ui.image=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG} \
-                --wait \
-                --timeout 10m
-            '''
-          }
+        container('builder') {
+          sh '''
+            set -euo pipefail
+
+            wait_pod() {
+              local pod_name="$1"
+              while true; do
+                phase=$(kubectl -n ${BUILD_NAMESPACE} get pod "$pod_name" -o jsonpath='{.status.phase}' 2>/dev/null || true)
+                case "$phase" in
+                  Succeeded)
+                    echo "[ok] $pod_name succeeded"
+                    break
+                    ;;
+                  Failed)
+                    echo "[fail] $pod_name failed"
+                    kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
+                    return 1
+                    ;;
+                  '')
+                    echo "[wait] $pod_name not created yet"
+                    ;;
+                  *)
+                    echo "[wait] $pod_name phase=$phase"
+                    ;;
+                esac
+                sleep 5
+              done
+            }
+
+            cleanup_pod() {
+              kubectl -n ${BUILD_NAMESPACE} delete pod "$1" --ignore-not-found=true >/dev/null 2>&1 || true
+            }
+
+            apply_backend_pod() {
+              local pod_name="$1"
+              local module="$2"
+              local jar_path="$3"
+              local image_name="$4"
+              cat <<YAML | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${pod_name}
+  namespace: ${BUILD_NAMESPACE}
+  labels:
+    app: ci-build
+    ci-role: backend-builder
+    ci-service: ${image_name}
+spec:
+  restartPolicy: Never
+  serviceAccountName: jenkins-agent
+  imagePullSecrets:
+    - name: harbor-regcred
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app: ci-build
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: ci-build
+  volumes:
+    - name: workspace
+      emptyDir: {}
+    - name: m2-cache
+      nfs:
+        server: 192.168.1.104
+        path: /data/nfs/share/jenkins-cache/m2
+    - name: harbor-config
+      secret:
+        secretName: harbor-regcred
+        items:
+          - key: .dockerconfigjson
+            path: config.json
+  initContainers:
+    - name: builder
+      image: ${CI_TOOLS_IMAGE}
+      imagePullPolicy: Always
+      command: ["sh","-lc"]
+      args:
+        - |
+          set -e
+          git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
+          cd /workspace/src
+          export MAVEN_OPTS="-Dmaven.repo.local=/workspace/.m2/repository"
+          mvn -T 1C -DskipTests package -pl ${module} -am
+      volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+        - name: m2-cache
+          mountPath: /root/.m2
+  containers:
+    - name: kaniko
+      image: ${KANIKO_IMAGE}
+      imagePullPolicy: IfNotPresent
+      args:
+        - --context=/workspace/src
+        - --dockerfile=/workspace/src/docker/build/backend.Dockerfile
+        - --destination=${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}
+        - --snapshot-mode=redo
+        - --use-new-run
+        - --cache=false
+        - --skip-tls-verify-registry=${REGISTRY}
+        - --build-arg=JAR_PATH=${jar_path}
+      volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+        - name: harbor-config
+          mountPath: /kaniko/.docker
+YAML
+            }
+
+            apply_ui_pod() {
+              local pod_name="$1"
+              cat <<YAML | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${pod_name}
+  namespace: ${BUILD_NAMESPACE}
+  labels:
+    app: ci-build
+    ci-role: ui-builder
+    ci-service: aidevops-ui
+spec:
+  restartPolicy: Never
+  serviceAccountName: jenkins-agent
+  imagePullSecrets:
+    - name: harbor-regcred
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app: ci-build
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: ci-build
+  volumes:
+    - name: workspace
+      emptyDir: {}
+    - name: npm-cache
+      nfs:
+        server: 192.168.1.104
+        path: /data/nfs/share/jenkins-cache/npm
+    - name: harbor-config
+      secret:
+        secretName: harbor-regcred
+        items:
+          - key: .dockerconfigjson
+            path: config.json
+  initContainers:
+    - name: builder
+      image: ${CI_TOOLS_IMAGE}
+      imagePullPolicy: Always
+      command: ["sh","-lc"]
+      args:
+        - |
+          set -e
+          git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
+          cd /workspace/src/aidevops-ui
+          npm config set registry https://registry.npmmirror.com
+          npm config set cache /workspace/.npm-cache --global
+          if [ -f package-lock.json ]; then
+            npm ci --legacy-peer-deps
+          else
+            npm install --legacy-peer-deps
+          fi
+          npm run build:prod
+          test -d dist
+      volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+        - name: npm-cache
+          mountPath: /root/.npm
+  containers:
+    - name: kaniko
+      image: ${KANIKO_IMAGE}
+      imagePullPolicy: IfNotPresent
+      args:
+        - --context=/workspace/src
+        - --dockerfile=/workspace/src/docker/build/frontend.Dockerfile
+        - --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
+        - --snapshot-mode=redo
+        - --use-new-run
+        - --cache=false
+        - --skip-tls-verify-registry=${REGISTRY}
+      volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+        - name: harbor-config
+          mountPath: /kaniko/.docker
+YAML
+            }
+
+            AUTH_POD="build-auth-${BUILD_NUMBER}"
+            GATEWAY_POD="build-gateway-${BUILD_NUMBER}"
+            SYSTEM_POD="build-system-${BUILD_NUMBER}"
+            UI_POD="build-ui-${BUILD_NUMBER}"
+
+            cleanup_pod "$AUTH_POD"
+            cleanup_pod "$GATEWAY_POD"
+            cleanup_pod "$SYSTEM_POD"
+            cleanup_pod "$UI_POD"
+
+            pids=""
+            if [ "${BUILD_AUTH}" = "true" ]; then apply_backend_pod "$AUTH_POD" 'aidevops-auth' 'aidevops-auth/target/aidevops-auth.jar' 'aidevops-auth' & pids="$pids $!"; fi
+            if [ "${BUILD_GATEWAY}" = "true" ]; then apply_backend_pod "$GATEWAY_POD" 'aidevops-gateway' 'aidevops-gateway/target/aidevops-gateway.jar' 'aidevops-gateway' & pids="$pids $!"; fi
+            if [ "${BUILD_SYSTEM}" = "true" ]; then apply_backend_pod "$SYSTEM_POD" 'aidevops-modules/aidevops-system' 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar' 'aidevops-system' & pids="$pids $!"; fi
+            if [ "${BUILD_UI}" = "true" ]; then apply_ui_pod "$UI_POD" & pids="$pids $!"; fi
+            for pid in $pids; do wait "$pid"; done
+
+            pids=""
+            if [ "${BUILD_AUTH}" = "true" ]; then wait_pod "$AUTH_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_GATEWAY}" = "true" ]; then wait_pod "$GATEWAY_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_SYSTEM}" = "true" ]; then wait_pod "$SYSTEM_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_UI}" = "true" ]; then wait_pod "$UI_POD" & pids="$pids $!"; fi
+            for pid in $pids; do wait "$pid"; done
+          '''
         }
+      }
+    }
+
+    stage('Rollout Changed Services To Test') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' }
+      }
+      steps {
+        container('builder') {
+          sh '''
+            set -euo pipefail
+
+            if [ "${BUILD_AUTH}" = "true" ]; then
+              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
+              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
+            fi
+
+            if [ "${BUILD_GATEWAY}" = "true" ]; then
+              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
+              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
+            fi
+
+            if [ "${BUILD_SYSTEM}" = "true" ]; then
+              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
+              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
+            fi
+
+            if [ "${BUILD_UI}" = "true" ]; then
+              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
+              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
+            fi
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      container('builder') {
+        sh '''
+          kubectl -n ${BUILD_NAMESPACE} delete pod build-auth-${BUILD_NUMBER} build-gateway-${BUILD_NUMBER} build-system-${BUILD_NUMBER} build-ui-${BUILD_NUMBER} --ignore-not-found=true >/dev/null 2>&1 || true
+        '''
       }
     }
   }
