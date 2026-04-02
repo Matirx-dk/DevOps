@@ -229,6 +229,13 @@ public class OpenClawGatewayClient {
         try {
             String effectiveSessionKey = hasText(sessionKey) ? sessionKey : "main";
             GatewayConnection connection = ensureConnected(effectiveSessionKey);
+            if (!connection.tryStartFlight()) {
+                result.put("connection", connection.snapshot());
+                result.put("ok", false);
+                result.put("stage", "connection-busy");
+                result.put("message", "当前会话仍有消息在处理中，请稍后再试。" );
+                return result;
+            }
             result.put("connection", connection.snapshot());
             Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), effectiveSessionKey, message);
             connection.markConnected(Boolean.TRUE.equals(exchange.get("ok")));
@@ -260,6 +267,10 @@ public class OpenClawGatewayClient {
             result.put("error", ex.getClass().getSimpleName());
             result.put("message", ex.getMessage());
             return result;
+        } finally {
+            String effectiveSessionKey = hasText(sessionKey) ? sessionKey : "main";
+            GatewayConnection connection = getOrCreateConnection(effectiveSessionKey);
+            connection.finishFlight();
         }
     }
 
@@ -735,6 +746,7 @@ public class OpenClawGatewayClient {
         private volatile long lastUsedAt = System.currentTimeMillis();
         private volatile boolean connected;
         private volatile boolean everConnected;
+        private volatile boolean inFlight;
         private volatile int failureCount;
         private volatile String lastError;
         private volatile String lastRunId;
@@ -788,6 +800,24 @@ public class OpenClawGatewayClient {
                         // ignore
                     }
                 }
+            }
+        }
+
+        private boolean tryStartFlight() {
+            synchronized (monitor) {
+                if (inFlight) {
+                    return false;
+                }
+                inFlight = true;
+                lastUsedAt = System.currentTimeMillis();
+                return true;
+            }
+        }
+
+        private void finishFlight() {
+            synchronized (monitor) {
+                inFlight = false;
+                lastUsedAt = System.currentTimeMillis();
             }
         }
 
