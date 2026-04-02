@@ -1,8 +1,7 @@
-FROM docker.io/library/eclipse-temurin:17-jre
+FROM docker.io/library/node:18-bullseye-slim AS node-runtime
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends nodejs npm node-ws \
-    && rm -rf /var/lib/apt/lists/*
+FROM docker.io/library/eclipse-temurin:17-jre
+COPY --from=node-runtime /usr/local/ /usr/local/
 
 WORKDIR /app
 ARG JAR_PATH
