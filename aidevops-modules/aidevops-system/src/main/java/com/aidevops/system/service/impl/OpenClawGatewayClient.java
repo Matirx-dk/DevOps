@@ -29,10 +29,12 @@ public class OpenClawGatewayClient {
     private static final int PROTOCOL_VERSION = 3;
 
     private final AiChatProperties properties;
+    private final OpenClawDeviceSigner deviceSigner;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public OpenClawGatewayClient(AiChatProperties properties) {
+    public OpenClawGatewayClient(AiChatProperties properties, OpenClawDeviceSigner deviceSigner) {
         this.properties = properties;
+        this.deviceSigner = deviceSigner;
     }
 
     public boolean enabled() {
@@ -132,13 +134,18 @@ public class OpenClawGatewayClient {
         request.put("params", params);
 
         Map<String, Object> signatureDraft = buildSignatureDraft(request, nonce, signedAt);
+        Map<String, Object> signatureResult = deviceSigner.sign(castMap(signatureDraft.get("payload")));
+        Map<String, Object> device = castMap(params.get("device"));
+        device.put("publicKey", signatureResult.get("publicKey"));
+        device.put("signature", signatureResult.get("signature"));
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("ready", enabled());
         result.put("challengeOk", Boolean.TRUE.equals(challenge.get("ok")));
         result.put("challengeStage", challenge.get("stage"));
-        result.put("signatureReady", false);
+        result.put("signatureReady", Boolean.TRUE.equals(signatureResult.get("ready")));
         result.put("signatureDraft", signatureDraft);
+        result.put("signatureResult", signatureResult);
         result.put("message", Boolean.TRUE.equals(challenge.get("ok"))
             ? "connect 请求草稿已生成；待签名原文也已固定，当前还缺真实 device 签名算法。"
             : "connect 请求草稿已生成；但当前还未拿到 challenge，nonce 先用占位值。"

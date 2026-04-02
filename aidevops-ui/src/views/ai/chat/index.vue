@@ -52,6 +52,8 @@
             <pre class="draft-json">{{ formatJson(connectDraft.request || {}) }}</pre>
             <div v-if="connectDraft.signatureDraft" class="draft-subtitle">待签名原文</div>
             <pre v-if="connectDraft.signatureDraft" class="draft-json">{{ connectDraft.signatureDraft.payloadJson || formatJson(connectDraft.signatureDraft.payload || {}) }}</pre>
+            <div v-if="connectDraft.signatureResult" class="draft-subtitle">签名器结果</div>
+            <pre v-if="connectDraft.signatureResult" class="draft-json">{{ formatJson(connectDraft.signatureResult) }}</pre>
           </div>
 
           <div class="message-list" ref="messageList">
