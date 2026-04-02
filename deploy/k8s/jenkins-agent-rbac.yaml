@@ -35,8 +35,11 @@ metadata:
   namespace: aidevops-test
 rules:
   - apiGroups: [""]
-    resources: ["pods", "pods/log", "services", "configmaps", "secrets"]
+    resources: ["pods", "pods/log", "services", "secrets"]
     verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
   - apiGroups: ["apps"]
     resources: ["deployments", "deployments/status", "replicasets"]
     verbs: ["get", "list", "watch", "patch", "update"]

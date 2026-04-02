@@ -11,23 +11,19 @@
     <div class="right-menu">
       <template v-if="device!=='mobile'">
         <search id="header-search" class="right-menu-item" />
-
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
-
         <el-tooltip content="布局大小" effect="dark" placement="bottom">
           <size-select id="size-select" class="right-menu-item hover-effect" />
         </el-tooltip>
-
         <el-tooltip content="消息通知" effect="dark" placement="bottom">
           <header-notice id="header-notice" class="right-menu-item hover-effect" />
         </el-tooltip>
-
       </template>
 
       <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="hover">
         <div class="avatar-wrapper">
           <img :src="avatar" class="user-avatar">
-          <span class="user-nickname"> {{ nickName }} </span>
+          <span class="user-nickname">{{ nickName }}</span>
         </div>
         <el-dropdown-menu slot="dropdown">
           <router-link to="/user/profile">
@@ -73,12 +69,7 @@ export default {
     HeaderNotice
   },
   computed: {
-    ...mapGetters([
-      'sidebar',
-      'avatar',
-      'device',
-      'nickName'
-    ]),
+    ...mapGetters(['sidebar', 'avatar', 'device', 'nickName']),
     setting: {
       get() {
         return this.$store.state.settings.showSettings
@@ -99,7 +90,7 @@ export default {
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
     },
-    setLayout(event) {
+    setLayout() {
       this.$emit('setLayout')
     },
     lockScreen() {
@@ -131,29 +122,32 @@ export default {
 }
 
 .navbar {
-  height: 50px;
+  height: 56px;
   overflow: hidden;
   position: relative;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  background: linear-gradient(90deg, rgba(11,18,32,0.96) 0%, rgba(19,29,51,0.94) 45%, rgba(24,40,75,0.94) 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
   display: flex;
   align-items: center;
-  // padding: 0 8px;
   box-sizing: border-box;
+  color: #eaf2ff;
 
   .hamburger-container {
-    line-height: 46px;
+    line-height: 52px;
     height: 100%;
     cursor: pointer;
     transition: background .3s;
-    -webkit-tap-highlight-color:transparent;
+    -webkit-tap-highlight-color: transparent;
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    margin-right: 8px;
+    margin: 0 10px 0 6px;
+    border-radius: 12px;
 
     &:hover {
-      background: rgba(0, 0, 0, .025)
+      background: transparent;
     }
   }
 
@@ -163,7 +157,7 @@ export default {
 
   .topmenu-container {
     position: absolute;
-    left: 50px;
+    left: 56px;
   }
 
   .topbar-container {
@@ -177,7 +171,7 @@ export default {
 
   .right-menu {
     height: 100%;
-    line-height: 50px;
+    line-height: 56px;
     display: flex;
     align-items: center;
     margin-left: auto;
@@ -187,11 +181,12 @@ export default {
     }
 
     .right-menu-item {
-      display: inline-block;
-      padding: 0 8px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
       height: 100%;
       font-size: 18px;
-      color: #5a5e66;
+      color: #d6e6ff;
       vertical-align: text-bottom;
 
       &.hover-effect {
@@ -199,41 +194,36 @@ export default {
         transition: background .3s;
 
         &:hover {
-          background: rgba(0, 0, 0, .025)
+          background: rgba(255,255,255,0.08);
         }
       }
     }
 
     .avatar-container {
-      margin-right: 0px;
-      padding-right: 0px;
+      margin-right: 0;
+      padding-right: 8px;
 
       .avatar-wrapper {
-        margin-top: 10px;
+        margin-top: 0;
         right: 8px;
         position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 56px;
 
         .user-avatar {
           cursor: pointer;
-          width: 30px;
-          height: 30px;
+          width: 32px;
+          height: 32px;
           border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.14);
         }
 
-        .user-nickname{
-          position: relative;
-          bottom: 10px;
-          left: 2px;
+        .user-nickname {
           font-size: 14px;
-          font-weight: bold;
-        }
-
-        .el-icon-caret-bottom {
-          cursor: pointer;
-          position: absolute;
-          right: -20px;
-          top: 25px;
-          font-size: 12px;
+          font-weight: 600;
+          color: #eaf2ff;
         }
       }
     }

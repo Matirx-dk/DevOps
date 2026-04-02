@@ -5,7 +5,7 @@ mysql:
   image: harbor.zoudekang.cloud/dockerhub-proxy/library/mysql:8.0
   rootPassword: password
   nfs:
-    server: 192.168.1.104
+    server: 192.168.1.100
     path: /data/nfs/share/aidevops-mysql
 
 redis:
@@ -19,6 +19,13 @@ auth:
 
 system:
   image: harbor.zoudekang.cloud/aidevops/aidevops-system:demo
+  aiChat:
+    enabled: false
+    gatewayUrl: https://ai.zoudekang.cloud/
+    gatewayWsUrl: wss://ai.zoudekang.cloud/
+    token: ""
+    experimentalSignerEnabled: false
+    probeTimeoutMs: 5000
 
 gateway:
   image: harbor.zoudekang.cloud/aidevops/aidevops-gateway:demo

@@ -44,24 +44,23 @@ export default {
   name: 'HeaderNotice',
   data() {
     return {
-      noticeList: [], // 通知列表
-      unreadCount: 0, // 未读数量
-      noticeLoading: false, // 加载状态
-      noticeVisible: false, // 弹出层显示状态
-      noticeLeaveTimer: null, // 鼠标离开计时器
-      previewVisible: false, // 预览弹窗显示状态
-      previewTitle: '', // 预览弹窗标题
-      previewContent: '', // 预览弹窗内容
-      previewNoticeType: '', // 预览弹窗类型
-      previewCreateBy: '', // 预览弹窗创建人
-      previewCreateTime: '' // 预览弹窗创建时间
+      noticeList: [],
+      unreadCount: 0,
+      noticeLoading: false,
+      noticeVisible: false,
+      noticeLeaveTimer: null,
+      previewVisible: false,
+      previewTitle: '',
+      previewContent: '',
+      previewNoticeType: '',
+      previewCreateBy: '',
+      previewCreateTime: ''
     }
   },
   mounted() {
     this.loadNoticeTop()
   },
   methods: {
-    // 鼠标移入铃铛区域
     onNoticeEnter() {
       clearTimeout(this.noticeLeaveTimer)
       this.noticeVisible = true
@@ -76,11 +75,9 @@ export default {
         }
       })
     },
-    // 鼠标离开铃铛区域
     onNoticeLeave() {
       this.noticeLeaveTimer = setTimeout(() => { this.noticeVisible = false }, 150)
     },
-    // 加载顶部公告列表
     loadNoticeTop() {
       this.noticeLoading = true
       listNoticeTop().then(res => {
@@ -90,7 +87,6 @@ export default {
         this.noticeLoading = false
       })
     },
-    // 预览公告详情
     previewNotice(item) {
       if (!item.isRead) {
         markNoticeRead(item.noticeId).catch(() => {})
@@ -109,7 +105,6 @@ export default {
         this.previewVisible = true
       })
     },
-    // 全部已读
     markAllRead() {
       const ids = this.noticeList.map(n => n.noticeId).join(',')
       if (!ids) return
@@ -145,30 +140,33 @@ export default {
 }
 .notice-popover {
   padding: 0 !important;
+  background: linear-gradient(135deg, #0f1728 0%, #18243a 55%, #203456 100%) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24) !important;
 }
 .notice-popover .notice-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #f7f9fb;
-  border-bottom: 1px solid #eee;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: #eaf2ff;
 }
 .notice-popover .notice-mark-all {
   font-size: 12px;
-  color: #409EFF;
+  color: #8fd3ff;
   font-weight: normal;
   cursor: pointer;
 }
-.notice-popover .notice-mark-all:hover { color: #2b7cc1; }
+.notice-popover .notice-mark-all:hover { color: #b6e6ff; }
 .notice-popover .notice-loading,
 .notice-popover .notice-empty {
   padding: 24px;
   text-align: center;
-  color: #bbb;
+  color: rgba(234, 242, 255, 0.68);
   font-size: 12px;
   line-height: 1.8;
 }
@@ -177,20 +175,20 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
   cursor: pointer;
   transition: background 0.15s;
 }
 .notice-popover .notice-item:last-child { border-bottom: none; }
-.notice-popover .notice-item:hover { background: #f7f9fb; }
+.notice-popover .notice-item:hover { background: rgba(255,255,255,0.06); }
 .notice-popover .notice-item.is-read .notice-tag,
 .notice-popover .notice-item.is-read .notice-item-title,
-.notice-popover .notice-item.is-read .notice-item-date { opacity: 0.45; filter: grayscale(1); color: #999; }
+.notice-popover .notice-item.is-read .notice-item-date { opacity: 0.45; filter: grayscale(1); color: #93a6c5; }
 .notice-popover .notice-tag { flex-shrink: 0; }
 .notice-popover .notice-item-title {
   flex: 1;
   font-size: 12px;
-  color: #333;
+  color: #eaf2ff;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -198,7 +196,7 @@ export default {
 .notice-popover .notice-item-date {
   flex-shrink: 0;
   font-size: 11px;
-  color: #bbb;
+  color: rgba(234, 242, 255, 0.5);
 }
 ::v-deep .notice-preview-dialog {
   .el-dialog__body { padding: 0 20px 20px; }
@@ -208,22 +206,22 @@ export default {
     gap: 14px;
     padding: 12px 0;
     font-size: 12px;
-    color: #888;
+    color: #a9bddb;
     .notice-preview-info { display: flex; align-items: center; gap: 4px; }
   }
   .notice-preview-divider {
     height: 1px;
-    background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.14), transparent);
     margin-bottom: 16px;
   }
   .notice-preview-content {
     font-size: 14px;
     line-height: 1.85;
-    color: #2d3748;
+    color: #e6efff;
     word-break: break-word;
-    img { max-width: 100%; border-radius: 4px; }
+    img { max-width: 100%; border-radius: 6px; }
     p { margin: 0 0 1em; }
-    a { color: #409EFF; text-decoration: underline; }
+    a { color: #8fd3ff; text-decoration: underline; }
   }
 }
 </style>

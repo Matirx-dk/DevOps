@@ -161,7 +161,7 @@ create table sys_menu (
 -- 初始化-菜单信息表数据
 -- ----------------------------
 -- 一级菜单
-insert into sys_menu values('4', 'AI对话', '0', '2', 'https://devops.zoudekang.cloud/openclaw/', null, '', '', 0, 0, 'M', '0', '0', '', 'guide', 'admin', sysdate(), '', null, 'AI对话菜单');
+insert into sys_menu values('4', 'AI对话', '0', '2', 'ai-chat', 'ai/chat/index', '', '', 1, 0, 'C', '0', '0', '', 'guide', 'admin', sysdate(), '', null, 'AI对话菜单');
 insert into sys_menu values('1', '平台管理', '0', '5', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
 insert into sys_menu values('2000', '运维中心', '0', '4', 'ops', 'ops/index', '', '', 1, 0, 'C', '0', '0', '', 'monitor', 'admin', sysdate(), '', null, '运维中心菜单');
 insert into sys_menu values('3000', '质量中心', '0', '3', 'quality', 'quality/index', '', '', 1, 0, 'C', '0', '0', '', 'skill', 'admin', sysdate(), '', null, '质量中心菜单');
@@ -238,6 +238,11 @@ create table sys_role_menu (
 -- ----------------------------
 -- 初始化-角色和菜单关联表数据
 -- ----------------------------
+insert into sys_role_menu values ('1', '1');
+insert into sys_role_menu values ('1', '100');
+insert into sys_role_menu values ('1', '101');
+insert into sys_role_menu values ('1', '102');
+insert into sys_role_menu values ('1', '106');
 insert into sys_role_menu values ('2', '1');
 insert into sys_role_menu values ('2', '2');
 insert into sys_role_menu values ('2', '3');
