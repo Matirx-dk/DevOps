@@ -141,12 +141,13 @@ export default {
     -webkit-tap-highlight-color: transparent;
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    margin-right: 8px;
-    border-radius: 10px;
+    margin: 0 10px 0 6px;
+    border-radius: 12px;
 
     &:hover {
-      background: rgba(255,255,255,0.08);
+      background: transparent;
     }
   }
 
