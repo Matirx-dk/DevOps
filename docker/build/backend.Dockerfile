@@ -1,7 +1,7 @@
 FROM docker.io/library/eclipse-temurin:17-jre
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends nodejs npm \
+    && apt-get install -y --no-install-recommends nodejs npm node-ws \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
