@@ -18,10 +18,7 @@ export default {
   },
   watch: {
     $route(route) {
-      // if you go to the redirect page, do not update the breadcrumbs
-      if (route.path.startsWith('/redirect/')) {
-        return
-      }
+      if (route.path.startsWith('/redirect/')) return
       this.getBreadcrumb()
     }
   },
@@ -30,11 +27,9 @@ export default {
   },
   methods: {
     getBreadcrumb() {
-      // only show routes with meta.title
       let matched = []
       const router = this.$route
       const pathNum = this.findPathNum(router.path)
-      // multi-level menu
       if (pathNum > 2) {
         const reg = /\/\w+/gi
         const pathList = router.path.match(reg).map((item, index) => {
@@ -45,13 +40,12 @@ export default {
       } else {
         matched = router.matched.filter(item => item.meta && item.meta.title)
       }
-      // 判断是否为首页
       if (!this.isDashboard(matched[0])) {
-        matched = [{ path: "/index", meta: { title: "首页" } }].concat(matched)
+        matched = [{ path: '/index', meta: { title: '首页' } }].concat(matched)
       }
       this.levelList = matched.filter(item => item.meta && item.meta.title && item.meta.breadcrumb !== false)
     },
-    findPathNum(str, char = "/") {
+    findPathNum(str, char = '/') {
       let index = str.indexOf(char)
       let num = 0
       while (index !== -1) {
@@ -72,9 +66,7 @@ export default {
     },
     isDashboard(route) {
       const name = route && route.name
-      if (!name) {
-        return false
-      }
+      if (!name) return false
       return name.trim() === 'Index'
     },
     handleLink(item) {
@@ -93,10 +85,22 @@ export default {
 .app-breadcrumb.el-breadcrumb {
   display: inline-block;
   font-size: 14px;
-  line-height: 50px;
+  line-height: 56px;
+
+  ::v-deep .el-breadcrumb__inner,
+  ::v-deep .el-breadcrumb__inner a {
+    color: rgba(234, 242, 255, 0.72);
+    font-weight: 500;
+  }
+
+  ::v-deep .el-breadcrumb__separator {
+    color: rgba(234, 242, 255, 0.34);
+  }
+
   .no-redirect {
-    color: #97a8be;
+    color: #ffffff;
     cursor: text;
+    font-weight: 600;
   }
 }
 </style>

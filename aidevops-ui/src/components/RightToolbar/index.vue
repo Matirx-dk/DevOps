@@ -12,7 +12,6 @@
         <el-dropdown trigger="click" :hide-on-click="false" style="padding-left: 12px" v-if="showColumnsType == 'checkbox'">
           <el-button size="mini" circle icon="el-icon-menu" />
           <el-dropdown-menu slot="dropdown">
-            <!-- 全选/反选 按钮 -->
             <el-dropdown-item>
               <el-checkbox :indeterminate="isIndeterminate" v-model="isChecked" @change="toggleCheckAll"> 列展示 </el-checkbox>
             </el-dropdown-item>
@@ -27,62 +26,32 @@
       </el-tooltip>
     </el-row>
     <el-dialog :title="title" :visible.sync="open" append-to-body>
-      <el-transfer
-        :titles="['显示', '隐藏']"
-        v-model="value"
-        :data="transferData"
-        @change="dataChange"
-      ></el-transfer>
+      <el-transfer :titles="['显示', '隐藏']" v-model="value" :data="transferData" @change="dataChange"></el-transfer>
     </el-dialog>
   </div>
 </template>
 
 <script>
 export default {
-  name: "RightToolbar",
+  name: 'RightToolbar',
   data() {
     return {
-      // 显隐数据
       value: [],
-      // 弹出层标题
-      title: "显示/隐藏",
-      // 是否显示弹出层
+      title: '显示/隐藏',
       open: false
     }
   },
   props: {
-    /* 是否显示检索条件 */
-    showSearch: {
-      type: Boolean,
-      default: true
-    },
-    /* 显隐列信息（数组格式、对象格式） */
-    columns: {
-      type: [Array, Object],
-      default: () => ({})
-    },
-    /* 是否显示检索图标 */
-    search: {
-      type: Boolean,
-      default: true
-    },
-    /* 显隐列类型（transfer穿梭框、checkbox复选框） */
-    showColumnsType: {
-      type: String,
-      default: "checkbox"
-    },
-    /* 右外边距 */
-    gutter: {
-      type: Number,
-      default: 10
-    },
+    showSearch: { type: Boolean, default: true },
+    columns: { type: [Array, Object], default: () => ({}) },
+    search: { type: Boolean, default: true },
+    showColumnsType: { type: String, default: 'checkbox' },
+    gutter: { type: Number, default: 10 }
   },
   computed: {
     style() {
       const ret = {}
-      if (this.gutter) {
-        ret.marginRight = `${this.gutter / 2}px`
-      }
+      if (this.gutter) ret.marginRight = `${this.gutter / 2}px`
       return ret
     },
     isChecked: {
@@ -97,31 +66,24 @@ export default {
     transferData() {
       if (Array.isArray(this.columns)) {
         return this.columns.map((item, index) => ({ key: index, label: item.label }))
-      } else {
-        return Object.keys(this.columns).map((key, index) => ({ key: index, label: this.columns[key].label }))
       }
+      return Object.keys(this.columns).map((key, index) => ({ key: index, label: this.columns[key].label }))
     }
   },
   created() {
     if (this.showColumnsType == 'transfer') {
-      // transfer穿梭显隐列初始默认隐藏列
       if (Array.isArray(this.columns)) {
         for (let item in this.columns) {
-          if (this.columns[item].visible === false) {
-            this.value.push(parseInt(item))
-          }
+          if (this.columns[item].visible === false) this.value.push(parseInt(item))
         }
       } else {
         Object.keys(this.columns).forEach((key, index) => {
-          if (this.columns[key].visible === false) {
-            this.value.push(index)
-          }
+          if (this.columns[key].visible === false) this.value.push(index)
         })
       }
     }
   },
   methods: {
-    // 搜索
     toggleSearch() {
       let el = this.$el
       let formEl = null
@@ -131,7 +93,6 @@ export default {
       if (!formEl) return this.$emit('update:showSearch', !this.showSearch)
       this._animateSearch(formEl, this.showSearch)
     },
-    // 搜索栏动画
     _animateSearch(el, isHide) {
       const DURATION = 260
       const TRANSITION = 'max-height 0.25s ease, opacity 0.2s ease'
@@ -152,11 +113,9 @@ export default {
         })
       }
     },
-    // 刷新
     refresh() {
-      this.$emit("queryTable")
+      this.$emit('queryTable')
     },
-    // 右侧列表元素变化
     dataChange(data) {
       if (Array.isArray(this.columns)) {
         for (let item in this.columns) {
@@ -169,11 +128,9 @@ export default {
         })
       }
     },
-    // 打开显隐列dialog
     showColumn() {
       this.open = true
     },
-    // 单勾选
     checkboxChange(event, key) {
       if (Array.isArray(this.columns)) {
         this.columns.filter(item => item.key == key)[0].visible = event
@@ -181,7 +138,6 @@ export default {
         this.columns[key].visible = event
       }
     },
-    // 切换全选/反选
     toggleCheckAll() {
       const newValue = !this.isChecked
       if (Array.isArray(this.columns)) {
@@ -190,16 +146,25 @@ export default {
         Object.values(this.columns).forEach((col) => (col.visible = newValue))
       }
     }
-  },
+  }
 }
 </script>
 
 <style lang="scss" scoped>
+.top-right-btn ::v-deep .el-button.is-circle {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #dbe7ff;
+}
+.top-right-btn ::v-deep .el-button.is-circle:hover {
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+}
 ::v-deep .el-transfer__button {
   border-radius: 50%;
   padding: 12px;
   display: block;
-  margin-left: 0px;
+  margin-left: 0;
 }
 ::v-deep .el-transfer__button:first-child {
   margin-bottom: 10px;
@@ -207,7 +172,7 @@ export default {
 .check-line {
   width: 90%;
   height: 1px;
-  background-color: #ccc;
+  background-color: rgba(255,255,255,0.12);
   margin: 3px auto;
 }
 </style>
