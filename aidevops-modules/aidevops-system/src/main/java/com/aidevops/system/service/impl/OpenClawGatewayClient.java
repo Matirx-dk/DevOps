@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -28,6 +29,7 @@ public class OpenClawGatewayClient {
     private final AiChatProperties properties;
     private final OpenClawDeviceSigner deviceSigner;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ConcurrentHashMap<String, GatewayConnection> connections = new ConcurrentHashMap<>();
 
     public OpenClawGatewayClient(AiChatProperties properties, OpenClawDeviceSigner deviceSigner) {
         this.properties = properties;
@@ -46,6 +48,7 @@ public class OpenClawGatewayClient {
         data.put("tokenConfigured", hasText(properties.getToken()));
         data.put("mode", enabled() ? "gateway-probe" : "mock-fallback");
         data.put("experimentalSignerEnabled", properties.isExperimentalSignerEnabled());
+        data.put("connectionPoolSize", connections.size());
         data.put("probe", probeChallenge());
         data.put("connectDraft", buildConnectDraft());
         data.put("message", enabled()
@@ -223,7 +226,12 @@ public class OpenClawGatewayClient {
         }
 
         try {
-            Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), sessionKey, message);
+            String effectiveSessionKey = hasText(sessionKey) ? sessionKey : "main";
+            GatewayConnection connection = getOrCreateConnection(effectiveSessionKey);
+            connection.touch();
+            Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), effectiveSessionKey, message);
+            connection.connected = Boolean.TRUE.equals(exchange.get("ok"));
+            result.put("connectionPoolSize", connections.size());
             result.putAll(exchange);
             result.put("ok", Boolean.TRUE.equals(exchange.get("ok")));
             if (Boolean.TRUE.equals(exchange.get("ok"))) {
@@ -686,6 +694,24 @@ public class OpenClawGatewayClient {
             }
         }
         return "";
+    }
+
+    private GatewayConnection getOrCreateConnection(String sessionKey) {
+        return connections.computeIfAbsent(sessionKey, GatewayConnection::new);
+    }
+
+    private final class GatewayConnection {
+        private final String sessionKey;
+        private volatile long lastUsedAt = System.currentTimeMillis();
+        private volatile boolean connected;
+
+        private GatewayConnection(String sessionKey) {
+            this.sessionKey = sessionKey;
+        }
+
+        private void touch() {
+            this.lastUsedAt = System.currentTimeMillis();
+        }
     }
 
     private boolean hasText(String value) {
