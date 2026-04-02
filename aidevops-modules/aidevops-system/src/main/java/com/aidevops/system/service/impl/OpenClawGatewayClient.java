@@ -209,6 +209,36 @@ public class OpenClawGatewayClient {
         return result;
     }
 
+    public Map<String, Object> sendMessage(String sessionKey, String message) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("sessionKey", sessionKey);
+        result.put("message", message);
+        result.put("enabled", enabled());
+
+        if (!enabled()) {
+            result.put("ok", false);
+            result.put("stage", "disabled");
+            result.put("answer", "当前未启用真实 OpenClaw Gateway，仍处于 mock 回退模式。" );
+            return result;
+        }
+
+        try {
+            Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), sessionKey, message);
+            result.putAll(exchange);
+            result.put("ok", Boolean.TRUE.equals(exchange.get("ok")));
+            if (Boolean.TRUE.equals(exchange.get("ok"))) {
+                result.put("answer", String.valueOf(exchange.getOrDefault("finalText", "")));
+            }
+            return result;
+        } catch (Exception ex) {
+            result.put("ok", false);
+            result.put("stage", "chat-send-failed");
+            result.put("error", ex.getClass().getSimpleName());
+            result.put("message", ex.getMessage());
+            return result;
+        }
+    }
+
     private Map<String, Object> buildConnectRequest(String nonce) {
         long signedAt = System.currentTimeMillis();
 
@@ -456,6 +486,141 @@ public class OpenClawGatewayClient {
             return result;
         } finally {
             try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "connect-test-complete").get(2, TimeUnit.SECONDS); } catch (Exception ignore) { webSocket.abort(); }
+        }
+    }
+
+    private Map<String, Object> sendChatAndReceive(String wsUrl, int timeoutMs, String sessionKey, String message) throws Exception {
+        CompletableFuture<String> challengeFuture = new CompletableFuture<>();
+        CompletableFuture<String> connectFuture = new CompletableFuture<>();
+        CompletableFuture<String> chatAckFuture = new CompletableFuture<>();
+        CompletableFuture<String> chatFinalFuture = new CompletableFuture<>();
+        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
+        final String[] runIdHolder = new String[1];
+        final StringBuilder latestDelta = new StringBuilder();
+
+        WebSocket.Listener listener = new WebSocket.Listener() {
+            private final StringBuilder textBuffer = new StringBuilder();
+            @Override public void onOpen(WebSocket webSocket) { webSocket.request(1); }
+            @Override public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                textBuffer.append(data);
+                if (last) {
+                    String frame = textBuffer.toString();
+                    textBuffer.setLength(0);
+                    try {
+                        Map<String, Object> parsed = objectMapper.readValue(frame, new TypeReference<Map<String, Object>>() {});
+                        String type = String.valueOf(parsed.get("type"));
+                        if (!challengeFuture.isDone()) {
+                            challengeFuture.complete(frame);
+                        } else if (!connectFuture.isDone() && "res".equals(type)) {
+                            connectFuture.complete(frame);
+                        } else if (!chatAckFuture.isDone() && "res".equals(type)) {
+                            chatAckFuture.complete(frame);
+                            Map<String, Object> payload = castMap(parsed.get("payload"));
+                            Object runId = payload.get("runId");
+                            if (runId != null) runIdHolder[0] = String.valueOf(runId);
+                        } else if ("event".equals(type) && "chat".equals(String.valueOf(parsed.get("event")))) {
+                            Map<String, Object> payload = castMap(parsed.get("payload"));
+                            String state = String.valueOf(payload.get("state"));
+                            if (runIdHolder[0] == null || runIdHolder[0].equals(String.valueOf(payload.get("runId")))) {
+                                if ("delta".equals(state)) {
+                                    Map<String, Object> msg = castMap(payload.get("message"));
+                                    Object text = msg.get("text");
+                                    if (text != null) {
+                                        latestDelta.setLength(0);
+                                        latestDelta.append(String.valueOf(text));
+                                    }
+                                } else if ("final".equals(state) || "error".equals(state) || "aborted".equals(state)) {
+                                    chatFinalFuture.complete(frame);
+                                }
+                            }
+                        }
+                    } catch (Exception ignore) {
+                        if (!challengeFuture.isDone()) challengeFuture.complete(frame);
+                    }
+                }
+                webSocket.request(1);
+                return CompletableFuture.completedFuture(null);
+            }
+            @Override public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+                if (!challengeFuture.isDone()) challengeFuture.completeExceptionally(new IllegalStateException("WS closed before challenge, code=" + statusCode + ", reason=" + reason));
+                if (!connectFuture.isDone()) connectFuture.completeExceptionally(new IllegalStateException("WS closed before connect response, code=" + statusCode + ", reason=" + reason));
+                if (!chatAckFuture.isDone()) chatAckFuture.completeExceptionally(new IllegalStateException("WS closed before chat ack, code=" + statusCode + ", reason=" + reason));
+                if (!chatFinalFuture.isDone()) chatFinalFuture.completeExceptionally(new IllegalStateException("WS closed before chat final, code=" + statusCode + ", reason=" + reason));
+                return CompletableFuture.completedFuture(null);
+            }
+            @Override public void onError(WebSocket webSocket, Throwable error) {
+                if (!challengeFuture.isDone()) challengeFuture.completeExceptionally(error);
+                if (!connectFuture.isDone()) connectFuture.completeExceptionally(error);
+                if (!chatAckFuture.isDone()) chatAckFuture.completeExceptionally(error);
+                if (!chatFinalFuture.isDone()) chatFinalFuture.completeExceptionally(error);
+            }
+        };
+
+        WebSocket webSocket = client.newWebSocketBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).buildAsync(URI.create(wsUrl), listener).get(timeoutMs, TimeUnit.MILLISECONDS);
+        try {
+            String challengeFrame = challengeFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            Map<String, Object> challenge = objectMapper.readValue(challengeFrame, new TypeReference<Map<String, Object>>() {});
+            Map<String, Object> challengePayload = castMap(challenge.get("payload"));
+            String nonce = String.valueOf(challengePayload.get("nonce"));
+
+            Map<String, Object> connectData = buildConnectRequest(nonce);
+            Map<String, Object> connectRequest = castMap(connectData.get("request"));
+            String connectJson = objectMapper.writeValueAsString(connectRequest);
+            webSocket.sendText(connectJson, true).get(timeoutMs, TimeUnit.MILLISECONDS);
+
+            String connectResponseFrame = connectFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            Map<String, Object> connectResponse = objectMapper.readValue(connectResponseFrame, new TypeReference<Map<String, Object>>() {});
+            if (!Boolean.TRUE.equals(connectResponse.get("ok"))) {
+                Map<String, Object> failed = new LinkedHashMap<>();
+                failed.put("ok", false);
+                failed.put("stage", "connect-failed");
+                failed.put("challenge", challenge);
+                failed.put("connectRequest", connectRequest);
+                failed.put("connectResponse", connectResponse);
+                failed.put("connectResponseFrame", connectResponseFrame);
+                failed.put("signatureDraft", connectData.get("signatureDraft"));
+                failed.put("signatureResult", connectData.get("signatureResult"));
+                return failed;
+            }
+
+            String idempotencyKey = "msg_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+            Map<String, Object> chatRequest = new LinkedHashMap<>();
+            chatRequest.put("type", "req");
+            chatRequest.put("id", "chat_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+            chatRequest.put("method", "chat.send");
+            Map<String, Object> chatParams = new LinkedHashMap<>();
+            chatParams.put("sessionKey", hasText(sessionKey) ? sessionKey : "main");
+            chatParams.put("message", message);
+            chatParams.put("deliver", false);
+            chatParams.put("idempotencyKey", idempotencyKey);
+            chatRequest.put("params", chatParams);
+            String chatJson = objectMapper.writeValueAsString(chatRequest);
+            webSocket.sendText(chatJson, true).get(timeoutMs, TimeUnit.MILLISECONDS);
+
+            String chatAckFrame = chatAckFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+            Map<String, Object> chatAck = objectMapper.readValue(chatAckFrame, new TypeReference<Map<String, Object>>() {});
+            String chatFinalFrame = chatFinalFuture.get(timeoutMs * 4L, TimeUnit.MILLISECONDS);
+            Map<String, Object> chatFinal = objectMapper.readValue(chatFinalFrame, new TypeReference<Map<String, Object>>() {});
+            Map<String, Object> chatPayload = castMap(chatFinal.get("payload"));
+            Map<String, Object> finalMessage = castMap(chatPayload.get("message"));
+            String finalText = finalMessage.get("text") == null ? latestDelta.toString() : String.valueOf(finalMessage.get("text"));
+
+            Map<String, Object> ok = new LinkedHashMap<>();
+            ok.put("ok", true);
+            ok.put("stage", "chat-final-received");
+            ok.put("challenge", challenge);
+            ok.put("connectRequest", connectRequest);
+            ok.put("connectResponse", connectResponse);
+            ok.put("chatRequest", chatRequest);
+            ok.put("chatAck", chatAck);
+            ok.put("chatFinal", chatFinal);
+            ok.put("runId", runIdHolder[0]);
+            ok.put("finalText", finalText == null ? "" : finalText);
+            ok.put("signatureDraft", connectData.get("signatureDraft"));
+            ok.put("signatureResult", connectData.get("signatureResult"));
+            return ok;
+        } finally {
+            try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "chat-send-complete").get(2, TimeUnit.SECONDS); } catch (Exception ignore) { webSocket.abort(); }
         }
     }
 

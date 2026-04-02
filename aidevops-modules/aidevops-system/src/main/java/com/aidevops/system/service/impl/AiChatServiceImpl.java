@@ -118,9 +118,11 @@ public class AiChatServiceImpl implements IAiChatService {
         session.put("updateTime", new Date());
         session.put("status", gatewayClient.enabled() ? "gateway-probe" : "mock");
 
-        Map<String, Object> preview = gatewayClient.previewSend(String.valueOf(session.get("openclawSessionKey")), message);
-        String answer = String.valueOf(preview.get("answer"));
+        Map<String, Object> sendResult = gatewayClient.sendMessage(String.valueOf(session.get("openclawSessionKey")), message);
+        String answer = String.valueOf(sendResult.getOrDefault("answer", ""));
         messages.add(buildMessage("assistant", answer));
+
+        session.put("status", Boolean.TRUE.equals(sendResult.get("ok")) ? "gateway-connected" : (gatewayClient.enabled() ? "gateway-probe" : "mock"));
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("sessionId", sessionId);
@@ -128,7 +130,7 @@ public class AiChatServiceImpl implements IAiChatService {
         data.put("answer", answer);
         data.put("responseTime", new Date());
         data.put("status", session.get("status"));
-        data.put("probe", preview.get("probe"));
+        data.put("gateway", sendResult);
         return data;
     }
 
