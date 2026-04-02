@@ -237,7 +237,7 @@ public class OpenClawGatewayClient {
                 return result;
             }
             result.put("connection", connection.snapshot());
-            Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), effectiveSessionKey, message);
+            Map<String, Object> exchange = connection.performSingleFlight(message);
             connection.markConnected(Boolean.TRUE.equals(exchange.get("ok")));
             if (exchange.get("runId") != null) {
                 connection.rememberRunId(String.valueOf(exchange.get("runId")));
@@ -836,6 +836,15 @@ public class OpenClawGatewayClient {
             this.failureCount += 1;
             this.lastError = ex.getClass().getSimpleName() + ": " + ex.getMessage();
             this.lastUsedAt = System.currentTimeMillis();
+        }
+
+        private Map<String, Object> performSingleFlight(String message) throws Exception {
+            return OpenClawGatewayClient.this.sendChatAndReceive(
+                properties.getGatewayWsUrl(),
+                properties.getProbeTimeoutMs(),
+                sessionKey,
+                message
+            );
         }
 
         private Map<String, Object> snapshot() {
