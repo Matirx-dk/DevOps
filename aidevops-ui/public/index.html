@@ -5,204 +5,135 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="renderer" content="webkit">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g1' x1='18' y1='18' x2='110' y2='110' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%233FA9FF'/%3E%3Cstop offset='1' stop-color='%23215CFF'/%3E%3C/linearGradient%3E%3ClinearGradient id='g2' x1='37' y1='28' x2='90' y2='94' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23E6F6FF' stop-opacity='0.95'/%3E%3Cstop offset='1' stop-color='%23FFFFFF' stop-opacity='0.82'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='10' y='10' width='108' height='108' rx='30' fill='url(%23g1)'/%3E%3Cpath d='M38 43C38 35.8203 43.8203 30 51 30H77C84.1797 30 90 35.8203 90 43V85C90 92.1797 84.1797 98 77 98H51C43.8203 98 38 92.1797 38 85V43Z' fill='url(%23g2)' fill-opacity='0.22'/%3E%3Cpath d='M45 45L64 34L83 45V66C83 78 75.3 89.1 64 94C52.7 89.1 45 78 45 66V45Z' fill='url(%23g2)'/%3E%3Cpath d='M56 60L62 66L74 53' stroke='%232C63FF' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <title><%= webpackConfig.name %></title>
     <!--[if lt IE 11]><script>window.location.href='/html/ie.html';</script><![endif]-->
-	  <style>
-    html,
-    body,
-    #app {
-      height: 100%;
-      margin: 0px;
-      padding: 0px;
-    }
-    .chromeframe {
-      margin: 0.2em 0;
-      background: #ccc;
-      color: #000;
-      padding: 0.2em 0;
-    }
-
-    #loader-wrapper {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 999999;
-    }
-
-    #loader {
-      display: block;
-      position: relative;
-      left: 50%;
-      top: 50%;
-      width: 150px;
-      height: 150px;
-      margin: -75px 0 0 -75px;
-      border-radius: 50%;
-      border: 3px solid transparent;
-      border-top-color: #FFF;
-      -webkit-animation: spin 2s linear infinite;
-      -ms-animation: spin 2s linear infinite;
-      -moz-animation: spin 2s linear infinite;
-      -o-animation: spin 2s linear infinite;
-      animation: spin 2s linear infinite;
-      z-index: 1001;
-    }
-
-    #loader:before {
-      content: "";
-      position: absolute;
-      top: 5px;
-      left: 5px;
-      right: 5px;
-      bottom: 5px;
-      border-radius: 50%;
-      border: 3px solid transparent;
-      border-top-color: #FFF;
-      -webkit-animation: spin 3s linear infinite;
-      -moz-animation: spin 3s linear infinite;
-      -o-animation: spin 3s linear infinite;
-      -ms-animation: spin 3s linear infinite;
-      animation: spin 3s linear infinite;
-    }
-
-    #loader:after {
-      content: "";
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      right: 15px;
-      bottom: 15px;
-      border-radius: 50%;
-      border: 3px solid transparent;
-      border-top-color: #FFF;
-      -moz-animation: spin 1.5s linear infinite;
-      -o-animation: spin 1.5s linear infinite;
-      -ms-animation: spin 1.5s linear infinite;
-      -webkit-animation: spin 1.5s linear infinite;
-      animation: spin 1.5s linear infinite;
-    }
-
-
-    @-webkit-keyframes spin {
-      0% {
-        -webkit-transform: rotate(0deg);
-        -ms-transform: rotate(0deg);
-        transform: rotate(0deg);
+    <style>
+      html, body, #app {
+        height: 100%;
+        margin: 0;
+        padding: 0;
       }
-      100% {
-        -webkit-transform: rotate(360deg);
-        -ms-transform: rotate(360deg);
-        transform: rotate(360deg);
+      body {
+        background: #0f172a;
       }
-    }
-
-    @keyframes spin {
-      0% {
-        -webkit-transform: rotate(0deg);
-        -ms-transform: rotate(0deg);
-        transform: rotate(0deg);
+      #loader-wrapper {
+        position: fixed;
+        inset: 0;
+        z-index: 999999;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 20% 20%, rgba(63, 169, 255, 0.22), transparent 28%),
+          radial-gradient(circle at 80% 30%, rgba(33, 92, 255, 0.18), transparent 24%),
+          linear-gradient(135deg, #0b1220 0%, #131d33 45%, #18284b 100%);
       }
-      100% {
-        -webkit-transform: rotate(360deg);
-        -ms-transform: rotate(360deg);
-        transform: rotate(360deg);
+      #loader {
+        display: block;
+        position: relative;
+        left: 50%;
+        top: 50%;
+        width: 130px;
+        height: 130px;
+        margin: -90px 0 0 -65px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: #72d3ff;
+        animation: spin 1.8s linear infinite;
+        z-index: 1001;
       }
-    }
-
-
-    #loader-wrapper .loader-section {
-      position: fixed;
-      top: 0;
-      width: 51%;
-      height: 100%;
-      background: #7171C6;
-      z-index: 1000;
-      -webkit-transform: translateX(0);
-      -ms-transform: translateX(0);
-      transform: translateX(0);
-    }
-
-    #loader-wrapper .loader-section.section-left {
-      left: 0;
-    }
-
-    #loader-wrapper .loader-section.section-right {
-      right: 0;
-    }
-
-
-    .loaded #loader-wrapper .loader-section.section-left {
-      -webkit-transform: translateX(-100%);
-      -ms-transform: translateX(-100%);
-      transform: translateX(-100%);
-      -webkit-transition: all 0.7s 0.3s cubic-bezier(0.645, 0.045, 0.355, 1.000);
-      transition: all 0.7s 0.3s cubic-bezier(0.645, 0.045, 0.355, 1.000);
-    }
-
-    .loaded #loader-wrapper .loader-section.section-right {
-      -webkit-transform: translateX(100%);
-      -ms-transform: translateX(100%);
-      transform: translateX(100%);
-      -webkit-transition: all 0.7s 0.3s cubic-bezier(0.645, 0.045, 0.355, 1.000);
-      transition: all 0.7s 0.3s cubic-bezier(0.645, 0.045, 0.355, 1.000);
-    }
-
-    .loaded #loader {
-      opacity: 0;
-      -webkit-transition: all 0.3s ease-out;
-      transition: all 0.3s ease-out;
-    }
-
-    .loaded #loader-wrapper {
-      visibility: hidden;
-      -webkit-transform: translateY(-100%);
-      -ms-transform: translateY(-100%);
-      transform: translateY(-100%);
-      -webkit-transition: all 0.3s 1s ease-out;
-      transition: all 0.3s 1s ease-out;
-    }
-
-    .no-js #loader-wrapper {
-      display: none;
-    }
-
-    .no-js h1 {
-      color: #222222;
-    }
-
-    #loader-wrapper .load_title {
-      font-family: 'Open Sans';
-      color: #FFF;
-      font-size: 19px;
-      width: 100%;
-      text-align: center;
-      z-index: 9999999999999;
-      position: absolute;
-      top: 60%;
-      opacity: 1;
-      line-height: 30px;
-    }
-
-    #loader-wrapper .load_title span {
-      font-weight: normal;
-      font-style: italic;
-      font-size: 13px;
-      color: #FFF;
-      opacity: 0.5;
-    }
-  </style>
+      #loader:before,
+      #loader:after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        border: 3px solid transparent;
+      }
+      #loader:before {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        border-top-color: #3fa9ff;
+        animation: spin 2.4s linear infinite;
+      }
+      #loader:after {
+        top: 18px;
+        left: 18px;
+        right: 18px;
+        bottom: 18px;
+        border-top-color: #ffffff;
+        animation: spin 1.2s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .loaded #loader {
+        opacity: 0;
+        transition: all .3s ease-out;
+      }
+      .loaded #loader-wrapper {
+        visibility: hidden;
+        transform: translateY(-100%);
+        transition: all .3s 1s ease-out;
+      }
+      #loader-wrapper .load-card {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 360px;
+        margin-left: -180px;
+        margin-top: 40px;
+        padding: 18px 20px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.1);
+        backdrop-filter: blur(8px);
+        text-align: center;
+        color: #eaf2ff;
+      }
+      #loader-wrapper .load-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: .5px;
+        margin-bottom: 8px;
+      }
+      #loader-wrapper .load-subtitle {
+        font-size: 13px;
+        line-height: 1.8;
+        color: rgba(234, 242, 255, 0.76);
+      }
+      #loader-wrapper .load-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 92px;
+        height: 30px;
+        margin-bottom: 14px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: rgba(63, 169, 255, 0.16);
+        color: #9edcff;
+        border: 1px solid rgba(63, 169, 255, 0.3);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+      .no-js #loader-wrapper {
+        display: none;
+      }
+    </style>
   </head>
   <body>
     <div id="app">
-	    <div id="loader-wrapper">
-		    <div id="loader"></div>
-		    <div class="loader-section section-left"></div>
-		    <div class="loader-section section-right"></div>
-		    <div class="load_title">正在加载系统资源，请耐心等待</div>
+      <div id="loader-wrapper">
+        <div id="loader"></div>
+        <div class="load-card">
+          <div class="load-badge">AIDevOps</div>
+          <div class="load-title">智能运维平台正在启动</div>
+          <div class="load-subtitle">正在加载前端资源、菜单路由与运行环境，请稍候片刻。</div>
         </div>
-	</div>
+      </div>
+    </div>
   </body>
 </html>
