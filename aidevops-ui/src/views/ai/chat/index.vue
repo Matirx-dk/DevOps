@@ -1,7 +1,7 @@
 <template>
   <div class="ai-chat-page app-container">
     <el-row :gutter="20">
-      <el-col :xs="24" :lg="7">
+      <el-col :xs="24" :lg="5">
         <el-card shadow="hover" class="chat-card session-card">
           <div slot="header" class="chat-header">
             <span>AI 对话</span>
@@ -22,7 +22,7 @@
         </el-card>
       </el-col>
 
-      <el-col :xs="24" :lg="17">
+      <el-col :xs="24" :lg="19">
         <el-card shadow="hover" class="chat-card message-card">
           <div slot="header" class="chat-header">
             <span>{{ currentTitle || 'AI 运维对话' }}</span>
@@ -187,7 +187,7 @@ export default {
   justify-content: flex-start;
 }
 .message-bubble {
-  max-width: 78%;
+  max-width: 82%;
   padding: 14px 16px;
   border-radius: 16px;
   background: rgba(255,255,255,0.06);
