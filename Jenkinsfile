@@ -130,7 +130,7 @@ spec:
       steps {
         container('builder') {
           sh '''
-            set -euo pipefail
+            set -eu
 
             wait_pod() {
               local pod_name="$1"
@@ -380,7 +380,7 @@ YAML
       steps {
         container('builder') {
           sh '''
-            set -euo pipefail
+            set -eu
 
             if [ "${BUILD_AUTH}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
