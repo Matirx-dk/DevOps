@@ -97,7 +97,7 @@ sqlInit:
 
 Chart 已内置：
 - `files/ry_config.sql`
-- `files/ry_cloud.sql`
+- `files/aidevops_cloud.sql`
 - `files/quartz.sql`
 
 这些文件已经按 Kubernetes 场景做过一轮基础替换：

@@ -56,7 +56,7 @@ sqlInit:
   mode: bundled
   bundled:
     ryConfigFile: files/ry_config.sql
-    ryCloudFile: files/ry_cloud.sql
+    ryCloudFile: files/aidevops_cloud.sql
     quartzFile: files/quartz.sql
   inline:
     ryConfigSql: ""
