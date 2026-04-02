@@ -7,7 +7,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: aidevops-test-pipeline
+    app: aidevops-cloud-pipeline
 spec:
   serviceAccountName: jenkins-agent
   restartPolicy: Never
@@ -46,11 +46,11 @@ spec:
 
   environment {
     REGISTRY = 'harbor.zoudekang.cloud'
-    TEST_PROJECT = 'aidevops-test'
-    K8S_NAMESPACE = 'aidevops-test'
+    TEST_PROJECT = 'aidevops-cloud'
+    K8S_NAMESPACE = 'aidevops-cloud'
     BUILD_NAMESPACE = 'jenkins'
     GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
-    GIT_BRANCH = 'test'
+    GIT_BRANCH = 'main'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
     KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug'
   }
@@ -112,7 +112,7 @@ spec:
             if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'
             }
-            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == '.dockerignore' || f.startsWith('deploy/')) {
+            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == 'Jenkinsfile.cloud' || f == '.dockerignore' || f.startsWith('deploy/')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
             }
           }
@@ -390,7 +390,7 @@ YAML
       }
     }
 
-    stage('Render And Apply Helm ConfigMaps To Test') {
+    stage('Render And Apply Helm ConfigMaps To Cloud') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -414,7 +414,7 @@ YAML
       }
     }
 
-    stage('Rollout Changed Services To Test') {
+    stage('Rollout Changed Services To Cloud') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
