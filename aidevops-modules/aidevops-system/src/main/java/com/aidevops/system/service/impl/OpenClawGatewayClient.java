@@ -232,6 +232,14 @@ public class OpenClawGatewayClient {
             result.put("connection", connection.snapshot());
             Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), effectiveSessionKey, message);
             connection.markConnected(Boolean.TRUE.equals(exchange.get("ok")));
+            if (exchange.get("runId") != null) {
+                connection.rememberRunId(String.valueOf(exchange.get("runId")));
+            }
+            Map<String, Object> challenge = castMap(exchange.get("challenge"));
+            Map<String, Object> challengePayload = castMap(challenge.get("payload"));
+            if (challengePayload.get("nonce") != null) {
+                connection.rememberNonce(String.valueOf(challengePayload.get("nonce")));
+            }
             connection.touch();
             result.put("connection", connection.snapshot());
             result.put("connectionPoolSize", connections.size());
@@ -729,6 +737,8 @@ public class OpenClawGatewayClient {
         private volatile boolean everConnected;
         private volatile int failureCount;
         private volatile String lastError;
+        private volatile String lastRunId;
+        private volatile String lastNonce;
         private volatile WebSocket webSocket;
 
         private GatewayConnection(String sessionKey) {
@@ -781,6 +791,16 @@ public class OpenClawGatewayClient {
             }
         }
 
+        private void rememberRunId(String runId) {
+            this.lastRunId = runId;
+            this.lastUsedAt = System.currentTimeMillis();
+        }
+
+        private void rememberNonce(String nonce) {
+            this.lastNonce = nonce;
+            this.lastUsedAt = System.currentTimeMillis();
+        }
+
         private void markFailure(Exception ex) {
             this.connected = false;
             this.failureCount += 1;
@@ -796,6 +816,8 @@ public class OpenClawGatewayClient {
             data.put("hasLiveSocket", hasLiveSocket());
             data.put("failureCount", failureCount);
             data.put("lastError", lastError);
+            data.put("lastRunId", lastRunId);
+            data.put("lastNonce", lastNonce);
             data.put("lastUsedAt", lastUsedAt);
             return data;
         }
