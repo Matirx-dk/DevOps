@@ -228,8 +228,7 @@ public class OpenClawGatewayClient {
 
         try {
             String effectiveSessionKey = hasText(sessionKey) ? sessionKey : "main";
-            GatewayConnection connection = getOrCreateConnection(effectiveSessionKey);
-            connection.touch();
+            GatewayConnection connection = ensureConnected(effectiveSessionKey);
             result.put("connection", connection.snapshot());
             Map<String, Object> exchange = sendChatAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs(), effectiveSessionKey, message);
             connection.markConnected(Boolean.TRUE.equals(exchange.get("ok")));
@@ -709,6 +708,19 @@ public class OpenClawGatewayClient {
         return connections.computeIfAbsent(sessionKey, GatewayConnection::new);
     }
 
+    private GatewayConnection ensureConnected(String sessionKey) {
+        GatewayConnection connection = getOrCreateConnection(sessionKey);
+        connection.touch();
+        return connection;
+    }
+
+    private void closeConnection(String sessionKey) {
+        GatewayConnection connection = connections.remove(sessionKey);
+        if (connection != null) {
+            connection.closeQuietly();
+        }
+    }
+
     private final class GatewayConnection {
         private final String sessionKey;
         private final Object monitor = new Object();
@@ -751,6 +763,22 @@ public class OpenClawGatewayClient {
             this.webSocket = null;
             this.connected = false;
             this.lastUsedAt = System.currentTimeMillis();
+        }
+
+        private void closeQuietly() {
+            WebSocket current = this.webSocket;
+            clearSocket();
+            if (current != null) {
+                try {
+                    current.sendClose(WebSocket.NORMAL_CLOSURE, "aidevops-close").get(2, TimeUnit.SECONDS);
+                } catch (Exception ignore) {
+                    try {
+                        current.abort();
+                    } catch (Exception ignored) {
+                        // ignore
+                    }
+                }
+            }
         }
 
         private void markFailure(Exception ex) {
