@@ -75,19 +75,21 @@ public class PlaceholderOpenClawDeviceSigner implements OpenClawDeviceSigner {
         try {
             String nodeScript = "const crypto=require('node:crypto');"
                 + "const fs=require('node:fs');"
+                + "const path=require('node:path');"
                 + "const input=JSON.parse(fs.readFileSync(0,'utf8'));"
+                + "const identityPath=process.env.AIDEVOPS_OPENCLAW_IDENTITY_PATH||'/tmp/aidevops-openclaw-device-identity.json';"
                 + "const norm=v=>typeof v==='string'&&v.trim()?v.trim().replace(/[A-Z]/g,c=>String.fromCharCode(c.charCodeAt(0)+32)) : '';"
                 + "const b64u=b=>Buffer.from(b).toString('base64').replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/g,'');"
                 + "const prefix=Buffer.from('302a300506032b6570032100','hex');"
-                + "const kp=crypto.generateKeyPairSync('ed25519');"
-                + "const publicKeyPem=kp.publicKey.export({type:'spki',format:'pem'}).toString();"
-                + "const privateKeyPem=kp.privateKey.export({type:'pkcs8',format:'pem'}).toString();"
-                + "const spki=crypto.createPublicKey(publicKeyPem).export({type:'spki',format:'der'});"
-                + "const raw=(spki.length===prefix.length+32&&spki.subarray(0,prefix.length).equals(prefix))?spki.subarray(prefix.length):spki;"
-                + "const deviceId=crypto.createHash('sha256').update(raw).digest('hex');"
+                + "const rawFromPem=pem=>{const spki=crypto.createPublicKey(pem).export({type:'spki',format:'der'});return (spki.length===prefix.length+32&&spki.subarray(0,prefix.length).equals(prefix))?spki.subarray(prefix.length):spki;};"
+                + "const deriveId=pem=>crypto.createHash('sha256').update(rawFromPem(pem)).digest('hex');"
+                + "const loadOrCreate=()=>{try{const raw=fs.readFileSync(identityPath,'utf8');const parsed=JSON.parse(raw);if(parsed&&parsed.publicKeyPem&&parsed.privateKeyPem){return {deviceId:parsed.deviceId||deriveId(parsed.publicKeyPem),publicKeyPem:parsed.publicKeyPem,privateKeyPem:parsed.privateKeyPem,createdAtMs:parsed.createdAtMs||Date.now(),loaded:true};}}catch{} const kp=crypto.generateKeyPairSync('ed25519'); const publicKeyPem=kp.publicKey.export({type:'spki',format:'pem'}).toString(); const privateKeyPem=kp.privateKey.export({type:'pkcs8',format:'pem'}).toString(); const deviceId=deriveId(publicKeyPem); const out={version:1,deviceId,publicKeyPem,privateKeyPem,createdAtMs:Date.now()}; fs.mkdirSync(path.dirname(identityPath),{recursive:true}); fs.writeFileSync(identityPath, JSON.stringify(out,null,2)+'\\n'); return {...out,loaded:false};};"
+                + "const identity=loadOrCreate();"
+                + "const raw=rawFromPem(identity.publicKeyPem);"
+                + "const deviceId=identity.deviceId;"
                 + "const payload=['v3',deviceId,String(input.clientId||''),String(input.clientMode||''),String(input.role||''),Array.isArray(input.scopes)?input.scopes.map(x=>String(x).trim()).join(','):String(input.scopes||'').replace(/ /g,''),String(input.signedAt||''),String(input.token||''),String(input.nonce||''),norm(String(input.platform||'')),norm(String(input.deviceFamily||''))].join('|');"
-                + "const sig=crypto.sign(null,Buffer.from(payload,'utf8'),crypto.createPrivateKey(privateKeyPem));"
-                + "process.stdout.write(JSON.stringify({ready:true,mode:'node-official-ed25519',algorithm:'Ed25519',publicKeyFormat:'base64url-raw-ed25519-32',publicKey:b64u(raw),signature:b64u(sig),publicKeyFingerprintSha256:deviceId,suggestedDeviceId:deviceId,payloadCanonical:payload,privateKeyPem,publicKeyPem}));";
+                + "const sig=crypto.sign(null,Buffer.from(payload,'utf8'),crypto.createPrivateKey(identity.privateKeyPem));"
+                + "process.stdout.write(JSON.stringify({ready:true,mode:'node-official-ed25519',algorithm:'Ed25519',publicKeyFormat:'base64url-raw-ed25519-32',publicKey:b64u(raw),signature:b64u(sig),publicKeyFingerprintSha256:deviceId,suggestedDeviceId:deviceId,payloadCanonical:payload,privateKeyPem:identity.privateKeyPem,publicKeyPem:identity.publicKeyPem,identityPath,identityLoaded:identity.loaded,createdAtMs:identity.createdAtMs}));";
 
             Process process = new ProcessBuilder("node", "-e", nodeScript).start();
             process.getOutputStream().write(objectMapper.writeValueAsBytes(signaturePayload));
