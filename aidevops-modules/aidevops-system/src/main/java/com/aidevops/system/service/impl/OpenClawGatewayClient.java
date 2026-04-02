@@ -166,6 +166,8 @@ public class OpenClawGatewayClient {
             result.put("challenge", exchange.get("challenge"));
             result.put("request", request);
             result.put("requestJson", exchange.get("requestJson"));
+            result.put("signatureDraft", exchange.get("signatureDraft"));
+            result.put("signatureResult", exchange.get("signatureResult"));
 
             String responseFrame = String.valueOf(exchange.get("responseFrame"));
             result.put("ok", true);
