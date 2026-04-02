@@ -1,14 +1,14 @@
 <template>
-  <div class="app-container">
+  <div class="app-container page-shell page-user">
     <el-row :gutter="20">
       <splitpanes :horizontal="this.$store.getters.device === 'mobile'" class="default-theme">
         <!--部门数据-->
         <pane size="16">
           <el-col>
-            <div class="head-container">
+            <div class="head-container search-card dept-card">
               <el-input v-model="deptName" placeholder="请输入部门名称" clearable size="small" prefix-icon="el-icon-search" style="margin-bottom: 20px" />
             </div>
-            <div class="head-container">
+            <div class="head-container content-card dept-card">
               <el-tree :data="deptOptions" :props="defaultProps" :expand-on-click-node="false" :filter-node-method="filterNode" ref="tree" node-key="id" default-expand-all highlight-current @node-click="handleNodeClick" />
             </div>
           </el-col>
@@ -16,6 +16,7 @@
         <!--用户数据-->
         <pane size="84">
           <el-col>
+            <div class="search-card">
             <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
               <el-form-item label="用户名称" prop="userName">
                 <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
@@ -36,7 +37,9 @@
                 <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
               </el-form-item>
             </el-form>
+            </div>
 
+            <div class="toolbar-card">
             <el-row :gutter="10" class="mb8">
               <el-col :span="1.5">
                 <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:user:add']">新增</el-button>
@@ -55,7 +58,9 @@
               </el-col>
               <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
             </el-row>
+            </div>
 
+            <div class="table-card">
             <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
               <el-table-column type="selection" width="50" align="center" />
               <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns.userId.visible" />
@@ -89,6 +94,7 @@
             </el-table>
 
             <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
+            </div>
           </el-col>
         </pane>
       </splitpanes>
@@ -556,3 +562,12 @@ export default {
   }
 }
 </script>
+<style lang="scss" scoped>
+.page-shell {
+  .splitpanes.default-theme { background: transparent; }
+  .dept-card { margin-bottom: 14px; }
+  ::v-deep .splitpanes__splitter { background: rgba(255,255,255,0.08); }
+  ::v-deep .el-tree { background: transparent; color: #dbe7ff; }
+  ::v-deep .el-tree-node__content:hover { background: rgba(255,255,255,0.06); }
+}
+</style>

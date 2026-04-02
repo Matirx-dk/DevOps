@@ -1,5 +1,6 @@
 <template>
-  <div class="app-container">
+  <div class="app-container page-shell page-menu">
+    <div class="search-card">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
       <el-form-item label="菜单名称" prop="menuName">
         <el-input
@@ -24,7 +25,9 @@
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
+    </div>
 
+    <div class="toolbar-card">
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
@@ -57,7 +60,9 @@
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    </div>
 
+    <div class="table-card">
     <el-table
       v-if="refreshTable"
       v-loading="loading"
@@ -119,6 +124,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
 
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="680px" append-to-body>
@@ -531,3 +537,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.page-shell {
+  .ml5 { color: #dbe7ff; }
+}
+</style>
