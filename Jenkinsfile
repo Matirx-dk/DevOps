@@ -393,9 +393,14 @@ YAML
             helm template aidevops-cloud deploy/helm/aidevops-cloud \
               -n ${K8S_NAMESPACE} \
               -f deploy/helm/aidevops-cloud/values.current-cluster.yaml \
-              --show-only templates/configmaps.yaml >/tmp/aidevops-configmaps.yaml
-            test -s /tmp/aidevops-configmaps.yaml
-            kubectl apply -f /tmp/aidevops-configmaps.yaml
+              --show-only templates/configmaps.yaml > /home/jenkins/agent/aidevops-configmaps.yaml
+            test -s /home/jenkins/agent/aidevops-configmaps.yaml
+          '''
+        }
+        container('builder') {
+          sh '''
+            set -eu
+            kubectl apply -f /home/jenkins/agent/aidevops-configmaps.yaml
           '''
         }
       }
