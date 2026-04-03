@@ -16,6 +16,7 @@
       <div class="login-header">
         <div class="logo-dot"></div>
         <div class="login-header-main">
+          <div class="mini-title">AIDevOps Access</div>
           <div class="login-header-top">
             <h3 class="title">{{ title }}</h3>
             <span class="env-tag">{{ envLabel }}</span>
@@ -160,9 +161,10 @@ export default {
       const password = Cookies.get("password")
       const rememberMe = Cookies.get('rememberMe')
       this.loginForm = {
+        ...this.loginForm,
         username: username === undefined ? this.loginForm.username : username,
         password: password === undefined ? this.loginForm.password : decrypt(password),
-        rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
+        rememberMe: rememberMe === undefined ? false : rememberMe === 'true'
       }
     },
     handleLogin() {
@@ -227,22 +229,23 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 88px;
+  min-width: 92px;
   height: 34px;
   padding: 0 16px;
   margin-bottom: 18px;
   border-radius: 999px;
-  background: rgba(63, 169, 255, 0.16);
-  border: 1px solid rgba(63, 169, 255, 0.3);
+  background: rgba(63, 169, 255, 0.14);
+  border: 1px solid rgba(143, 211, 255, 0.22);
   color: #8fd3ff;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 1px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
 }
 .brand-title {
   margin: 0 0 16px;
-  font-size: 38px;
-  line-height: 1.2;
+  font-size: 40px;
+  line-height: 1.18;
   font-weight: 700;
 }
 .brand-desc {
@@ -250,6 +253,7 @@ export default {
   color: rgba(234, 242, 255, 0.78);
   font-size: 15px;
   line-height: 1.9;
+  max-width: 480px;
 }
 .brand-tags {
   display: flex;
@@ -273,7 +277,7 @@ export default {
 }
 .subtitle {
   margin: 6px 0 0;
-  color: #4d5b78;
+  color: #44516c;
   font-size: 14px;
   font-weight: 600;
 }
@@ -281,13 +285,14 @@ export default {
   margin: 8px 0 0;
   color: #7b879d;
   font-size: 12px;
-  line-height: 1.7;
+  line-height: 1.75;
+  max-width: 320px;
 }
 .login-header {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  margin-bottom: 28px;
+  gap: 16px;
+  margin-bottom: 30px;
 }
 .login-header-main {
   flex: 1;
@@ -299,44 +304,78 @@ export default {
   gap: 12px;
 }
 .logo-dot {
-  width: 46px;
-  height: 46px;
-  border-radius: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
   background: linear-gradient(135deg, #3fa9ff 0%, #215cff 100%);
-  box-shadow: 0 12px 28px rgba(33, 92, 255, 0.28);
+  box-shadow: 0 14px 30px rgba(33, 92, 255, 0.30);
+  position: relative;
+}
+.logo-dot::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.36);
 }
 .login-form {
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(10px);
-  width: 440px;
-  padding: 34px 32px 20px;
-  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  width: 428px;
+  padding: 34px 30px 18px;
+  box-shadow: 0 24px 64px rgba(9, 18, 35, 0.22);
+  border: 1px solid rgba(255,255,255,0.55);
   .el-input {
-    height: 46px;
+    height: 48px;
     input {
-      height: 46px;
-      border-radius: 12px;
-      border-color: #dbe5f3;
-      background: #f8fbff;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid #dbe5f3;
+      background: rgba(248, 251, 255, 0.96);
+      transition: all .2s ease;
+      color: #24314f;
+    }
+    input::placeholder {
+      color: #a3aec3;
+    }
+    input:hover {
+      border-color: #c8d7eb;
+      background: #fff;
     }
     input:focus {
       border-color: #3fa9ff;
       background: #fff;
+      box-shadow: 0 0 0 4px rgba(63, 169, 255, 0.10);
     }
   }
   .input-icon {
-    height: 46px;
+    height: 48px;
     width: 14px;
     margin-left: 2px;
+    color: #7f8aa3;
   }
+}
+.mini-title {
+  margin-bottom: 10px;
+  color: #7f8aa3;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
 }
 .field-label {
   margin-bottom: 8px;
   color: #41506d;
   font-size: 12px;
   font-weight: 600;
+}
+.login-form ::v-deep .el-form-item {
+  margin-bottom: 18px;
+}
+.login-form ::v-deep .el-form-item.is-error .el-input__inner {
+  border-color: #f56c6c;
+  box-shadow: none;
 }
 .captcha-item ::v-deep .el-form-item__content {
   display: block;
@@ -353,7 +392,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 4px 0 22px;
+  margin: 6px 0 20px;
 }
 .login-hint {
   color: #8a94a8;
@@ -363,36 +402,43 @@ export default {
   display: inline-block;
   padding: 5px 12px;
   border-radius: 999px;
-  background: #eef4ff;
+  background: rgba(33, 92, 255, 0.10);
   color: #215cff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .5px;
+  letter-spacing: .8px;
   white-space: nowrap;
 }
 .login-code {
   width: 118px;
-  height: 46px;
+  height: 48px;
   flex: 0 0 118px;
   img {
     cursor: pointer;
     vertical-align: middle;
-    border-radius: 12px;
+    border-radius: 14px;
     width: 118px;
-    height: 46px;
+    height: 48px;
     object-fit: cover;
     border: 1px solid #dbe5f3;
     background: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
   }
 }
 .login-btn {
   width: 100%;
-  height: 46px;
-  border-radius: 12px;
+  height: 48px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #3fa9ff 0%, #215cff 100%);
   border: none;
-  box-shadow: 0 12px 28px rgba(33, 92, 255, 0.22);
+  box-shadow: 0 14px 30px rgba(33, 92, 255, 0.24);
   font-weight: 600;
+  letter-spacing: .3px;
+}
+.login-btn:hover,
+.login-btn:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(33, 92, 255, 0.28);
 }
 .el-login-footer {
   height: 40px;
@@ -402,10 +448,10 @@ export default {
   width: 100%;
   left: 0;
   text-align: center;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.68);
   font-family: Arial;
   font-size: 12px;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
 }
 .login-code-img {
   height: 42px;

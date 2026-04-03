@@ -238,7 +238,7 @@ public class OpenClawGatewayClient {
             }
             result.put("connection", connection.snapshot());
             Map<String, Object> exchange = connection.performSingleFlight(message);
-            connection.markConnected(Boolean.TRUE.equals(exchange.get("ok")));
+            connection.afterConnect(castMap(exchange.get("connectResponse")));
             if (exchange.get("runId") != null) {
                 connection.rememberRunId(String.valueOf(exchange.get("runId")));
             }
@@ -751,6 +751,8 @@ public class OpenClawGatewayClient {
         private volatile String lastError;
         private volatile String lastRunId;
         private volatile String lastNonce;
+        private volatile Long openedAt;
+        private volatile Map<String, Object> lastHelloAuth;
         private volatile WebSocket webSocket;
 
         private GatewayConnection(String sessionKey) {
@@ -778,12 +780,15 @@ public class OpenClawGatewayClient {
             this.connected = true;
             this.everConnected = true;
             this.lastError = null;
+            this.openedAt = System.currentTimeMillis();
             this.lastUsedAt = System.currentTimeMillis();
         }
 
         private void clearSocket() {
             this.webSocket = null;
             this.connected = false;
+            this.openedAt = null;
+            this.lastHelloAuth = null;
             this.lastUsedAt = System.currentTimeMillis();
         }
 
@@ -831,6 +836,19 @@ public class OpenClawGatewayClient {
             this.lastUsedAt = System.currentTimeMillis();
         }
 
+        private void rememberHelloAuth(Map<String, Object> auth) {
+            this.lastHelloAuth = auth == null ? null : new LinkedHashMap<>(auth);
+            this.lastUsedAt = System.currentTimeMillis();
+        }
+
+        private void afterConnect(Map<String, Object> connectResponse) {
+            Map<String, Object> payload = castMap(connectResponse.get("payload"));
+            Map<String, Object> auth = castMap(payload.get("auth"));
+            rememberHelloAuth(auth);
+            markConnected(Boolean.TRUE.equals(connectResponse.get("ok")));
+            touch();
+        }
+
         private void markFailure(Exception ex) {
             this.connected = false;
             this.failureCount += 1;
@@ -857,6 +875,8 @@ public class OpenClawGatewayClient {
             data.put("lastError", lastError);
             data.put("lastRunId", lastRunId);
             data.put("lastNonce", lastNonce);
+            data.put("openedAt", openedAt);
+            data.put("lastHelloAuth", lastHelloAuth);
             data.put("lastUsedAt", lastUsedAt);
             return data;
         }
