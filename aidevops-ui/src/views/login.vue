@@ -11,6 +11,16 @@
         <span>Harbor</span>
         <span>Observability</span>
       </div>
+      <div class="brand-metrics">
+        <div class="metric-card">
+          <strong>发布链路</strong>
+          <span>构建、推送、部署统一入口</span>
+        </div>
+        <div class="metric-card">
+          <strong>运行状态</strong>
+          <span>监控、告警、AI 对话快速联动</span>
+        </div>
+      </div>
     </div>
     <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
       <div class="login-header">
@@ -28,9 +38,9 @@
       <el-form-item prop="username">
         <div class="field-label">账号</div>
         <el-input
-          v-model="loginForm.username"
+          v-model.trim="loginForm.username"
           type="text"
-          auto-complete="off"
+          auto-complete="username"
           placeholder="请输入账号"
         >
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
@@ -42,7 +52,7 @@
           v-model="loginForm.password"
           type="password"
           show-password
-          auto-complete="off"
+          auto-complete="current-password"
           placeholder="请输入密码"
           @keyup.enter.native="handleLogin"
         >
@@ -53,15 +63,16 @@
         <div class="field-label">验证码</div>
         <div class="captcha-row">
           <el-input
-            v-model="loginForm.code"
+            v-model.trim="loginForm.code"
             auto-complete="off"
             placeholder="请输入验证码"
             @keyup.enter.native="handleLogin"
           >
             <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
           </el-input>
-          <div class="login-code">
-            <img :src="codeUrl" @click="getCode" class="login-code-img"/>
+          <div class="login-code" @click="getCode">
+            <img :src="codeUrl" class="login-code-img"/>
+            <span class="code-refresh-text">点击刷新</span>
           </div>
         </div>
       </el-form-item>
@@ -69,9 +80,14 @@
         <el-checkbox v-model="loginForm.rememberMe">记住密码</el-checkbox>
         <span class="login-hint">建议使用浏览器自动填充提高效率</span>
       </div>
+      <div class="security-tip">
+        <i class="el-icon-lock"></i>
+        <span>账号信息仅用于当前平台认证，请勿在公共设备长期保存密码。</span>
+      </div>
       <el-form-item style="width:100%; margin-bottom: 10px;">
         <el-button
           :loading="loading"
+          :disabled="loading"
           size="medium"
           type="primary"
           class="login-btn"
@@ -168,6 +184,9 @@ export default {
       }
     },
     handleLogin() {
+      if (this.loading) {
+        return
+      }
       this.$refs.loginForm.validate(valid => {
         if (valid) {
           this.loading = true
@@ -184,6 +203,7 @@ export default {
             this.$router.push({ path: this.redirect || "/" }).catch(()=>{})
           }).catch(() => {
             this.loading = false
+            this.loginForm.code = ''
             if (this.captchaEnabled) {
               this.getCode()
             }
@@ -268,6 +288,34 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #dce9ff;
   font-size: 13px;
+}
+.brand-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 34px;
+  max-width: 500px;
+}
+.metric-card {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(6px);
+}
+.metric-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+}
+.metric-card span {
+  display: block;
+  color: rgba(234, 242, 255, 0.74);
+  font-size: 13px;
+  line-height: 1.7;
 }
 .title {
   margin: 0;
@@ -392,11 +440,28 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 6px 0 20px;
+  margin: 6px 0 12px;
 }
 .login-hint {
   color: #8a94a8;
   font-size: 12px;
+}
+.security-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(37, 99, 235, 0.06);
+  color: #6b7892;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.security-tip i {
+  margin-top: 2px;
+  color: #215cff;
+  font-size: 13px;
 }
 .env-tag {
   display: inline-block;
@@ -410,11 +475,12 @@ export default {
   white-space: nowrap;
 }
 .login-code {
+  position: relative;
   width: 118px;
   height: 48px;
   flex: 0 0 118px;
+  cursor: pointer;
   img {
-    cursor: pointer;
     vertical-align: middle;
     border-radius: 14px;
     width: 118px;
@@ -424,6 +490,17 @@ export default {
     background: #fff;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
   }
+}
+.code-refresh-text {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.56);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 10px;
+  line-height: 1.5;
 }
 .login-btn {
   width: 100%;
@@ -439,6 +516,13 @@ export default {
 .login-btn:focus {
   transform: translateY(-1px);
   box-shadow: 0 16px 34px rgba(33, 92, 255, 0.28);
+}
+.login-btn.is-disabled,
+.login-btn.is-disabled:hover,
+.login-btn.is-disabled:focus {
+  transform: none;
+  box-shadow: 0 10px 22px rgba(33, 92, 255, 0.16);
+  opacity: 0.88;
 }
 .el-login-footer {
   height: 40px;
@@ -456,6 +540,25 @@ export default {
 .login-code-img {
   height: 42px;
 }
+@media (max-width: 1280px) {
+  .login {
+    gap: 28px;
+    padding: 0 4.5%;
+  }
+  .login-side {
+    max-width: 460px;
+  }
+  .brand-title {
+    font-size: 34px;
+  }
+  .brand-metrics {
+    gap: 12px;
+  }
+  .metric-card {
+    padding: 14px 16px;
+  }
+}
+
 @media (max-width: 1080px) {
   .login {
     justify-content: center;
@@ -468,6 +571,7 @@ export default {
 
 @media (max-width: 640px) {
   .login {
+    align-items: stretch;
     padding: 20px 14px 72px;
   }
   .login-form {
@@ -475,6 +579,16 @@ export default {
     max-width: 100%;
     padding: 26px 18px 18px;
     border-radius: 18px;
+  }
+  .login-header {
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .title {
+    font-size: 24px;
+  }
+  .form-tip {
+    max-width: none;
   }
   .login-header-top {
     align-items: flex-start;
@@ -495,6 +609,9 @@ export default {
     align-items: flex-start;
     gap: 10px;
     flex-direction: column;
+  }
+  .security-tip {
+    padding: 10px 12px;
   }
   .el-login-footer {
     padding: 0 16px;
