@@ -164,7 +164,7 @@ create table sys_menu (
 insert into sys_menu values('1', '系统管理', '0', '1', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '系统管理目录');
 insert into sys_menu values('2', '系统监控', '0', '2', 'monitor',          null, '', '', 1, 0, 'M', '0', '0', '', 'monitor',  'admin', sysdate(), '', null, '系统监控目录');
 insert into sys_menu values('3', '系统工具', '0', '3', 'tool',             null, '', '', 1, 0, 'M', '0', '0', '', 'tool',     'admin', sysdate(), '', null, '系统工具目录');
-insert into sys_menu values('4', 'AI智能运维官网', '0', '4', 'http://devops.zoudekang.cloud', null, '', '', 0, 0, 'M', '0', '0', '', 'guide',    'admin', sysdate(), '', null, 'AI智能运维官网地址');
+insert into sys_menu values('4', 'AI对话', '0', '4', 'ai-chat', 'ai/chat/index', '', '', 1, 0, 'C', '0', '0', '', 'guide',    'admin', sysdate(), '', null, 'AI对话页面');
 -- 二级菜单
 insert into sys_menu values('100',  '用户与权限',       '1',   '1', 'user',       'system/user/index',                 '', '', 1, 0, 'C', '0', '0', 'system:user:list',        'user',          'admin', sysdate(), '', null, '用户管理菜单');
 insert into sys_menu values('101',  '角色与授权',       '1',   '2', 'role',       'system/role/index',                 '', '', 1, 0, 'C', '0', '0', 'system:role:list',        'peoples',       'admin', sysdate(), '', null, '角色管理菜单');
