@@ -161,7 +161,7 @@ spec:
 
     stage('SonarQube Code Analysis') {
       when {
-        expression { env.BRANCH_NAME == 'test' && env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
+        expression { currentBuild.projectName == 'aidevops-test-pipeline' && env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
       }
       steps {
         container('builder') {
