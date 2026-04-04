@@ -183,17 +183,17 @@ spec:
               sonar.projectKey=${service}
               sonar.projectName=${service}
               sonar.projectVersion=${GIT_COMMIT_TAG}
-              sources=./sonar-src/${module}/src/main/java
-              sonar.java.binaries=./sonar-src/${module}/target/classes
+              sources=./${module}/src/main/java
+              sonar.java.binaries=./${module}/target/classes
               sonar.sourceEncoding=UTF-8
               sonar.host.url=${SQ_HOST}
 EOF
 
                 mvn sonar:sonar \
-                  -f ./sonar-src/${pom} \
+                  -f ${pom} \
                   -Dsonar.projectKey=${service} \
                   -Dsonar.projectName=${service} \
-                  -Dsonar.sources=./sonar-src/${module}/src/main/java \
+                  -Dsonar.sources=./${module}/src/main/java \
                   -Dsonar.host.url=${SQ_HOST} \
                   -DskipTests=true \
                   -T 1C
