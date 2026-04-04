@@ -167,24 +167,45 @@ spec:
         container('builder') {
           withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
             sh '''
+              set -eu
               SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
-              git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} ./sonar-src
-              cd ./sonar-src
+              git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
 
-              echo "[sonar] running analysis..."
+              run_analysis() {
+                local module="$1"
+                local project_key="$2"
+                echo "[sonar] analyzing $module ..."
+                mvn verify sonar:sonar \
+                  -f /tmp/sonar-src/pom.xml \
+                  -pl "$module" -am \
+                  -Dsonar.token=${SQ_PASS} \
+                  -Dsonar.host.url=${SQ_HOST} \
+                  -Dsonar.projectKey="$project_key" \
+                  -Dsonar.projectName="$project_key" \
+                  -Dsonar.skipTests=true \
+                  -Dsonar.inclusions="**/*.java"
+                echo "[sonar] $module done"
+              }
+
+              pids=""
               if [ "${BUILD_AUTH}" = "true" ]; then
-                mvn verify sonar:sonar -pl aidevops-auth -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=auth -Dsonar.projectName=auth -Dsonar.skipTests=true
+                run_analysis "aidevops-auth" "auth" &
+                pids="$pids $!"
               fi
               if [ "${BUILD_GATEWAY}" = "true" ]; then
-                mvn verify sonar:sonar -pl aidevops-gateway -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=gateway -Dsonar.projectName=gateway -Dsonar.skipTests=true
+                run_analysis "aidevops-gateway" "gateway" &
+                pids="$pids $!"
               fi
               if [ "${BUILD_SYSTEM}" = "true" ]; then
-                mvn verify sonar:sonar -pl aidevops-modules/aidevops-system -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=system -Dsonar.projectName=system -Dsonar.skipTests=true
+                run_analysis "aidevops-modules/aidevops-system" "system" &
+                pids="$pids $!"
               fi
 
-              rm -rf ./sonar-src
-              echo "[sonar] analysis complete"
+              for pid in $pids; do wait "$pid" || exit 1; done
+
+              rm -rf /tmp/sonar-src
+              echo "[sonar] all analyses complete"
             '''
           }
         }
