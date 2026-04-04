@@ -410,17 +410,17 @@ YAML
             cleanup_pod "$UI_POD"
 
             pids=""
-            if [ "${BUILD_AUTH}" = "true" ]; then apply_backend_pod "$AUTH_POD" 'aidevops-auth' 'aidevops-auth/target/aidevops-auth.jar' 'aidevops-auth' & pids="$pids $!"; fi
-            if [ "${BUILD_GATEWAY}" = "true" ]; then apply_backend_pod "$GATEWAY_POD" 'aidevops-gateway' 'aidevops-gateway/target/aidevops-gateway.jar' 'aidevops-gateway' & pids="$pids $!"; fi
-            if [ "${BUILD_SYSTEM}" = "true" ]; then apply_backend_pod "$SYSTEM_POD" 'aidevops-modules/aidevops-system' 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar' 'aidevops-system' & pids="$pids $!"; fi
-            if [ "${BUILD_UI}" = "true" ]; then apply_ui_pod "$UI_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_AUTH:-false}" = "true" ]; then apply_backend_pod "$AUTH_POD" 'aidevops-auth' 'aidevops-auth/target/aidevops-auth.jar' 'aidevops-auth' & pids="$pids $!"; fi
+            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then apply_backend_pod "$GATEWAY_POD" 'aidevops-gateway' 'aidevops-gateway/target/aidevops-gateway.jar' 'aidevops-gateway' & pids="$pids $!"; fi
+            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then apply_backend_pod "$SYSTEM_POD" 'aidevops-modules/aidevops-system' 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar' 'aidevops-system' & pids="$pids $!"; fi
+            if [ "${BUILD_UI:-false}" = "true" ]; then apply_ui_pod "$UI_POD" & pids="$pids $!"; fi
             for pid in $pids; do wait "$pid"; done
 
             pids=""
-            if [ "${BUILD_AUTH}" = "true" ]; then wait_pod "$AUTH_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_GATEWAY}" = "true" ]; then wait_pod "$GATEWAY_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_SYSTEM}" = "true" ]; then wait_pod "$SYSTEM_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_UI}" = "true" ]; then wait_pod "$UI_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_AUTH:-false}" = "true" ]; then wait_pod "$AUTH_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then wait_pod "$GATEWAY_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then wait_pod "$SYSTEM_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_UI:-false}" = "true" ]; then wait_pod "$UI_POD" & pids="$pids $!"; fi
             for pid in $pids; do wait "$pid"; done
           '''
         }
@@ -460,22 +460,22 @@ YAML
           sh '''
             set -eu
 
-            if [ "${BUILD_AUTH}" = "true" ]; then
+            if [ "${BUILD_AUTH:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
             fi
 
-            if [ "${BUILD_GATEWAY}" = "true" ]; then
+            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
             fi
 
-            if [ "${BUILD_SYSTEM}" = "true" ]; then
+            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
             fi
 
-            if [ "${BUILD_UI}" = "true" ]; then
+            if [ "${BUILD_UI:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
             fi
