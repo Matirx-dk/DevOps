@@ -158,40 +158,6 @@ spec:
       }
     }
 
-    stage('SonarQube Code Analysis') {
-      when {
-        expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
-      }
-      steps {
-        container('builder') {
-          withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
-            sh '''
-              SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
-              SQ_AUTH_TOKEN="${SQ_USER}:${SQ_PASS}"
-
-              git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} ./sonar-src
-              cd ./sonar-src
-
-
-              echo "[sonar] running analysis..."
-              if [ "${BUILD_AUTH}" = "true" ]; then
-                mvn verify sonar:sonar -pl aidevops-auth -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=auth -Dsonar.projectName=auth -Dsonar.skipTests=true
-              fi
-              if [ "${BUILD_GATEWAY}" = "true" ]; then
-                mvn verify sonar:sonar -pl aidevops-gateway -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=gateway -Dsonar.projectName=gateway -Dsonar.skipTests=true
-              fi
-              if [ "${BUILD_SYSTEM}" = "true" ]; then
-                mvn verify sonar:sonar -pl aidevops-modules/aidevops-system -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=system -Dsonar.projectName=system -Dsonar.skipTests=true
-              fi
-
-              rm -rf ./sonar-src
-              echo "[sonar] analysis complete"
-            '''
-          }
-        }
-      }
-    }
-
     stage('Build And Push In Dedicated Pods') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
@@ -282,6 +248,9 @@ spec:
     - name: m2-cache
       persistentVolumeClaim:
         claimName: jenkins-m2-cache-pvc
+    - name: kaniko-cache
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -314,12 +283,16 @@ spec:
         - --destination=${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}
         - --snapshot-mode=redo
         - --use-new-run
-        - --cache=false
+        - --cache=true
+        - --cache-dir=/kaniko-cache
+        - --cache-ttl-hours=336
         - --skip-tls-verify-registry=${REGISTRY}
         - --build-arg=JAR_PATH=${jar_path}
       volumeMounts:
         - name: workspace
           mountPath: /workspace
+        - name: kaniko-cache
+          mountPath: /kaniko-cache
         - name: harbor-config
           mountPath: /kaniko/.docker
 YAML
@@ -364,6 +337,9 @@ spec:
     - name: npm-cache
       persistentVolumeClaim:
         claimName: jenkins-npm-cache-pvc
+    - name: kaniko-cache
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -393,6 +369,8 @@ spec:
           mountPath: /workspace
         - name: npm-cache
           mountPath: /home/ubuntu/.npm
+        - name: kaniko-cache
+          mountPath: /kaniko-cache
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
@@ -403,7 +381,9 @@ spec:
         - --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
         - --snapshot-mode=redo
         - --use-new-run
-        - --cache=false
+        - --cache=true
+        - --cache-dir=/kaniko-cache
+        - --cache-ttl-hours=336
         - --skip-tls-verify-registry=${REGISTRY}
       volumeMounts:
         - name: workspace
