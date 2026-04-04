@@ -285,7 +285,7 @@ spec:
         - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache
-        - --cache-ttl-hours=336
+        - --cache-ttl=336h
         - --skip-tls-verify-registry=${REGISTRY}
         - --build-arg=JAR_PATH=${jar_path}
       volumeMounts:
@@ -383,7 +383,7 @@ spec:
         - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache
-        - --cache-ttl-hours=336
+        - --cache-ttl=336h
         - --skip-tls-verify-registry=${REGISTRY}
       volumeMounts:
         - name: workspace
