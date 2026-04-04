@@ -166,7 +166,7 @@ spec:
         container('builder') {
           withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
             sh '''
-              SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
+              SQ_HOST="http://sonarqube.sonarqube:9000"
               SQ_AUTH_TOKEN="${SQ_USER}:${SQ_PASS}"
 
               git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} ./sonar-src
@@ -194,6 +194,7 @@ EOF
                   -Dsonar.projectKey=${service} \
                   -Dsonar.projectName=${service} \
                   -Dsonar.host.url=${SQ_HOST} \
+                  -Dsonar.token=${SQ_PASS} \
                   -DskipTests=true \
                   -T 1C
               }
