@@ -36,6 +36,10 @@
       overflow-x: hidden !important;
     }
 
+    .el-scrollbar__wrap {
+      background: transparent !important;
+    }
+
     .el-scrollbar__bar.is-vertical {
       right: 0px;
     }

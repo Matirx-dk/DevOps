@@ -143,6 +143,7 @@ export default {
       height: 34px;
       display: flex;
       align-items: center;
+      background: transparent !important;
     }
   }
 }
