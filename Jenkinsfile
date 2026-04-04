@@ -193,7 +193,6 @@ EOF
                   -f ${pom} \
                   -Dsonar.projectKey=${service} \
                   -Dsonar.projectName=${service} \
-                  -Dsonar.sources=./${module}/src/main/java \
                   -Dsonar.host.url=${SQ_HOST} \
                   -DskipTests=true \
                   -T 1C
