@@ -158,6 +158,39 @@ spec:
       }
     }
 
+
+    stage('SonarQube Code Analysis') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
+      }
+      steps {
+        container('builder') {
+          withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
+            sh '''
+              SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
+
+              git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} ./sonar-src
+              cd ./sonar-src
+
+              echo "[sonar] running analysis..."
+              if [ "${BUILD_AUTH}" = "true" ]; then
+                mvn verify sonar:sonar -pl aidevops-auth -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=auth -Dsonar.projectName=auth -Dsonar.skipTests=true
+              fi
+              if [ "${BUILD_GATEWAY}" = "true" ]; then
+                mvn verify sonar:sonar -pl aidevops-gateway -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=gateway -Dsonar.projectName=gateway -Dsonar.skipTests=true
+              fi
+              if [ "${BUILD_SYSTEM}" = "true" ]; then
+                mvn verify sonar:sonar -pl aidevops-modules/aidevops-system -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=system -Dsonar.projectName=system -Dsonar.skipTests=true
+              fi
+
+              rm -rf ./sonar-src
+              echo "[sonar] analysis complete"
+            '''
+          }
+        }
+      }
+    }
+
     stage('Build And Push In Dedicated Pods') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
