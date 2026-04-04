@@ -1,6 +1,6 @@
-FROM docker.io/library/node:18-bullseye-slim AS node-runtime
+FROM harbor.zoudekang.cloud/dockerhub-proxy/library/node:18-bullseye-slim AS node-runtime
 
-FROM docker.io/library/eclipse-temurin:17-jre
+FROM harbor.zoudekang.cloud/dockerhub-proxy/library/eclipse-temurin:17-jre
 COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 COPY --from=node-runtime /usr/local/bin/npm /usr/local/bin/npm
 COPY --from=node-runtime /usr/local/bin/npx /usr/local/bin/npx
