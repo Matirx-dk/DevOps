@@ -172,45 +172,16 @@ spec:
               git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} ./sonar-src
               cd ./sonar-src
 
-              do_scan() {
-                local module="$1"
-                local service="$2"
-                local pom="$3"
-                local jar_path="$4"
-                echo "[sonar] scanning $service ($module)..."
 
-                cat > /tmp/sonar-project-${service}.properties << EOF
-              sonar.projectKey=${service}
-              sonar.projectName=${service}
-              sonar.projectVersion=${GIT_COMMIT_TAG}
-              sources=./${module}/src/main/java
-              sonar.java.binaries=./${module}/target/classes
-              sonar.sourceEncoding=UTF-8
-              sonar.host.url=${SQ_HOST}
-EOF
-
-                mvn sonar:sonar \
-                  -f ${pom} \
-                  -Dsonar.projectKey=${service} \
-                  -Dsonar.projectName=${service} \
-                  -Dsonar.host.url=${SQ_HOST} \
-                  -Dsonar.token=${SQ_PASS} \
-                  -Dsonar.java.binaries=./${module}/target/classes \
-                  -DskipTests=true \
-                  -T 1C
-              }
-
-              echo "[sonar] compiling project..."
-              mvn compile -DskipTests
-
+              echo "[sonar] running analysis..."
               if [ "${BUILD_AUTH}" = "true" ]; then
-                do_scan aidevops-auth auth pom.xml aidevops-auth/target/classes
+                mvn verify sonar:sonar -pl aidevops-auth -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=auth -Dsonar.projectName=auth -Dsonar.skipTests=true
               fi
               if [ "${BUILD_GATEWAY}" = "true" ]; then
-                do_scan aidevops-gateway gateway pom.xml aidevops-gateway/target/classes
+                mvn verify sonar:sonar -pl aidevops-gateway -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=gateway -Dsonar.projectName=gateway -Dsonar.skipTests=true
               fi
               if [ "${BUILD_SYSTEM}" = "true" ]; then
-                do_scan aidevops-modules/aidevops-system system aidevops-modules/aidevops-system/pom.xml aidevops-modules/aidevops-system/target/classes
+                mvn verify sonar:sonar -pl aidevops-modules/aidevops-system -am -Dsonar.token=${SQ_PASS} -Dsonar.host.url=${SQ_HOST} -Dsonar.projectKey=system -Dsonar.projectName=system -Dsonar.skipTests=true
               fi
 
               rm -rf ./sonar-src
