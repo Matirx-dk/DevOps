@@ -200,6 +200,9 @@ EOF
                   -T 1C
               }
 
+              echo "[sonar] compiling project..."
+              mvn compile -DskipTests
+
               if [ "${BUILD_AUTH}" = "true" ]; then
                 do_scan aidevops-auth auth pom.xml aidevops-auth/target/classes
               fi
