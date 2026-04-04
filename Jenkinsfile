@@ -161,7 +161,7 @@ spec:
 
     stage('SonarQube Code Analysis') {
       when {
-        expression { env.TEST_PROJECT == 'aidevops-test' }
+        expression { echo "DEBUG: TEST_PROJECT=${env.TEST_PROJECT}"; return env.TEST_PROJECT == 'aidevops-test' }
       }
       steps {
         container('builder') {
