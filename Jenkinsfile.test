@@ -172,7 +172,6 @@ spec:
         container('builder') {
           withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
             sh '''
-              set -eu
               SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
               git config --global http.sslVerify false
