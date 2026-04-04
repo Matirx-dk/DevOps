@@ -164,12 +164,12 @@ spec:
       }
       steps {
         container('builder') {
+          withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
           sh '''
+            SQ_AUTH_TOKEN="${SQ_USER}:${SQ_PASS}"
             SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
-            SQ_AUTH_TOKEN="${SONAR_TOKEN}"
-
-            git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/sonar-src
-            cd /workspace/sonar-src
+            git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} ./sonar-src
+            cd ./sonar-src
 
             do_scan() {
               local module="$1"
@@ -183,17 +183,17 @@ spec:
 sonar.projectKey=${service}
 sonar.projectName=${service}
 sonar.projectVersion=${GIT_COMMIT_TAG}
-sources=/workspace/sonar-src/${module}/src/main/java
-sonar.java.binaries=/workspace/sonar-src/${module}/target/classes
+sources=./sonar-src/${module}/src/main/java
+sonar.java.binaries=./sonar-src/${module}/target/classes
 sonar.sourceEncoding=UTF-8
 sonar.host.url=${SQ_HOST}
 EOF
 
               mvn sonar:sonar \
-                -f /workspace/sonar-src/${pom} \
+                -f ./sonar-src/${pom} \
                 -Dsonar.projectKey=${service} \
                 -Dsonar.projectName=${service} \
-                -Dsonar.sources=/workspace/sonar-src/${module}/src/main/java \
+                -Dsonar.sources=./sonar-src/${module}/src/main/java \
                 -Dsonar.host.url=${SQ_HOST} \
                 -DskipTests=true \
                 -T 1C
@@ -209,9 +209,12 @@ EOF
               do_scan aidevops-modules/aidevops-system system aidevops-modules/aidevops-system/pom.xml aidevops-modules/aidevops-system/target/classes
             fi
 
-            rm -rf /workspace/sonar-src
+            rm -rf ./sonar-src
             echo "[sonar] analysis complete"
           '''
+              }
+            }
+          }
         }
       }
     }
