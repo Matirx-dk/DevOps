@@ -195,6 +195,7 @@ EOF
                   -Dsonar.projectName=${service} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.token=${SQ_PASS} \
+                  -Dsonar.java.binaries=./${module}/target/classes \
                   -DskipTests=true \
                   -T 1C
               }
