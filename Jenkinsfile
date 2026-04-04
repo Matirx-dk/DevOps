@@ -161,7 +161,7 @@ spec:
 
     stage('SonarQube Code Analysis') {
       when {
-        branch 'test'
+        expression { env.TEST_PROJECT == 'aidevops-test' }
       }
       steps {
         container('builder') {
