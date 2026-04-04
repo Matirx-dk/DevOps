@@ -153,6 +153,11 @@ spec:
           if (env.SKIP_PIPELINE == 'true') {
             currentBuild.description = 'No relevant changes detected'
           }
+          env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
+          env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
+          env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
+          env.BUILD_UI = env.BUILD_UI ?: 'false'
+          env.AI_CHAT_CONFIG_CHANGED = env.AI_CHAT_CONFIG_CHANGED ?: 'false'
           echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
         }
       }
