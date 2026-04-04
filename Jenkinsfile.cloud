@@ -281,6 +281,9 @@ spec:
     - name: m2-cache
       persistentVolumeClaim:
         claimName: jenkins-m2-cache-pvc
+    - name: kaniko-cache
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -303,6 +306,8 @@ spec:
           mountPath: /workspace
         - name: m2-cache
           mountPath: /home/ubuntu/.m2
+        - name: kaniko-cache
+          mountPath: /kaniko-cache
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
@@ -313,7 +318,9 @@ spec:
         - --destination=${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}
         - --snapshot-mode=redo
         - --use-new-run
-        - --cache=false
+        - --cache=true
+        - --cache-dir=/kaniko-cache
+        - --cache-ttl=336h
         - --skip-tls-verify-registry=${REGISTRY}
         - --build-arg=JAR_PATH=${jar_path}
       volumeMounts:
@@ -363,6 +370,9 @@ spec:
     - name: npm-cache
       persistentVolumeClaim:
         claimName: jenkins-npm-cache-pvc
+    - name: kaniko-cache
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -392,6 +402,8 @@ spec:
           mountPath: /workspace
         - name: npm-cache
           mountPath: /home/ubuntu/.npm
+        - name: kaniko-cache
+          mountPath: /kaniko-cache
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
@@ -402,7 +414,9 @@ spec:
         - --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
         - --snapshot-mode=redo
         - --use-new-run
-        - --cache=false
+        - --cache=true
+        - --cache-dir=/kaniko-cache
+        - --cache-ttl=336h
         - --skip-tls-verify-registry=${REGISTRY}
       volumeMounts:
         - name: workspace
