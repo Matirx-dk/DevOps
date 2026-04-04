@@ -165,7 +165,6 @@ spec:
       steps {
         container('builder') {
           sh '''
-            set -eu
             SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
             SQ_AUTH_TOKEN="${SONAR_TOKEN}"
 
