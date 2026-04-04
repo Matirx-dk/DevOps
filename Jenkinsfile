@@ -165,55 +165,53 @@ spec:
       steps {
         container('builder') {
           withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
-          sh '''
-            SQ_AUTH_TOKEN="${SQ_USER}:${SQ_PASS}"
-            SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
-            git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} ./sonar-src
-            cd ./sonar-src
+            sh '''
+              SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
+              SQ_AUTH_TOKEN="${SQ_USER}:${SQ_PASS}"
 
-            do_scan() {
-              local module="$1"
-              local service="$2"
-              local pom="$3"
-              local jar_path="$4"
-              echo "[sonar] scanning $service ($module)..."
+              git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} ./sonar-src
+              cd ./sonar-src
 
-              # Generate sonar-project.properties for this service
-              cat > /tmp/sonar-project-${service}.properties << EOF
-sonar.projectKey=${service}
-sonar.projectName=${service}
-sonar.projectVersion=${GIT_COMMIT_TAG}
-sources=./sonar-src/${module}/src/main/java
-sonar.java.binaries=./sonar-src/${module}/target/classes
-sonar.sourceEncoding=UTF-8
-sonar.host.url=${SQ_HOST}
+              do_scan() {
+                local module="$1"
+                local service="$2"
+                local pom="$3"
+                local jar_path="$4"
+                echo "[sonar] scanning $service ($module)..."
+
+                cat > /tmp/sonar-project-${service}.properties << EOF
+              sonar.projectKey=${service}
+              sonar.projectName=${service}
+              sonar.projectVersion=${GIT_COMMIT_TAG}
+              sources=./sonar-src/${module}/src/main/java
+              sonar.java.binaries=./sonar-src/${module}/target/classes
+              sonar.sourceEncoding=UTF-8
+              sonar.host.url=${SQ_HOST}
 EOF
 
-              mvn sonar:sonar \
-                -f ./sonar-src/${pom} \
-                -Dsonar.projectKey=${service} \
-                -Dsonar.projectName=${service} \
-                -Dsonar.sources=./sonar-src/${module}/src/main/java \
-                -Dsonar.host.url=${SQ_HOST} \
-                -DskipTests=true \
-                -T 1C
-            }
-
-            if [ "${BUILD_AUTH}" = "true" ]; then
-              do_scan aidevops-auth auth pom.xml aidevops-auth/target/classes
-            fi
-            if [ "${BUILD_GATEWAY}" = "true" ]; then
-              do_scan aidevops-gateway gateway pom.xml aidevops-gateway/target/classes
-            fi
-            if [ "${BUILD_SYSTEM}" = "true" ]; then
-              do_scan aidevops-modules/aidevops-system system aidevops-modules/aidevops-system/pom.xml aidevops-modules/aidevops-system/target/classes
-            fi
-
-            rm -rf ./sonar-src
-            echo "[sonar] analysis complete"
-          '''
+                mvn sonar:sonar \
+                  -f ./sonar-src/${pom} \
+                  -Dsonar.projectKey=${service} \
+                  -Dsonar.projectName=${service} \
+                  -Dsonar.sources=./sonar-src/${module}/src/main/java \
+                  -Dsonar.host.url=${SQ_HOST} \
+                  -DskipTests=true \
+                  -T 1C
               }
-            }
+
+              if [ "${BUILD_AUTH}" = "true" ]; then
+                do_scan aidevops-auth auth pom.xml aidevops-auth/target/classes
+              fi
+              if [ "${BUILD_GATEWAY}" = "true" ]; then
+                do_scan aidevops-gateway gateway pom.xml aidevops-gateway/target/classes
+              fi
+              if [ "${BUILD_SYSTEM}" = "true" ]; then
+                do_scan aidevops-modules/aidevops-system system aidevops-modules/aidevops-system/pom.xml aidevops-modules/aidevops-system/target/classes
+              fi
+
+              rm -rf ./sonar-src
+              echo "[sonar] analysis complete"
+            '''
           }
         }
       }
