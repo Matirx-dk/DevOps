@@ -413,10 +413,11 @@ export default {
   padding: 14px 20px !important;
   border-bottom: 1px solid rgba(0,0,0,0.06) !important;
 }
-.workbench-page .el-card__header .section-header {
-  color: #111827 !important;
-  -webkit-text-fill-color: #111827 !important;
+.workbench-page .el-card__header .section-header,
+.workbench-page .el-card__header .section-header span {
+  color: #525252 !important;
+  -webkit-text-fill-color: #525252 !important;
   font-size: 15px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 </style>
