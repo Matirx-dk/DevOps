@@ -56,7 +56,8 @@ export default {
     width: 100%;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    padding-left: 18px;
     gap: 10px;
 
     & .brand-badge {
@@ -84,11 +85,10 @@ export default {
     & .sidebar-title {
       display: inline-block;
       margin: 0;
-      color: #fff;
-      font-weight: 700;
-      line-height: 56px;
-      font-size: 14px;
-      letter-spacing: 0.2px;
+      color: #eaf2ff;
+      font-weight: 600;
+      font-size: 17px;
+      letter-spacing: 0.5px;
       font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
       vertical-align: middle;
     }
@@ -97,7 +97,7 @@ export default {
   &.collapse {
     .brand-badge,
     .sidebar-logo { margin-right: 0; }
-    .sidebar-logo-link { gap: 0; }
+    .sidebar-logo-link { gap: 0; padding-left: 0; justify-content: center; }
   }
 }
 </style>
