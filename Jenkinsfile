@@ -161,7 +161,7 @@ spec:
 
     stage('SonarQube Code Analysis') {
       when {
-        expression { echo "DEBUG: TEST_PROJECT=${env.TEST_PROJECT}"; return env.TEST_PROJECT == 'aidevops-test' }
+        expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
       }
       steps {
         container('builder') {
@@ -172,47 +172,37 @@ spec:
 
               git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
 
+              run_analysis() {
+                local module="$1"
+                local project_key="$2"
+                echo "[sonar] analyzing $module ..."
+                mvn verify sonar:sonar \
+                  -f /tmp/sonar-src/pom.xml \
+                  -pl "$module" -am \
+                  -Dsonar.token=${SQ_PASS} \
+                  -Dsonar.host.url=${SQ_HOST} \
+                  -Dsonar.projectKey="$project_key" \
+                  -Dsonar.projectName="$project_key" \
+                  -Dsonar.skipTests=true \
+                  -Dsonar.inclusions="**/*.java"
+                echo "[sonar] $module done"
+              }
+
+              pids=""
               if [ "${BUILD_AUTH}" = "true" ]; then
-                echo "[sonar] analyzing aidevops-auth ..."
-                mvn verify sonar:sonar \
-                  -f /tmp/sonar-src/pom.xml \
-                  -pl aidevops-auth -am \
-                  -Dsonar.token=${SQ_PASS} \
-                  -Dsonar.host.url=${SQ_HOST} \
-                  -Dsonar.projectKey=auth \
-                  -Dsonar.projectName=auth \
-                  -Dsonar.skipTests=true \
-                  -Dsonar.inclusions="**/*.java"
-                echo "[sonar] aidevops-auth done"
+                run_analysis "aidevops-auth" "auth" &
+                pids="$pids $!"
               fi
-
               if [ "${BUILD_GATEWAY}" = "true" ]; then
-                echo "[sonar] analyzing aidevops-gateway ..."
-                mvn verify sonar:sonar \
-                  -f /tmp/sonar-src/pom.xml \
-                  -pl aidevops-gateway -am \
-                  -Dsonar.token=${SQ_PASS} \
-                  -Dsonar.host.url=${SQ_HOST} \
-                  -Dsonar.projectKey=gateway \
-                  -Dsonar.projectName=gateway \
-                  -Dsonar.skipTests=true \
-                  -Dsonar.inclusions="**/*.java"
-                echo "[sonar] aidevops-gateway done"
+                run_analysis "aidevops-gateway" "gateway" &
+                pids="$pids $!"
+              fi
+              if [ "${BUILD_SYSTEM}" = "true" ]; then
+                run_analysis "aidevops-modules/aidevops-system" "system" &
+                pids="$pids $!"
               fi
 
-              if [ "${BUILD_SYSTEM}" = "true" ]; then
-                echo "[sonar] analyzing aidevops-modules/aidevops-system ..."
-                mvn verify sonar:sonar \
-                  -f /tmp/sonar-src/pom.xml \
-                  -pl aidevops-modules/aidevops-system -am \
-                  -Dsonar.token=${SQ_PASS} \
-                  -Dsonar.host.url=${SQ_HOST} \
-                  -Dsonar.projectKey=system \
-                  -Dsonar.projectName=system \
-                  -Dsonar.skipTests=true \
-                  -Dsonar.inclusions="**/*.java"
-                echo "[sonar] aidevops-modules/aidevops-system done"
-              fi
+              for pid in $pids; do wait "$pid" || exit 1; done
 
               rm -rf /tmp/sonar-src
               echo "[sonar] all analyses complete"
