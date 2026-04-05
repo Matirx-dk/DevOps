@@ -129,7 +129,7 @@ spec:
             if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'
             }
-            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == 'Jenkinsfile.cloud' || f == '.dockerignore' || f.startsWith('deploy/')) {
+            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == '.dockerignore' || f.startsWith('deploy/')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
             }
           }
@@ -164,7 +164,8 @@ spec:
     }
 
 
- {
+
+    stage('Build And Push In Dedicated Pods') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -279,8 +280,6 @@ spec:
           mountPath: /workspace
         - name: m2-cache
           mountPath: /home/ubuntu/.m2
-        - name: kaniko-cache
-          mountPath: /kaniko-cache
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
@@ -289,16 +288,17 @@ spec:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/backend.Dockerfile
         - --destination=${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}
-        - --snapshot-mode=redo
-        - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache
         - --cache-ttl=336h
+        - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
         - --build-arg=JAR_PATH=${jar_path}
       volumeMounts:
         - name: workspace
           mountPath: /workspace
+        - name: kaniko-cache
+          mountPath: /kaniko-cache
         - name: harbor-config
           mountPath: /kaniko/.docker
 YAML
@@ -385,11 +385,10 @@ spec:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/frontend.Dockerfile
         - --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-        - --snapshot-mode=redo
-        - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache
         - --cache-ttl=336h
+        - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
       volumeMounts:
         - name: workspace
