@@ -64,7 +64,6 @@ spec:
             LOCK_NAME=aidevops-shared-release-lock
             LOCK_HOLDER="${JOB_NAME}-${BUILD_NUMBER}"
             echo "trying to acquire $LOCK_NAME as $LOCK_HOLDER"
-            # trigger test
             while true; do
               if kubectl -n ${BUILD_NAMESPACE} create configmap "$LOCK_NAME" \
                 --from-literal=holder="$LOCK_HOLDER" \
@@ -85,7 +84,6 @@ spec:
     stage('Checkout') {
       steps {
         checkout scm
-        sh 'git fetch --unshallow 2>/dev/null || git fetch origin main --depth=1000 2>/dev/null || true'
         script {
           sh '''
             git config --global --add safe.directory "$WORKSPACE"
@@ -112,12 +110,10 @@ spec:
         script {
           def changed = sh(
             script: '''
-              echo "[detect] workspace=$(pwd) files=$(ls -1 | wc -l) git_commits=$(git rev-list --count HEAD 2>/dev/null || echo 0)"
-              git fetch origin main --depth=1000 2>/dev/null || true
               if git rev-parse HEAD~1 >/dev/null 2>&1; then
                 git diff --name-only HEAD~1 HEAD
               else
-                git log --oneline -3
+                git ls-files
               fi
             ''',
             returnStdout: true
@@ -133,7 +129,7 @@ spec:
             if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'
             }
-            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == 'Jenkinsfile.cloud' || f == '.dockerignore' || f.startsWith('deploy/')) {
+            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == '.dockerignore' || f.startsWith('deploy/')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
             }
           }
@@ -163,7 +159,8 @@ spec:
     }
 
 
- {
+
+    stage('Build And Push In Dedicated Pods') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -171,10 +168,6 @@ spec:
         container('builder') {
           sh '''
             set -eu
-            BUILD_AUTH=${BUILD_AUTH:-false}
-            BUILD_GATEWAY=${BUILD_GATEWAY:-false}
-            BUILD_SYSTEM=${BUILD_SYSTEM:-false}
-            BUILD_UI=${BUILD_UI:-false}
 
             wait_pod() {
               local pod_name="$1"
@@ -282,8 +275,6 @@ spec:
           mountPath: /workspace
         - name: m2-cache
           mountPath: /home/ubuntu/.m2
-        - name: kaniko-cache
-          mountPath: /kaniko-cache
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
@@ -302,6 +293,8 @@ spec:
       volumeMounts:
         - name: workspace
           mountPath: /workspace
+        - name: kaniko-cache
+          mountPath: /kaniko-cache
         - name: harbor-config
           mountPath: /kaniko/.docker
 YAML
@@ -462,10 +455,6 @@ YAML
         container('builder') {
           sh '''
             set -eu
-            BUILD_AUTH=${BUILD_AUTH:-false}
-            BUILD_GATEWAY=${BUILD_GATEWAY:-false}
-            BUILD_SYSTEM=${BUILD_SYSTEM:-false}
-            BUILD_UI=${BUILD_UI:-false}
 
             if [ "${BUILD_AUTH}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
