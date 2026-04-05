@@ -48,7 +48,7 @@ spec:
     REGISTRY = 'harbor.zoudekang.cloud'
     TEST_PROJECT = 'aidevops-cloud'
     K8S_NAMESPACE = 'aidevops-cloud'
-    BUILD_NAMESPACE = 'jenkins'
+    BUILD_NAMESPACE = "jenkins" # trigger test
     GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
     GIT_BRANCH = 'main'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
