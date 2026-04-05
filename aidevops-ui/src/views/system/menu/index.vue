@@ -45,7 +45,7 @@
           icon="el-icon-check"
           size="mini"
           @click="handleSaveSort"
-          v-hasPermi="['system:menu:edit']"
+         
         >保存排序</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -104,21 +104,21 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['system:menu:edit']"
+           
           >修改</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-plus"
             @click="handleAdd(scope.row)"
-            v-hasPermi="['system:menu:add']"
+           
           >新增</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['system:menu:remove']"
+           
           >删除</el-button>
         </template>
       </el-table-column>
