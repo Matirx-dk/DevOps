@@ -64,6 +64,7 @@ spec:
             LOCK_NAME=aidevops-shared-release-lock
             LOCK_HOLDER="${JOB_NAME}-${BUILD_NUMBER}"
             echo "trying to acquire $LOCK_NAME as $LOCK_HOLDER"
+            # trigger test
             while true; do
               if kubectl -n ${BUILD_NAMESPACE} create configmap "$LOCK_NAME" \
                 --from-literal=holder="$LOCK_HOLDER" \
