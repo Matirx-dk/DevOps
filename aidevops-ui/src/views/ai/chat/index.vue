@@ -27,12 +27,6 @@
             <div class="message-content">{{ msg.content }}</div>
           </div>
         </div>
-        <div v-if="sending" class="message-row assistant">
-          <div class="message-bubble">
-            <div class="message-role">AI 助手</div>
-            <div class="message-content">正在生成回复，请稍候<span class="blink">...</span></div>
-          </div>
-        </div>
       </div>
 
       <div class="message-input-bar">
