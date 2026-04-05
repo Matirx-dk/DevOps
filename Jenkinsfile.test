@@ -175,6 +175,8 @@ spec:
               set -eu
               SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
+              git config --global http.sslVerify false
+              git config --global https.sslVerify false
               git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
 
               run_analysis() {
@@ -324,6 +326,8 @@ spec:
       args:
         - |
           set -e
+          git config --global http.sslVerify false
+          git config --global https.sslVerify false
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
           mvn clean -T 1C -DskipTests package -pl ${module} -am
@@ -413,6 +417,8 @@ spec:
       args:
         - |
           set -e
+          git config --global http.sslVerify false
+          git config --global https.sslVerify false
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src/aidevops-ui
           npm config set registry https://registry.npmmirror.com --location=user
