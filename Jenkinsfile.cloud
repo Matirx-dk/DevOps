@@ -112,7 +112,6 @@ spec:
         script {
           def changed = sh(
             script: '''
-              set -e
               git fetch origin main --depth=1000 2>/dev/null || true
               if git rev-parse HEAD~1 >/dev/null 2>&1; then
                 git diff --name-only HEAD~1 HEAD
