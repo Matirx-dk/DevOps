@@ -4,6 +4,7 @@
       <router-link key="collapse" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" class="sidebar-logo-img" />
         <div v-else class="brand-badge">Ai</div>
+        <h1 v-if="!collapse" class="sidebar-title">AIDevops</h1>
       </router-link>
     </transition>
   </div>
@@ -48,17 +49,18 @@ export default {
     width: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
+    padding-left: 14px;
+    gap: 10px;
 
     & .sidebar-logo-img {
-      width: 44px;
-      height: 44px;
+      width: 36px;
+      height: 36px;
       flex-shrink: 0;
     }
 
     & .brand-badge {
-      width: 44px;
-      height: 44px;
+      width: 36px;
+      height: 36px;
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -69,6 +71,25 @@ export default {
       background: linear-gradient(135deg, #3fa9ff 0%, #215cff 100%);
       box-shadow: 0 4px 12px rgba(33, 92, 255, 0.35);
       flex-shrink: 0;
+    }
+
+    & .sidebar-title {
+      margin: 0;
+      padding: 0;
+      color: #eaf2ff;
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
+      line-height: 1;
+      white-space: nowrap;
+    }
+  }
+
+  &.collapse {
+    .sidebar-logo-link {
+      justify-content: center;
+      padding-left: 0;
     }
   }
 }
