@@ -1,6 +1,7 @@
 <template>
   <div class="navbar" :class="'nav' + navType">
     <hamburger id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
+    <span class="sidebar-toggle-label">AIDevops</span>
 
     <breadcrumb v-if="navType == 1" id="breadcrumb-container" class="breadcrumb-container" />
     <top-nav v-if="navType == 2" id="topmenu-container" class="topmenu-container" />
@@ -119,6 +120,9 @@ export default {
   .hamburger-container {
     display: none !important;
   }
+  .sidebar-toggle-label {
+    display: none !important;
+  }
 }
 
 .navbar {
@@ -149,6 +153,15 @@ export default {
     &:hover {
       background: transparent;
     }
+  }
+
+  .sidebar-toggle-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #eaf2ff;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    flex-shrink: 0;
   }
 
   .breadcrumb-container {
