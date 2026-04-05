@@ -12,7 +12,7 @@
 
 <script>
 import variables from '@/assets/styles/variables.scss'
-import logoImg from '@/assets/images/logo-aidevops.png'
+import logoImg from '@/assets/images/logo-aidevops.svg'
 
 export default {
   name: 'SidebarLogo',
