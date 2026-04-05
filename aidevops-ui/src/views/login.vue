@@ -578,13 +578,44 @@ export default {
     padding-top: 48px;
   }
 }
+
+@media (min-width: 541px) and (max-width: 1100px) {
+  .brand-title {
+    font-size: 32px;
+  }
+  .brand-desc {
+    font-size: 14px;
+    max-width: 360px;
+  }
+  .brand-metrics {
+    max-width: 360px;
+  }
+  .metric-card {
+    padding: 14px 16px;
+  }
+}
 @media (max-width: 540px) {
+  .brand-title {
+    font-size: 30px;
+  }
+  .brand-desc {
+    font-size: 13px;
+  }
+  .metric-card {
+    padding: 14px 16px;
+  }
+  .metric-card strong {
+    font-size: 13px;
+  }
+  .metric-card span {
+    font-size: 11px;
+  }
   .login-card {
-    padding: 28px 20px 20px;
-    border-radius: 20px;
+    padding: 24px 16px 16px;
+    border-radius: 16px;
   }
   .card-title {
-    font-size: 20px;
+    font-size: 18px;
   }
   .captcha-row {
     flex-direction: column;
@@ -593,6 +624,11 @@ export default {
     flex: 0 0 auto;
     width: 100%;
     height: 44px;
+    img {
+      width: 100%;
+      height: 44px;
+      object-fit: fill;
+    }
   }
 }
 </style>
