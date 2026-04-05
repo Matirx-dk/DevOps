@@ -4,7 +4,7 @@
       <router-link key="collapse" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" class="sidebar-logo-img" />
         <div v-else class="brand-badge">Ai</div>
-        <h1 v-if="!collapse" class="sidebar-title">AIDevops</h1>
+        <h1 v-if="!collapse" class="sidebar-title">智能运维平台</h1>
       </router-link>
     </transition>
   </div>
@@ -49,18 +49,18 @@ export default {
     width: 100%;
     display: flex;
     align-items: center;
-    padding-left: 14px;
-    gap: 10px;
+    padding-left: 16px;
+    gap: 8px;
 
     & .sidebar-logo-img {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       flex-shrink: 0;
     }
 
     & .brand-badge {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -77,9 +77,9 @@ export default {
       margin: 0;
       padding: 0;
       color: #eaf2ff;
-      font-weight: 600;
-      font-size: 16px;
-      letter-spacing: 0.5px;
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: 1px;
       font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
       line-height: 1;
       white-space: nowrap;
