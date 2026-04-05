@@ -186,7 +186,7 @@ export default {
       const userId = 'local_user_' + Date.now()
       const assistantId = 'local_assistant_' + (Date.now() + 1)
       this.messages.push({ messageId: userId, role: 'user', content: text })
-      this.messages.push({ messageId: assistantId, role: 'assistant', content: '您好，我是 AI 运维助手，有什么可以帮您的？' })
+      this.messages.push({ messageId: assistantId, role: 'assistant', content: '您好，我是 AI 运维助手。\n\n我可以帮你：\n- 解答服务器、容器、Kubernetes 相关问题\n- 分析日志和错误信息\n- 提供 CI/CD 流水线配置建议\n- 协助排查网络、存储、性能问题\n- 编写或优化运维脚本\n\n请描述你遇到的问题，我来帮你分析。' })
       this.inputMessage = ''
       this.sending = true
       this.$nextTick(() => this.scrollToBottom())
