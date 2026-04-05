@@ -382,7 +382,7 @@ export default {
 
 .env-label {
   width: 90px;
-  color: #666;
+  color: #374151;
   font-size: 13px;
 }
 
@@ -395,8 +395,8 @@ export default {
 }
 
 .env-val {
-  color: #1a1a2e;
-  font-weight: 600;
+  color: #111827;
+  font-weight: 700;
 }
 
 .tips-list {
