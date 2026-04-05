@@ -184,7 +184,7 @@ spec:
                 echo "[sonar] analyzing $module ..."
                 mvn sonar:sonar -T1 \
                   -f /tmp/sonar-src/pom.xml \
-                  -pl "$module" \
+                  -pl "$module" -am \
                   -Dsonar.token=${SQ_PASS} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.projectKey="$project_key" \
