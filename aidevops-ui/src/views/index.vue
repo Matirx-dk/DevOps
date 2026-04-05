@@ -346,11 +346,11 @@ export default {
 .node-header {
   display: grid;
   grid-template-columns: 1.5fr 1fr 1.5fr;
-  background: #f5f7fa;
+  background: #f8f9fa;
   padding: 8px 12px;
   font-size: 12px;
-  font-weight: 700;
-  color: #555;
+  font-weight: 600;
+  color: #888;
   border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
@@ -359,7 +359,7 @@ export default {
   grid-template-columns: 1.5fr 1fr 1.5fr;
   padding: 8px 12px;
   font-size: 13px;
-  color: #333;
+  color: #666;
   border-bottom: 1px solid rgba(0,0,0,0.04);
   &:last-child { border-bottom: none; }
 }
