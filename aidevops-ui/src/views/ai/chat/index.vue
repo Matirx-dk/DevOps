@@ -92,12 +92,12 @@ export default {
       return (this.diagnostics && this.diagnostics.probe && this.diagnostics.probe.stage) || '-'
     },
     statusText() {
-      if (!this.diagnostics) return '正在加载会话状态...'
+      if (!this.diagnostics) return '正在连接 AI 服务...'
       if (this.sending) return '消息发送中，请稍候...'
-      if (this.connectResult && this.connectResult.ok) return 'Gateway connect 已打通，当前走真实会话收发'
-      if (this.probeOk) return 'Gateway 已可达，可直接发送消息'
-      if (this.diagnostics.enabled) return '已启用 Gateway，但当前探测还未成功'
-      return '当前未启用真实 Gateway，对话先走本地回退'
+      if (this.connectResult && this.connectResult.ok) return 'AI 服务已就绪'
+      if (this.probeOk) return 'AI 服务已就绪'
+      if (this.diagnostics.enabled) return 'AI 服务连接中...'
+      return 'AI 服务连接中...'
     }
   },
   created() {
@@ -186,7 +186,7 @@ export default {
       const userId = 'local_user_' + Date.now()
       const assistantId = 'local_assistant_' + (Date.now() + 1)
       this.messages.push({ messageId: userId, role: 'user', content: text })
-      this.messages.push({ messageId: assistantId, role: 'assistant', content: '正在生成回复，请稍候...' })
+      this.messages.push({ messageId: assistantId, role: 'assistant', content: '您好，我是 AI 运维助手，有什么可以帮您的？' })
       this.inputMessage = ''
       this.sending = true
       this.$nextTick(() => this.scrollToBottom())
