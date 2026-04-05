@@ -12,7 +12,7 @@
 
 <script>
 import variables from '@/assets/styles/variables.scss'
-import logoImg from '@/assets/images/logo-aidevops.svg'
+import logoImg from '@/assets/images/logo-aidevops.png'
 
 export default {
   name: 'SidebarLogo',
@@ -51,18 +51,18 @@ export default {
     flex-direction: row !important;
     align-items: center !important;
     padding-left: 16px;
-    gap: 8px;
+    gap: 10px;
 
     & .sidebar-logo-img {
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       flex-shrink: 0;
       display: block;
     }
 
     & .brand-badge {
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       border-radius: 6px;
       display: flex;
       align-items: center;
