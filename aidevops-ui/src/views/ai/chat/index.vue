@@ -1,133 +1,55 @@
 <template>
-  <div class="ai-chat-page">
-    <div class="chat-wrapper">
-      <!-- 诊断信息栏 -->
+  <div class="ai-chat-page app-container">
+    <el-card shadow="hover" class="chat-card">
+      <div slot="header" class="chat-header">
+        <div>
+          <div class="header-title">{{ currentTitle || 'AI 运维对话' }}</div>
+          <div class="chat-tip">{{ statusText }}</div>
+        </div>
+        <div class="header-actions">
+          <el-button size="mini" :loading="probing" @click="handleProbe">重新探测</el-button>
+          <el-button size="mini" :loading="connecting" @click="handleConnectTest">Connect测试</el-button>
+          <el-tag size="mini" :type="probeOk ? 'success' : 'info'">{{ probeOk ? 'WS可达' : '本地回退' }}</el-tag>
+        </div>
+      </div>
+
       <div v-if="diagnostics" class="diagnostics-bar">
         <div class="diag-item"><span>模式</span><strong>{{ diagnostics.mode || '-' }}</strong></div>
-        <div class="diag-item"><span>WS</span><strong>{{ diagnostics.gatewayWsUrl ? '已配置' : '未配置' }}</strong></div>
-        <div class="diag-item"><span>探测</span><strong :class="probeOk ? 'text-success' : 'text-muted'">{{ probeStage }}</strong></div>
-        <div class="diag-item"><span>Token</span><strong :class="diagnostics.tokenConfigured ? 'text-success' : 'text-muted'">{{ diagnostics.tokenConfigured ? '已配置' : '未配置' }}</strong></div>
-        <div class="diag-actions">
-          <el-button size="small" :loading="probing" @click="handleProbe">重新探测</el-button>
-          <el-button size="small" :loading="connecting" @click="handleConnectTest">Connect测试</el-button>
-        </div>
+        <div class="diag-item"><span>WS</span><strong>{{ diagnostics.gatewayWsUrl || '-' }}</strong></div>
+        <div class="diag-item"><span>探测</span><strong>{{ probeStage }}</strong></div>
+        <div class="diag-item"><span>Token</span><strong>{{ diagnostics.tokenConfigured ? '已配置' : '未配置' }}</strong></div>
       </div>
 
-      <!-- 状态提示 -->
-      <div class="status-bar">
-        <span class="status-dot" :class="probeOk ? 'online' : 'offline'"></span>
-        <span class="status-text">{{ statusText }}</span>
-      </div>
-
-      <!-- 消息区域 -->
       <div class="message-list" ref="messageList">
-        <div v-if="!messages.length" class="empty-state">
-          <div class="empty-icon">
-            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="64" height="64" rx="16" fill="url(#chatGrad)"/>
-              <path d="M20 26h24M20 34h16M20 42h20" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-              <defs>
-                <linearGradient id="chatGrad" x1="0" y1="0" x2="64" y2="64">
-                  <stop stop-color="#3fa9ff"/>
-                  <stop offset="1" stop-color="#215cff"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <p>开始一次智能运维对话</p>
-          <span>描述你遇到的运维问题，AI 将为你提供解决方案</span>
-        </div>
-
         <div v-for="msg in messages" :key="msg.messageId || msg.id" class="message-row" :class="msg.role">
-          <div v-if="msg.role !== 'user'" class="avatar assistant-avatar">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="8" fill="url(#avGrad)"/>
-              <circle cx="16" cy="13" r="4" fill="white"/>
-              <path d="M10 24c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              <defs>
-                <linearGradient id="avGrad" x1="0" y1="0" x2="32" y2="32">
-                  <stop stop-color="#3fa9ff"/>
-                  <stop offset="1" stop-color="#215cff"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <div v-else class="avatar user-avatar">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="8" fill="#2a3441"/>
-              <circle cx="16" cy="13" r="4" fill="#8fd3ff"/>
-              <path d="M10 24c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#8fd3ff" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
           <div class="message-bubble">
             <div class="message-role">{{ msg.role === 'user' ? '我' : 'AI 助手' }}</div>
             <div class="message-content">{{ msg.content }}</div>
           </div>
         </div>
-
         <div v-if="sending" class="message-row assistant">
-          <div class="avatar assistant-avatar">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="8" fill="url(#avGrad2)"/>
-              <circle cx="16" cy="13" r="4" fill="white"/>
-              <path d="M10 24c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              <defs>
-                <linearGradient id="avGrad2" x1="0" y1="0" x2="32" y2="32">
-                  <stop stop-color="#3fa9ff"/>
-                  <stop offset="1" stop-color="#215cff"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <div class="message-bubble typing">
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
+          <div class="message-bubble">
+            <div class="message-role">AI 助手</div>
+            <div class="message-content">正在生成回复，请稍候<span class="blink">...</span></div>
           </div>
         </div>
       </div>
 
-      <!-- 输入区域 -->
-      <div class="input-area">
-        <div class="input-wrapper">
-          <el-input
-            v-model="inputMessage"
-            type="textarea"
-            :rows="3"
-            resize="none"
-            placeholder="输入你的运维问题，AI 将为你解答..."
-            @keydown.native="handleInputKeydown"
-          />
-          <div class="input-actions">
-            <span class="input-hint">Enter 发送 · Shift + Enter 换行</span>
-            <div class="action-btns">
-              <el-button @click="inputMessage = ''" size="small">清空</el-button>
-              <el-button type="primary" :loading="sending" :disabled="!inputMessage.trim()" @click="handleSend" size="small">发送</el-button>
-            </div>
-          </div>
+      <div class="message-input-bar">
+        <el-input
+          v-model="inputMessage"
+          type="textarea"
+          :rows="3"
+          resize="none"
+          placeholder="输入消息，Enter 发送，Shift + Enter 换行"
+          @keydown.native="handleInputKeydown"
+        />
+        <div class="message-actions">
+          <el-button @click="inputMessage = ''" size="small">清空</el-button>
+          <el-button type="primary" :loading="sending" :disabled="!inputMessage.trim()" @click="handleSend" size="small">发送</el-button>
         </div>
       </div>
-    </div>
-
-    <!-- Connect 草稿弹窗 -->
-    <el-drawer title="Connect 调试信息" :visible.sync="showConnectDraft" size="480px" direction="rtl">
-      <div v-if="connectDraft" class="draft-section">
-        <div class="draft-title">Connect 请求草稿</div>
-        <div class="draft-meta">
-          <span>challenge: {{ connectDraft.challengeStage || '-' }}</span>
-          <span>signature: {{ connectDraft.signatureReady ? 'ready' : 'pending' }}</span>
-        </div>
-        <pre class="draft-json">{{ formatJson(connectDraft.request || {}) }}</pre>
-        <div v-if="connectDraft.signatureDraft" class="draft-title mt">待签名原文</div>
-        <pre v-if="connectDraft.signatureDraft" class="draft-json">{{ connectDraft.signatureDraft.payloadJson || formatJson(connectDraft.signatureDraft.payload || {}) }}</pre>
-        <div v-if="connectDraft.signatureResult" class="draft-title mt">签名器结果</div>
-        <pre v-if="connectDraft.signatureResult" class="draft-json">{{ formatJson(connectDraft.signatureResult) }}</pre>
-      </div>
-      <div v-if="connectResult" class="draft-section">
-        <div class="draft-title">Connect 测试结果</div>
-        <pre class="draft-json">{{ formatJson(connectResult) }}</pre>
-      </div>
-    </el-drawer>
+    </el-card>
   </div>
 </template>
 
@@ -317,270 +239,115 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.ai-chat-page {
-  height: calc(100vh - 120px);
-  display: flex;
-  flex-direction: column;
+.chat-card {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.97);
 }
 
-.chat-wrapper {
+.chat-header {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.chat-tip {
+  color: #888;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .diagnostics-bar {
   display: flex;
-  align-items: center;
   gap: 10px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 16px;
   flex-wrap: wrap;
+  padding: 10px 14px;
+  background: #f8f9fa;
+  border-radius: 10px;
 }
 
 .diag-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   font-size: 12px;
-  padding: 5px 10px;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.04);
-  span { opacity: 0.55; }
+  color: #555;
+  span { opacity: 0.6; margin-right: 4px; }
   strong { font-weight: 600; }
 }
 
-.diag-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 8px;
-}
-
-.text-success { color: #3fa9ff; }
-.text-muted { color: rgba(255,255,255,0.35); }
-
-.status-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 0 4px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  &.online { background: #3fa9ff; box-shadow: 0 0 8px rgba(63,169,255,0.5); }
-  &.offline { background: rgba(255,255,255,0.25); }
-}
-
-.status-text {
-  font-size: 13px;
-  color: rgba(255,255,255,0.5);
-}
-
 .message-list {
-  flex: 1;
+  height: 480px;
   overflow-y: auto;
-  padding: 16px 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-}
-
-.empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 60px 20px;
-  text-align: center;
-
-  .empty-icon svg {
-    width: 72px;
-    height: 72px;
-    opacity: 0.8;
-  }
-
-  p {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #eaf2ff;
-  }
-
-  span {
-    font-size: 13px;
-    color: rgba(255,255,255,0.4);
-    max-width: 320px;
-    line-height: 1.7;
-  }
+  padding: 8px 4px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-bottom: 16px;
 }
 
 .message-row {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-
-  &.user {
-    flex-direction: row-reverse;
-    .message-bubble {
-      background: linear-gradient(135deg, #3fa9ff 0%, #215cff 100%);
-      border: none;
-      border-bottom-right-radius: 6px;
-    }
-    .message-role { color: rgba(255,255,255,0.7); }
-    .message-content { color: #fff; }
-  }
-
-  &.assistant {
-    .message-bubble {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-bottom-left-radius: 6px;
-    }
-  }
-}
-
-.avatar {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  overflow: hidden;
-  svg { width: 100%; height: 100%; }
+  margin-bottom: 14px;
+  &.user { justify-content: flex-end; }
+  &.assistant { justify-content: flex-start; }
 }
 
 .message-bubble {
   max-width: 72%;
-  padding: 14px 16px;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.message-row.user .message-bubble {
+  background: linear-gradient(135deg, #3fa9ff 0%, #215cff 100%);
+  .message-role { color: rgba(255,255,255,0.7); }
+  .message-content { color: #fff; }
 }
 
 .message-role {
   font-size: 11px;
-  opacity: 0.6;
+  color: #999;
   margin-bottom: 6px;
-  color: rgba(255,255,255,0.6);
 }
 
 .message-content {
   font-size: 14px;
   line-height: 1.8;
-  color: #e4efff;
+  color: #333;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.typing {
+.blink {
+  animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.message-input-bar {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 16px 20px;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.typing-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #3fa9ff;
-  animation: typingBounce 1.4s ease-in-out infinite;
-  &:nth-child(2) { animation-delay: 0.2s; }
-  &:nth-child(3) { animation-delay: 0.4s; }
-}
-
-@keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-  30% { transform: translateY(-5px); opacity: 1; }
-}
-
-.input-area {
-  padding: 16px 0 0;
-  border-top: 1px solid rgba(255,255,255,0.06);
-}
-
-.input-wrapper {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 18px;
-  padding: 16px;
-  transition: border-color 0.2s;
-
-  &:focus-within {
-    border-color: rgba(63,169,255,0.4);
-    box-shadow: 0 0 0 3px rgba(63,169,255,0.08);
-  }
-}
-
-.input-hint {
-  font-size: 11px;
-  color: rgba(255,255,255,0.3);
-}
-
-.input-actions {
+.message-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 10px;
-}
-
-.action-btns {
-  display: flex;
-  gap: 8px;
-}
-
-.draft-section {
-  padding: 16px 20px;
-}
-
-.draft-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  &.mt { margin-top: 20px; }
-}
-
-.draft-meta {
-  display: flex;
-  gap: 16px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.5);
-  margin-bottom: 10px;
-}
-
-.draft-json {
-  background: rgba(0,0,0,0.3);
-  border-radius: 10px;
-  padding: 14px;
-  font-size: 12px;
-  line-height: 1.7;
-  color: #cde7ff;
-  overflow-x: auto;
-  margin: 0;
-  max-height: 280px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-@media (max-width: 768px) {
-  .message-bubble { max-width: 85%; }
-  .diag-actions { margin-left: 0; width: 100%; }
-  .input-hint { display: none; }
+  justify-content: flex-end;
+  gap: 10px;
 }
 </style>
