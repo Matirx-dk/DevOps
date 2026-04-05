@@ -182,7 +182,7 @@ spec:
                 local module="$1"
                 local project_key="$2"
                 echo "[sonar] analyzing $module ..."
-                mvn verify sonar:sonar \
+                mvn verify sonar:sonar -T1 \
                   -f /tmp/sonar-src/pom.xml \
                   -pl "$module" -am \
                   -Dsonar.token=${SQ_PASS} \
