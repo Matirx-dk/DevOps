@@ -59,7 +59,7 @@
               <div class="action-card glass-card">
                 <h3>开始巡检</h3>
                 <p>优先检查网关、Nacos、Jenkins、入口链路和集群状态，必要时从 AI 对话发起排障。</p>
-                <el-link href="https://devops.zoudekang.cloud/openclaw/" target="_blank" type="primary">打开 AI 对话</el-link>
+                <router-link to="/ai/chat"><el-link type="primary">打开 AI 对话</el-link></router-link>
               </div>
             </el-col>
             <el-col :xs="24" :md="12">
@@ -79,7 +79,7 @@
         <el-card shadow="hover" class="workbench-card dark-card">
           <div slot="header" class="card-header"><span>快捷入口</span></div>
           <div class="quick-links">
-            <p><el-link href="https://devops.zoudekang.cloud/openclaw/" target="_blank">AI 对话</el-link></p>
+            <p><router-link to="/ai/chat"><el-link>AI 对话</el-link></router-link></p>
             <p><router-link to="/ops"><el-link>运维中心</el-link></router-link></p>
             <p><router-link to="/quality"><el-link>质量中心</el-link></router-link></p>
             <p><el-link href="https://devops.zoudekang.cloud/nacos/" target="_blank">Nacos 配置中心</el-link></p>

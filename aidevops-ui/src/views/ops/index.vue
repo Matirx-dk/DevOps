@@ -11,7 +11,7 @@
             <div class="ai-entry-title">运维协同对话入口</div>
             <p class="ai-entry-desc">在平台内直接打开 OpenClaw 对话窗口，用于巡检、排障、发布协助和日常运维沟通。</p>
             <div class="ai-actions">
-              <el-button type="primary" size="mini" @click="openChatDialog">打开对话框</el-button>
+              <router-link to="/ai/chat"><el-button type="primary" size="mini">打开对话框</el-button></router-link>
               <el-link href="https://devops.zoudekang.cloud/openclaw/" target="_blank" type="primary">新标签打开</el-link>
             </div>
           </div>
@@ -25,7 +25,7 @@
             <el-link href="https://devops.zoudekang.cloud/nacos/" target="_blank">Nacos 配置中心</el-link>
             <el-link href="https://devops.zoudekang.cloud/jenkins/" target="_blank">Jenkins 流水线</el-link>
             <el-link href="/swagger-ui/index.html" target="_blank">Swagger 接口文档</el-link>
-            <el-link href="https://devops.zoudekang.cloud/openclaw/" target="_blank">AI 对话入口</el-link>
+            <router-link to="/ai/chat"><el-link>AI 对话入口</el-link></router-link>
           </div>
         </el-card>
       </el-col>
@@ -88,7 +88,7 @@ export default {
   data() {
     return {
       chatDialogVisible: false,
-      chatUrl: 'https://devops.zoudekang.cloud/openclaw/'
+      chatUrl: '/ai/chat'
     }
   },
   methods: {
