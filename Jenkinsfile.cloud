@@ -84,14 +84,8 @@ spec:
 
     stage('Checkout') {
       steps {
-        checkout scm: [
-          $class: 'GitSCM',
-          branches: [[name: '*/main']],
-          userRemoteConfigs: [[url: 'https://github.com/dekangzou/DevOps.git']],
-          extensions: [
-            [$class: 'CloneOption', depth: 0, noTags: false, shallow: false]
-          ]
-        ]
+        checkout scm
+        sh 'git fetch --unshallow 2>/dev/null || git fetch origin main --depth=1000 2>/dev/null || true'
         script {
           sh '''
             git config --global --add safe.directory "$WORKSPACE"
