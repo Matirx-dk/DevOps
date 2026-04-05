@@ -2,14 +2,13 @@
   <div class="sidebar-logo-container" :class="{'collapse':collapse}" :style="{ backgroundColor: sideTheme === 'theme-dark' && navType !== 3 ? variables.menuBackground : variables.menuLightBackground }">
     <transition name="sidebarLogoFade">
       <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
-        <div class="brand-badge" v-if="logoText">{{ logoText }}</div>
-        <img v-else-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 v-else class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' && navType !== 3 ? variables.logoTitleColor : variables.logoLightTitleColor }">{{ title }}</h1>
+        <img v-if="logo" :src="logo" class="sidebar-logo-img" />
+        <div v-else class="brand-badge">Ai</div>
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-        <div class="brand-badge" v-if="logoText">{{ logoText }}</div>
-        <img v-else-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' && navType !== 3 ? variables.logoTitleColor : variables.logoLightTitleColor }">AIDevops</h1>
+        <img v-if="logo" :src="logo" class="sidebar-logo-img" />
+        <div v-else class="brand-badge">Ai</div>
+        <h1 class="sidebar-title">AIDevops</h1>
       </router-link>
     </transition>
   </div>
@@ -17,6 +16,7 @@
 
 <script>
 import variables from '@/assets/styles/variables.scss'
+import logoImg from '@/assets/images/logo-aidevops.png'
 
 export default {
   name: 'SidebarLogo',
@@ -31,7 +31,7 @@ export default {
   data() {
     return {
       title: process.env.VUE_APP_TITLE,
-      logo: '',
+      logo: logoImg,
       logoText: 'A'
     }
   }
@@ -56,27 +56,27 @@ export default {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding-left: 16px;
-    gap: 10px;
+    padding-left: 14px;
+    gap: 8px;
+
+    & .sidebar-logo-img {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
 
     & .brand-badge {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 18px;
+      font-size: 13px;
       font-weight: 700;
       background: linear-gradient(135deg, #3fa9ff 0%, #215cff 100%);
-      box-shadow: 0 10px 24px rgba(33, 92, 255, 0.28);
-      flex-shrink: 0;
-    }
-
-    & .sidebar-logo {
-      width: 32px;
-      height: 32px;
+      box-shadow: 0 4px 12px rgba(33, 92, 255, 0.35);
       flex-shrink: 0;
     }
 
@@ -85,15 +85,20 @@ export default {
       padding: 0;
       color: #eaf2ff;
       font-weight: 600;
-      font-size: 17px;
-      letter-spacing: 0.5px;
+      font-size: 16px;
+      letter-spacing: 0.3px;
       font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
       line-height: 1;
+      white-space: nowrap;
     }
   }
 
   &.collapse {
-    .sidebar-logo-link { justify-content: center; padding-left: 0; gap: 0; }
+    .sidebar-logo-link {
+      justify-content: center;
+      padding-left: 0;
+      gap: 0;
+    }
   }
 }
 </style>
