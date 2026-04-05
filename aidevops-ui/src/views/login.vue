@@ -26,18 +26,6 @@
     <div class="login-panel">
       <div class="login-card">
         <div class="card-header">
-          <div class="card-logo">
-            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="40" height="40" rx="12" fill="url(#logoGrad)"/>
-              <path d="M12 20L17 25L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-              <defs>
-                <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#3fa9ff"/>
-                  <stop offset="1" stop-color="#215cff"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
           <div class="card-title-area">
             <h3 class="card-title">{{ title }}</h3>
             <span class="env-badge" :class="envLabel.toLowerCase()">{{ envLabel }}</span>
@@ -349,37 +337,28 @@ export default {
 }
 .login-card {
   width: 100%;
-  border-radius: 28px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(20px);
-  padding: 36px 32px 24px;
+  padding: 28px 28px 20px;
   box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.35),
+    0 24px 60px rgba(0, 0, 0, 0.30),
     0 0 0 1px rgba(255, 255, 255, 0.50),
     inset 0 1px 0 rgba(255, 255, 255, 0.80);
 }
 .card-header {
-  margin-bottom: 28px;
-}
-.card-logo {
-  width: 44px;
-  height: 44px;
-  margin-bottom: 16px;
-  svg {
-    width: 44px;
-    height: 44px;
-  }
+  margin-bottom: 20px;
 }
 .card-title-area {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .card-title {
   margin: 0;
   color: #111827;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
 }
 .env-badge {
