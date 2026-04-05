@@ -9,7 +9,7 @@
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
         <div class="brand-badge" v-if="logoText">{{ logoText }}</div>
         <img v-else-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' && navType !== 3 ? variables.logoTitleColor : variables.logoLightTitleColor }">{{ title }}</h1>
+        <h1 class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' && navType !== 3 ? variables.logoTitleColor : variables.logoLightTitleColor }">AIDevops</h1>
       </router-link>
     </transition>
   </div>
