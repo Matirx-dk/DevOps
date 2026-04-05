@@ -1,6 +1,5 @@
 <template>
   <div class="workbench-page app-container">
-    <!-- 概览统计 -->
     <el-row :gutter="16" class="stats-row">
       <el-col :xs="12" :sm="6">
         <div class="stat-card blue">
@@ -9,7 +8,7 @@
           </div>
           <div class="stat-info">
             <div class="stat-value">4</div>
-            <div class="stat-label">集群节点</div>
+            <div class="stat-label">K8s 节点</div>
           </div>
         </div>
       </el-col>
@@ -27,34 +26,33 @@
       <el-col :xs="12" :sm="6">
         <div class="stat-card orange">
           <div class="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
           </div>
           <div class="stat-info">
-            <div class="stat-value">-</div>
-            <div class="stat-label">今日构建</div>
+            <div class="stat-value">Nacos</div>
+            <div class="stat-label">配置中心</div>
           </div>
         </div>
       </el-col>
       <el-col :xs="12" :sm="6">
         <div class="stat-card purple">
           <div class="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </div>
           <div class="stat-info">
-            <div class="stat-value">-</div>
-            <div class="stat-label">运行状态</div>
+            <div class="stat-value">Harbor</div>
+            <div class="stat-label">镜像仓库</div>
           </div>
         </div>
       </el-col>
     </el-row>
 
     <el-row :gutter="16">
-      <!-- 左侧：快捷入口 + 常用操作 -->
       <el-col :xs="24" :lg="14">
         <!-- 一键操作 -->
         <el-card shadow="hover" class="section-card">
           <div slot="header" class="section-header">
-            <span>一键操作</span>
+            <span>快捷入口</span>
           </div>
           <div class="action-grid">
             <div class="action-btn" @click="$router.push('/ai-chat')">
@@ -85,11 +83,11 @@
               <div class="action-icon quality">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
-              <span>质量中心</span>
+              <span>SonarQube</span>
             </div>
-            <a class="action-btn" href="/swagger-ui/index.html" target="_blank">
+            <a class="action-btn" href="/swagger-ui/" target="_blank">
               <div class="action-icon swagger">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 8"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 8 8 8"/></svg>
               </div>
               <span>Swagger</span>
             </a>
@@ -118,17 +116,17 @@
               </div>
               <div class="tool-info">
                 <strong>Grafana 监控大盘</strong>
-                <span>指标可视化与告警（待接入）</span>
+                <span>指标可视化与告警</span>
               </div>
               <div class="tool-arrow">→</div>
             </a>
-            <a class="tool-item" href="https://devops.zoudekang.cloud/kuboard/" target="_blank">
-              <div class="tool-icon kuboard">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <a class="tool-item" href="https://devops.zoudekang.cloud/sonarqube/" target="_blank">
+              <div class="tool-icon sonarqube">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
               <div class="tool-info">
-                <strong>Kuboard 集群管理</strong>
-                <span>Kubernetes 可视化管理（待接入）</span>
+                <strong>SonarQube 代码质量</strong>
+                <span>代码质量检测与漏洞扫描</span>
               </div>
               <div class="tool-arrow">→</div>
             </a>
@@ -136,58 +134,50 @@
         </el-card>
       </el-col>
 
-      <!-- 右侧：系统状态 + 使用建议 -->
       <el-col :xs="24" :lg="10">
-        <!-- 环境说明 -->
-        <el-card shadow="hover" class="section-card env-card">
+        <!-- 节点信息 -->
+        <el-card shadow="hover" class="section-card">
           <div slot="header" class="section-header">
-            <span>当前环境</span>
-            <el-tag size="mini" type="success" effect="plain">TEST</el-tag>
+            <span>测试环境节点</span>
           </div>
-          <div class="env-info">
-            <div class="env-item">
-              <span class="env-label">Gateway</span>
-              <span class="env-dot online"></span>
-              <span class="env-val">运行中</span>
+          <div class="node-table">
+            <div class="node-header">
+              <span>主机名</span>
+              <span>角色</span>
+              <span>IP</span>
             </div>
-            <div class="env-item">
-              <span class="env-label">Auth 服务</span>
-              <span class="env-dot online"></span>
-              <span class="env-val">运行中</span>
+            <div class="node-row">
+              <span>devops-1</span>
+              <span>控制平面</span>
+              <span>192.168.1.101</span>
             </div>
-            <div class="env-item">
-              <span class="env-label">System 服务</span>
-              <span class="env-dot online"></span>
-              <span class="env-val">运行中</span>
+            <div class="node-row">
+              <span>devops-2</span>
+              <span>计算节点</span>
+              <span>192.168.1.102</span>
             </div>
-            <div class="env-item">
-              <span class="env-label">UI 服务</span>
-              <span class="env-dot online"></span>
-              <span class="env-val">运行中</span>
+            <div class="node-row">
+              <span>devops-3</span>
+              <span>计算节点</span>
+              <span>192.168.1.103</span>
             </div>
-            <div class="env-item">
-              <span class="env-label">MySQL</span>
-              <span class="env-dot online"></span>
-              <span class="env-val">运行中</span>
-            </div>
-            <div class="env-item">
-              <span class="env-label">Redis</span>
-              <span class="env-dot online"></span>
-              <span class="env-val">运行中</span>
+            <div class="node-row">
+              <span>devops-4</span>
+              <span>计算节点</span>
+              <span>192.168.1.104</span>
             </div>
           </div>
         </el-card>
 
-        <!-- 快捷提示 -->
-        <el-card shadow="hover" class="section-card tips-card">
+        <!-- 提示 -->
+        <el-card shadow="hover" class="section-card">
           <div slot="header" class="section-header">
             <span>使用建议</span>
           </div>
           <ul class="tips-list">
-            <li>AI 对话可发起运维巡检与故障排查</li>
-            <li>配置变更统一在 Nacos 中管理</li>
             <li>发布构建统一走 Jenkins 流水线</li>
-            <li>接口调试使用 Swagger 文档</li>
+            <li>配置变更统一在 Nacos 中管理</li>
+            <li>AI 对话可发起运维巡检与故障排查</li>
           </ul>
         </el-card>
       </el-col>
@@ -214,33 +204,32 @@ export default {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 20px 16px;
-  border-radius: 14px;
+  padding: 18px 14px;
+  border-radius: 12px;
   margin-bottom: 12px;
-  color: #fff;
   cursor: default;
-  transition: transform 0.2s;
-
-  &:hover { transform: translateY(-2px); }
+  &:hover { transform: translateY(-1px); }
 }
 
 .stat-icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   svg { width: 100%; height: 100%; }
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1;
   margin-bottom: 4px;
+  color: #fff;
 }
 
 .stat-label {
   font-size: 12px;
   opacity: 0.85;
+  color: #fff;
 }
 
 .stat-card.blue { background: linear-gradient(135deg, #3fa9ff, #215cff); }
@@ -250,7 +239,7 @@ export default {
 
 .section-card {
   margin-bottom: 16px;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
@@ -261,49 +250,45 @@ export default {
   justify-content: space-between;
   font-size: 15px;
   font-weight: 700;
-  color: #111827 !important;
-  -webkit-text-fill-color: #111827 !important;
-  text-fill-color: #111827 !important;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
 }
 
 .action-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .action-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 18px 8px;
-  border-radius: 12px;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 10px;
   background: #f8f9fa;
   border: 1px solid rgba(0, 0, 0, 0.06);
   cursor: pointer;
   text-decoration: none;
   color: #1a1a2e;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   transition: all 0.2s;
-
   &:hover {
     background: #eef1f6;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 }
 
 .action-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  svg { width: 22px; height: 22px; }
-
+  svg { width: 18px; height: 18px; }
   &.ai { background: rgba(63, 169, 255, 0.12); color: #3fa9ff; }
   &.ops { background: rgba(52, 211, 153, 0.12); color: #34d399; }
   &.jenkins { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
@@ -315,109 +300,88 @@ export default {
 .tool-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .tool-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
   background: #f8f9fa;
   text-decoration: none;
   transition: all 0.2s;
-
-  &:hover {
-    background: #eef1f6;
-    transform: translateX(3px);
-  }
+  &:hover { background: #eef1f6; transform: translateX(2px); }
 }
 
 .tool-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  svg { width: 18px; height: 18px; }
-
+  svg { width: 16px; height: 16px; }
   &.harbor { background: rgba(63, 169, 255, 0.12); color: #3fa9ff; }
   &.grafana { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
-  &.kuboard { background: rgba(167, 139, 250, 0.12); color: #7c3aed; }
+  &.sonarqube { background: rgba(52, 211, 153, 0.12); color: #059669; }
 }
 
 .tool-info {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  strong { font-size: 14px; color: #1a1a2e; font-weight: 600; }
-  span { font-size: 12px; color: #999; }
+  strong { font-size: 13px; color: #1a1a2e; font-weight: 600; }
+  span { font-size: 11px; color: #999; }
 }
 
-.tool-arrow {
-  color: #ccc;
-  font-size: 16px;
+.tool-arrow { color: #ccc; font-size: 14px; }
+
+.node-table {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.env-card .section-header {
-  width: 100%;
-}
-
-.env-info {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.env-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-}
-
-.env-label {
-  width: 90px;
-  color: #909399;
-  font-size: 13px;
-}
-
-.env-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  &.online { background: #34d399; box-shadow: 0 0 6px rgba(52, 211, 153, 0.5); }
-  &.offline { background: #f56c6c; }
-}
-
-.env-val {
-  color: #606266;
+.node-header {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1.5fr;
+  background: #f5f7fa;
+  padding: 8px 12px;
+  font-size: 12px;
   font-weight: 700;
+  color: #555;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.node-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1.5fr;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #333;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  &:last-child { border-bottom: none; }
 }
 
 .tips-list {
   margin: 0;
   padding-left: 16px;
   color: #555;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 2.2;
 }
 </style>
 
 <style lang="scss">
 .workbench-page .el-card__header {
-  padding: 14px 20px !important;
+  padding: 12px 16px !important;
   border-bottom: 1px solid rgba(0,0,0,0.06) !important;
 }
-.workbench-page .el-card__header .section-header,
-.workbench-page .el-card__header .section-header span {
-  color: #909399 !important;
-  -webkit-text-fill-color: #909399 !important;
-  font-size: 15px !important;
-  font-weight: 600 !important;
+.workbench-page .el-card__body {
+  padding: 14px 16px !important;
 }
 </style>
+</parameter>
+</script>
+</minimax:tool_call>
