@@ -4,7 +4,7 @@
       <router-link key="collapse" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" class="sidebar-logo-img" />
         <div v-else class="brand-badge">Ai</div>
-        <h1 v-if="!collapse" class="sidebar-title">智能运维平台</h1>
+        <span v-if="!collapse" class="sidebar-title">智能运维平台</span>
       </router-link>
     </transition>
   </div>
@@ -47,26 +47,28 @@ export default {
   & .sidebar-logo-link {
     height: 56px;
     width: 100%;
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
     padding-left: 16px;
     gap: 8px;
 
     & .sidebar-logo-img {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       flex-shrink: 0;
+      display: block;
     }
 
     & .brand-badge {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       background: linear-gradient(135deg, #3fa9ff 0%, #215cff 100%);
       box-shadow: 0 4px 12px rgba(33, 92, 255, 0.35);
@@ -74,6 +76,7 @@ export default {
     }
 
     & .sidebar-title {
+      display: inline-block;
       margin: 0;
       padding: 0;
       color: #eaf2ff;
@@ -88,7 +91,7 @@ export default {
 
   &.collapse {
     .sidebar-logo-link {
-      justify-content: center;
+      justify-content: center !important;
       padding-left: 0;
     }
   }
