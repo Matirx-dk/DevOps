@@ -382,7 +382,7 @@ export default {
 
 .env-label {
   width: 90px;
-  color: #374151;
+  color: #909399;
   font-size: 13px;
 }
 
@@ -395,7 +395,7 @@ export default {
 }
 
 .env-val {
-  color: #111827;
+  color: #606266;
   font-weight: 700;
 }
 
@@ -415,8 +415,8 @@ export default {
 }
 .workbench-page .el-card__header .section-header,
 .workbench-page .el-card__header .section-header span {
-  color: #525252 !important;
-  -webkit-text-fill-color: #525252 !important;
+  color: #909399 !important;
+  -webkit-text-fill-color: #909399 !important;
   font-size: 15px !important;
   font-weight: 600 !important;
 }
