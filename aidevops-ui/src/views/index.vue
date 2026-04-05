@@ -6,7 +6,7 @@
           <div slot="header" class="card-header">
             <div>
               <div class="hero-mark">AIOps</div>
-              <span>工作台</span>
+              <span class="hero-section-title">工作台</span>
             </div>
             <span class="header-tag">AIDevOps</span>
           </div>
@@ -52,23 +52,21 @@
           </div>
         </el-card>
 
-        <el-card shadow="hover" class="workbench-card dark-card">
+        <el-card shadow="hover" class="workbench-card action-card">
           <div slot="header" class="card-header"><span>常用操作</span></div>
           <el-row :gutter="16">
             <el-col :xs="24" :md="12">
-              <div class="action-card glass-card">
+              <div class="action-item glass-action">
                 <h3>开始巡检</h3>
                 <p>优先检查网关、Nacos、Jenkins、入口链路和集群状态，必要时从 AI 对话发起排障。</p>
-                <router-link to="/ai/chat"><el-link type="primary">打开 AI 对话</el-link></router-link>
+                <router-link to="/ai/chat"><el-button type="primary" size="small">打开 AI 对话</el-button></router-link>
               </div>
             </el-col>
             <el-col :xs="24" :md="12">
-              <div class="action-card glass-card">
+              <div class="action-item glass-action">
                 <h3>进入运维中心</h3>
                 <p>统一进入配置中心、流水线、接口文档，以及后续接入的监控和集群工具。</p>
-                <router-link to="/ops">
-                  <el-link type="primary">打开运维中心</el-link>
-                </router-link>
+                <router-link to="/ops"><el-button type="primary" size="small">打开运维中心</el-button></router-link>
               </div>
             </el-col>
           </el-row>
@@ -76,19 +74,19 @@
       </el-col>
 
       <el-col :xs="24" :lg="8">
-        <el-card shadow="hover" class="workbench-card dark-card">
+        <el-card shadow="hover" class="workbench-card action-card">
           <div slot="header" class="card-header"><span>快捷入口</span></div>
           <div class="quick-links">
-            <p><router-link to="/ai/chat"><el-link>AI 对话</el-link></router-link></p>
-            <p><router-link to="/ops"><el-link>运维中心</el-link></router-link></p>
-            <p><router-link to="/quality"><el-link>质量中心</el-link></router-link></p>
-            <p><el-link href="https://devops.zoudekang.cloud/nacos/" target="_blank">Nacos 配置中心</el-link></p>
-            <p><el-link href="https://devops.zoudekang.cloud/jenkins/" target="_blank">Jenkins 流水线</el-link></p>
-            <p><el-link href="/swagger-ui/index.html" target="_blank">Swagger 接口文档</el-link></p>
+            <router-link to="/ai/chat"><el-button type="text" size="small">AI 对话</el-button></router-link>
+            <router-link to="/ops"><el-button type="text" size="small">运维中心</el-button></router-link>
+            <router-link to="/quality"><el-button type="text" size="small">质量中心</el-button></router-link>
+            <el-link href="https://devops.zoudekang.cloud/nacos/" target="_blank" type="text" size="small">Nacos 配置中心</el-link>
+            <el-link href="https://devops.zoudekang.cloud/jenkins/" target="_blank" type="text" size="small">Jenkins 流水线</el-link>
+            <el-link href="/swagger-ui/index.html" target="_blank" type="text" size="small">Swagger 接口文档</el-link>
           </div>
         </el-card>
 
-        <el-card shadow="hover" class="workbench-card dark-card">
+        <el-card shadow="hover" class="workbench-card action-card">
           <div slot="header" class="card-header"><span>使用建议</span></div>
           <ul class="tips-list">
             <li>巡检和排障优先从 AI 对话进入。</li>
@@ -115,21 +113,51 @@ export default {
   overflow: hidden;
 }
 
-.hero-card,
-.dark-card {
+.hero-card {
   background: linear-gradient(135deg, #0f1728 0%, #18243a 55%, #203456 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+}
+
+.action-card {
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  color: #1a1a2e;
+}
+
+.hero-card .card-header {
   color: #eaf2ff;
 }
 
-.hero-mark,
+.hero-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(63, 169, 255, 0.16);
+  border: 1px solid rgba(63, 169, 255, 0.3);
+  color: #8fd3ff;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.hero-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #eaf2ff;
+  margin-left: 12px;
+}
+
 .header-tag {
   display: inline-flex;
   align-items: center;
@@ -144,10 +172,6 @@ export default {
   font-weight: 700;
 }
 
-.hero-mark {
-  margin-bottom: 12px;
-}
-
 .hero-panel {
   display: flex;
   flex-direction: column;
@@ -157,7 +181,7 @@ export default {
 .hero-title {
   margin: 0 0 12px;
   color: #ffffff;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
 }
 
@@ -209,39 +233,43 @@ export default {
 .summary-item.orange { background: linear-gradient(135deg, #FA8C16, #FFC53D); }
 .summary-item.purple { background: linear-gradient(135deg, #722ED1, #B37FEB); }
 
-.glass-card {
-  height: 100%;
+.action-item {
   padding: 18px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #eaf2ff;
+  border-radius: 14px;
+  background: #f8f9fa;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 12px;
+
+  h3 {
+    margin: 0 0 10px;
+    color: #1a1a2e;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0 0 14px;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.7;
+  }
 }
 
-.action-card h3 {
-  margin: 0 0 10px;
-  color: #ffffff;
-}
+.quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 
-.action-card p {
-  margin: 0 0 14px;
-  color: rgba(234, 242, 255, 0.72);
-  line-height: 1.8;
-}
-
-.quick-links p {
-  margin: 12px 0;
-}
-
-.quick-links ::v-deep .el-link,
-.glass-card ::v-deep .el-link {
-  color: #8fd3ff;
+  a {
+    text-decoration: none;
+  }
 }
 
 .tips-list {
   margin: 0;
   padding-left: 18px;
-  color: rgba(234, 242, 255, 0.78);
-  line-height: 1.9;
+  color: #555;
+  font-size: 14px;
+  line-height: 2;
 }
 </style>
