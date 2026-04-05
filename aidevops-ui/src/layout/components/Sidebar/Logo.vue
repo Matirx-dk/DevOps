@@ -46,25 +46,24 @@ export default {
 .sidebar-logo-container {
   position: relative;
   height: 56px;
-  line-height: 56px;
   background: transparent;
   text-align: center;
   overflow: hidden;
 
   & .sidebar-logo-link {
-    height: 100%;
+    height: 56px;
     width: 100%;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding-left: 18px;
+    padding-left: 16px;
     gap: 10px;
 
     & .brand-badge {
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
@@ -78,26 +77,23 @@ export default {
     & .sidebar-logo {
       width: 32px;
       height: 32px;
-      vertical-align: middle;
-      margin-right: 12px;
+      flex-shrink: 0;
     }
 
     & .sidebar-title {
-      display: inline-block;
       margin: 0;
+      padding: 0;
       color: #eaf2ff;
       font-weight: 600;
       font-size: 17px;
       letter-spacing: 0.5px;
       font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
-      vertical-align: middle;
+      line-height: 1;
     }
   }
 
   &.collapse {
-    .brand-badge,
-    .sidebar-logo { margin-right: 0; }
-    .sidebar-logo-link { gap: 0; padding-left: 0; justify-content: center; }
+    .sidebar-logo-link { justify-content: center; padding-left: 0; gap: 0; }
   }
 }
 </style>
