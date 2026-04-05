@@ -326,7 +326,7 @@ spec:
           set -e
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          mvn -T 1C -DskipTests package -pl ${module} -am
+          mvn clean -T 1C -DskipTests package -pl ${module} -am
       volumeMounts:
         - name: workspace
           mountPath: /workspace
