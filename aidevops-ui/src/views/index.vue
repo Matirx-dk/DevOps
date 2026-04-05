@@ -262,11 +262,8 @@ export default {
   font-size: 15px;
   font-weight: 700;
   color: #111827 !important;
-}
-
-::v-deep .el-card__header {
-  padding: 14px 20px !important;
-  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+  -webkit-text-fill-color: #111827 !important;
+  text-fill-color: #111827 !important;
 }
 
 .action-grid {
@@ -408,5 +405,18 @@ export default {
   color: #555;
   font-size: 14px;
   line-height: 2.2;
+}
+</style>
+
+<style lang="scss">
+.workbench-page .el-card__header {
+  padding: 14px 20px !important;
+  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+}
+.workbench-page .el-card__header .section-header {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
 }
 </style>
