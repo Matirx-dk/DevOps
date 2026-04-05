@@ -57,7 +57,7 @@
             <span>一键操作</span>
           </div>
           <div class="action-grid">
-            <div class="action-btn" @click="$router.push('/ai/chat')">
+            <div class="action-btn" @click="$router.push('/ai-chat')">
               <div class="action-icon ai">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               </div>
@@ -261,7 +261,12 @@ export default {
   justify-content: space-between;
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #111827 !important;
+}
+
+::v-deep .el-card__header {
+  padding: 14px 20px !important;
+  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
 }
 
 .action-grid {
