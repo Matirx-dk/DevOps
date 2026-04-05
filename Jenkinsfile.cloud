@@ -283,11 +283,10 @@ spec:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/backend.Dockerfile
         - --destination=${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}
-        - --snapshot-mode=redo
-        - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache
         - --cache-ttl=336h
+        - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
         - --build-arg=JAR_PATH=${jar_path}
       volumeMounts:
@@ -381,11 +380,10 @@ spec:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/frontend.Dockerfile
         - --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-        - --snapshot-mode=redo
-        - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache
         - --cache-ttl=336h
+        - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
       volumeMounts:
         - name: workspace
