@@ -51,14 +51,14 @@ export default {
     justify-content: center;
 
     & .sidebar-logo-img {
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
       flex-shrink: 0;
     }
 
     & .brand-badge {
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
       border-radius: 8px;
       display: flex;
       align-items: center;
