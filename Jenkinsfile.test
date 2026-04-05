@@ -194,21 +194,15 @@ spec:
                 echo "[sonar] $module done"
               }
 
-              pids=""
               if [ "${BUILD_AUTH}" = "true" ]; then
-                run_analysis "aidevops-auth" "auth" &
-                pids="$pids $!"
+                run_analysis "aidevops-auth" "auth"
               fi
               if [ "${BUILD_GATEWAY}" = "true" ]; then
-                run_analysis "aidevops-gateway" "gateway" &
-                pids="$pids $!"
+                run_analysis "aidevops-gateway" "gateway"
               fi
               if [ "${BUILD_SYSTEM}" = "true" ]; then
-                run_analysis "aidevops-modules/aidevops-system" "system" &
-                pids="$pids $!"
+                run_analysis "aidevops-modules/aidevops-system" "system"
               fi
-
-              for pid in $pids; do wait "$pid" || exit 1; done
 
               rm -rf /tmp/sonar-src
               echo "[sonar] all analyses complete"
