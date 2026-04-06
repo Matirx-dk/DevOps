@@ -53,7 +53,7 @@ spec:
     GIT_BRANCH = 'test'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
     KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug',
-    SONAR_HOST_URL = 'http://sonarqube.sonarqube:9000'
+    SONAR_HOST_URL = 'http://sonarqube.sonarqube:9000/sonarqube'
   }
 
   stages {
@@ -173,7 +173,7 @@ spec:
         container('builder') {
           withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
             sh '''
-              SQ_HOST="http://sonarqube.sonarqube:9000"
+              SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
               git config --global http.sslVerify false
               git config --global https.sslVerify false

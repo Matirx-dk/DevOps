@@ -13,7 +13,7 @@
     <description>AI智能运维微服务系统</description>
 
     <properties>
-        <sonar.host.url>http://sonarqube.sonarqube:9000</sonar.host.url>
+        <sonar.host.url>http://sonarqube.sonarqube:9000/sonarqube</sonar.host.url>
         <aidevops.version>3.6.7</aidevops.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
