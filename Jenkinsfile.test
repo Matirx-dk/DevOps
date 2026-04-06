@@ -52,7 +52,7 @@ spec:
     GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
     GIT_BRANCH = 'test'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
-    KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug',
+    KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug'
     SONAR_HOST_URL = 'http://sonarqube.sonarqube:9000/sonarqube'
   }
 
