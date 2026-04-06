@@ -10,6 +10,8 @@ metadata:
     app: aidevops-test-pipeline
 spec:
   serviceAccountName: jenkins-agent
+  imagePullSecrets:
+    - name: harbor-pull-secret
   restartPolicy: Never
   containers:
     - name: builder
