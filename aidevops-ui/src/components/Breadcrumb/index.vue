@@ -89,12 +89,12 @@ export default {
 
   ::v-deep .el-breadcrumb__inner,
   ::v-deep .el-breadcrumb__inner a {
-    color: rgba(234, 242, 255, 0.72);
+    color: rgba(234, 242, 255, 0.85);
     font-weight: 500;
   }
 
   ::v-deep .el-breadcrumb__separator {
-    color: rgba(234, 242, 255, 0.34);
+    color: rgba(234, 242, 255, 0.55);
   }
 
   .no-redirect {

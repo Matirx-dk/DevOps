@@ -57,7 +57,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['system:config:add']"
+         
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -68,7 +68,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['system:config:edit']"
+         
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -79,7 +79,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['system:config:remove']"
+         
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -89,7 +89,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['system:config:export']"
+         
         >导出</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -99,7 +99,7 @@
           icon="el-icon-refresh"
           size="mini"
           @click="handleRefreshCache"
-          v-hasPermi="['system:config:remove']"
+         
         >刷新缓存</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
@@ -131,14 +131,14 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['system:config:edit']"
+           
           >修改</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['system:config:remove']"
+           
           >删除</el-button>
         </template>
       </el-table-column>
