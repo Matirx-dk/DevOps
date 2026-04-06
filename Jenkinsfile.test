@@ -56,7 +56,7 @@ spec:
   }
 
   stages {
-    stage('Acquire Shared Release Lock') {
+    stage('获取发布锁') {
       steps {
         container('builder') {
           sh '''
@@ -81,7 +81,7 @@ spec:
       }
     }
 
-    stage('Checkout') {
+    stage('代码检出') {
       steps {
         checkout scm
         script {
@@ -105,7 +105,7 @@ spec:
       }
     }
 
-    stage('Detect Changed Services') {
+    stage('检测变更服务') {
       steps {
         script {
           def changed = sh(
@@ -164,7 +164,7 @@ spec:
     }
 
 
-    stage('SonarQube Code Analysis') {
+    stage('SonarQube 代码分析') {
       when {
         expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
       }
@@ -219,7 +219,7 @@ spec:
       }
     }
 
-    stage('Build And Push In Dedicated Pods') {
+    stage('构建并推送镜像') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -486,7 +486,7 @@ YAML
       }
     }
 
-    stage('Render And Apply Helm ConfigMaps To Test') {
+    stage('渲染并应用 Helm 配置') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -510,7 +510,7 @@ YAML
       }
     }
 
-    stage('Rollout Changed Services To Test') {
+    stage('滚动更新至测试环境') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
