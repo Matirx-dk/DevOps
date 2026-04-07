@@ -48,6 +48,15 @@ spec:
                         def ns = params.ENV == 'cloud' ? 'aidevops-cloud' : 'aidevops-test'
                         def svcList = params.SERVICE == 'all' ? ['auth', 'gateway', 'system', 'ui'] : [params.SERVICE]
 
+
+                        // 打印版本历史
+                        echo "=== 可用版本 ==="
+                        svcList.each { svc ->
+                            echo "--- aidevops-${svc} ---"
+                            sh "kubectl rollout history deployment/aidevops-${svc} -n ${ns} || true"
+                        }
+                        echo "====================="
+
                         echo "=== Rollback: ${svcList} -> ${ns} ==="
 
                         def created = sh(
