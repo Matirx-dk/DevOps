@@ -69,3 +69,4 @@ sqlInit:
     ryConfigSql: ""
     ryCloudSql: ""
     quartzSql: ""
+# trigger cloud
