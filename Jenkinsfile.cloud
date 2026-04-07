@@ -119,8 +119,7 @@ spec:
               fi
             ''',
             returnStdout: true
-          ).trim().split('
-') as List
+          ).trim().split('\n') as List
 
           def targets = [] as Set
           changed.each { f ->
@@ -507,3 +506,4 @@ YAML
     }
   }
 }
+
