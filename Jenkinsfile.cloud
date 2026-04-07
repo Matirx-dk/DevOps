@@ -13,8 +13,6 @@ spec:
   imagePullSecrets:
     - name: harbor-pull-secret
   restartPolicy: Never
-  nodeSelector:
-    kubernetes.io/hostname: devops-2
   containers:
     - name: builder
       image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
