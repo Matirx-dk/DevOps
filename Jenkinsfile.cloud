@@ -18,7 +18,7 @@ spec:
   containers:
     - name: builder
       image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: [\"cat\"]
       tty: true
       volumeMounts:
@@ -271,7 +271,7 @@ spec:
   initContainers:
     - name: builder
       image: ${CI_TOOLS_IMAGE}
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: ["sh","-lc"]
       args:
         - |
@@ -359,7 +359,7 @@ spec:
   initContainers:
     - name: builder
       image: ${CI_TOOLS_IMAGE}
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: ["sh","-lc"]
       args:
         - |
