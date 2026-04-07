@@ -33,6 +33,11 @@ spec:
             choices: ['cloud', 'test'],
             description: '选择目标环境'
         )
+        string(
+            name: 'REVISION',
+            defaultValue: '0',
+            description: '回滚版本（0=上一版本，填数字如1/2/3...）'
+        )
     }
 
     stages {
@@ -84,7 +89,12 @@ spec:
                             echo "    当前镜像: ${currentImage}"
 
                             // 执行回滚
-                            sh "kubectl rollout undo deployment/${deployName} -n ${ns}"
+                            if (params.REVISION.toInteger() == 0) {
+            sh "kubectl rollout undo deployment/${deployName} -n ${ns}"
+        } else {
+            echo "    回滚到历史版本 #${params.REVISION}..."
+            sh "kubectl rollout undo deployment/${deployName} -n ${ns} --to-revision=${params.REVISION}"
+        }
 
                             // 等待回滚完成
                             sh "kubectl rollout status deployment/${deployName} -n ${ns} --timeout=120s"
