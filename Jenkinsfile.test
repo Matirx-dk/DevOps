@@ -12,8 +12,6 @@ spec:
   serviceAccountName: jenkins-agent
   imagePullSecrets:
     - name: harbor-pull-secret
-  nodeSelector:
-    kubernetes.io/hostname: devops-2
   restartPolicy: Never
   containers:
     - name: builder
