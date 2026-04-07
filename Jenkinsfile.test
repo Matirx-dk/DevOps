@@ -167,6 +167,21 @@ spec:
     }
 
 
+    stage('打印构建信息') {
+      steps {
+        script {
+          sh '''
+            echo ""
+            echo "  Git Commit:  ${GIT_COMMIT_SHORT}"
+            echo "  Message:     ${GIT_COMMIT_MSG_RAW}"
+            echo "  Branch:      ${GIT_BRANCH}"
+            echo "  Build:       #${BUILD_NUMBER}"
+            echo ""
+          '''
+        }
+      }
+    }
+
     stage('SonarQube 代码分析') {
       when {
         expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
@@ -177,23 +192,23 @@ spec:
             sh '''
               SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
-              git config --global http.sslVerify false
-              git config --global https.sslVerify false
-              git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
-
               run_analysis() {
                 local module="$1"
                 local project_key="$2"
                 echo "[sonar] analyzing $module ..."
-                mvn sonar:sonar -T1 \
-                  -f /tmp/sonar-src/pom.xml \
-                  -pl "$module" -am \
+                mvn sonar:sonar \
+                  -f ${WORKSPACE}/pom.xml \
+                  -pl "$module" \
                   -Dsonar.token=${SQ_PASS} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.projectKey="$project_key" \
                   -Dsonar.projectName="$project_key" \
                   -Dsonar.skipTests=true \
-                  -Dsonar.inclusions="**/*.java" || true
+                  -Dsonar.inclusions="**/*.java" \
+                  -DskipTests=true \
+                  -B \
+                  -q \
+                  > /dev/null 2>&1 || true
                 echo "[sonar] $module done"
               }
 
@@ -207,7 +222,6 @@ spec:
                 run_analysis "aidevops-modules/aidevops-system" "system"
               fi
 
-              rm -rf /tmp/sonar-src
               echo "[sonar] all analyses complete"
             '''
           }
