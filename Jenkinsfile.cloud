@@ -93,16 +93,8 @@ spec:
           '''
           env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
           env.GIT_COMMIT_MSG_RAW = sh(script: 'git log -1 --pretty=%s', returnStdout: true).trim()
-          env.GIT_COMMIT_TAG = sh(
-            script: '''
-              MSG=$(git log -1 --pretty=%s | tr '[:upper:]' '[:lower:]')
-              MSG=$(printf "%s" "$MSG" | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//; s/-*$//')
-              if [ -z "$MSG" ]; then MSG=commit; fi
-              printf "%s-%s" "$MSG" "$(git rev-parse --short HEAD)"
-            ''',
-            returnStdout: true
-          ).trim()
-          currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.GIT_COMMIT_TAG}"
+          env.GIT_COMMIT_TAG = env.BUILD_NUMBER
+          currentBuild.displayName = "#${env.BUILD_NUMBER}"
         }
       }
     }
