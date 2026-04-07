@@ -36,7 +36,8 @@ spec:
         string(
             name: 'REVISION',
             defaultValue: '0',
-            description: '回滚版本（0=上一版本，填数字如1/2/3...）
+            description: '回滚版本（0=上一版本，填数字如1/2/3...指定历史版本号）'
+        )
     }
 
     stages {
@@ -47,7 +48,6 @@ spec:
                         def lockName = params.ENV == 'cloud' ? 'aidevops-shared-release-lock' : 'aidevops-test-release-lock'
                         def ns = params.ENV == 'cloud' ? 'aidevops-cloud' : 'aidevops-test'
                         def svcList = params.SERVICE == 'all' ? ['auth', 'gateway', 'system', 'ui'] : [params.SERVICE]
-
 
                         // 打印版本历史
                         echo "=== 可用版本 ==="
@@ -103,3 +103,33 @@ spec:
                                 echo "    回滚到历史版本 #${params.REVISION}..."
                                 sh "kubectl rollout undo deployment/${deployName} -n ${ns} --to-revision=${params.REVISION}"
                             }
+
+                            // 等待回滚完成
+                            sh "kubectl rollout status deployment/${deployName} -n ${ns} --timeout=300s"
+
+                            // 查看回滚后版本
+                            def newImage = sh(
+                                script: "kubectl get deployment ${deployName} -n ${ns} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null",
+                                returnStdout: true
+                            ).trim()
+                            echo "    新镜像: ${newImage}"
+                            echo "<<< ${deployName} 回滚完成"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            container('builder') {
+                script {
+                    def lockName = params.ENV == 'cloud' ? 'aidevops-shared-release-lock' : 'aidevops-test-release-lock'
+                    sh "kubectl delete configmap ${lockName} -n jenkins --ignore-not-found=true || true"
+                    echo "发布锁已释放"
+                }
+            }
+        }
+    }
+}
