@@ -25,4 +25,3 @@ spring:
       - nacos:application-${spring.profiles.active}.${spring.config.file-extension}
       - nacos:${spring.application.name}-${spring.profiles.active}.${spring.config.file-extension}
 # test-build 13:49:16
-# retry 13:57:11
