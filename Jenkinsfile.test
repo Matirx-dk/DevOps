@@ -10,11 +10,13 @@ metadata:
     app: aidevops-test-pipeline
 spec:
   serviceAccountName: jenkins-agent
+  imagePullSecrets:
+    - name: harbor-pull-secret
   restartPolicy: Never
   containers:
     - name: builder
       image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: [\"cat\"]
       tty: true
       volumeMounts:
@@ -87,8 +89,8 @@ spec:
         checkout scm
         script {
           sh '''
-            HOME=/tmp git config --global --add safe.directory "$WORKSPACE"
-            HOME=/tmp git config --global --add safe.directory "$(pwd)"
+            git config --global --add safe.directory "$WORKSPACE"
+            git config --global --add safe.directory "$(pwd)"
           '''
           env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
           env.GIT_COMMIT_MSG_RAW = sh(script: 'git log -1 --pretty=%s', returnStdout: true).trim()
@@ -175,7 +177,7 @@ spec:
             sh '''
               SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
-              HOME=/tmp git config --global http.sslVerify false
+              git config --global http.sslVerify false
               git config --global https.sslVerify false
               git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
 
@@ -183,7 +185,7 @@ spec:
                 local module="$1"
                 local project_key="$2"
                 echo "[sonar] analyzing $module ..."
-                mvn sonar:sonar -T1 || true \
+                mvn sonar:sonar -T1 \
                   -f /tmp/sonar-src/pom.xml \
                   -pl "$module" -am \
                   -Dsonar.token=${SQ_PASS} \
@@ -191,7 +193,7 @@ spec:
                   -Dsonar.projectKey="$project_key" \
                   -Dsonar.projectName="$project_key" \
                   -Dsonar.skipTests=true \
-                  -Dsonar.inclusions="**/*.java"
+                  -Dsonar.inclusions="**/*.java" || true
                 echo "[sonar] $module done"
               }
 
@@ -315,12 +317,15 @@ spec:
   initContainers:
     - name: builder
       image: ${CI_TOOLS_IMAGE}
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: ["sh","-lc"]
+      env:
+        - name: HOME
+          value: /home/jenkins/agent
       args:
         - |
           set -e
-          HOME=/tmp git config --global http.sslVerify false
+          git config --global http.sslVerify false
           git config --global https.sslVerify false
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
@@ -406,12 +411,15 @@ spec:
   initContainers:
     - name: builder
       image: ${CI_TOOLS_IMAGE}
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: ["sh","-lc"]
+      env:
+        - name: HOME
+          value: /home/jenkins/agent
       args:
         - |
           set -e
-          HOME=/tmp git config --global http.sslVerify false
+          git config --global http.sslVerify false
           git config --global https.sslVerify false
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src/aidevops-ui
