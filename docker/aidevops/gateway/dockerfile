@@ -12,4 +12,4 @@ WORKDIR /home/aidevops
 # 复制jar文件到路径
 COPY ./jar/aidevops-gateway.jar /home/aidevops/aidevops-gateway.jar
 # 启动网关服务
-ENTRYPOINT ["java","-jar","aidevops-gateway.jar"]
+ENTRYPOINT ["java","-jar","aidevops-gateway.jar"]# trigger
