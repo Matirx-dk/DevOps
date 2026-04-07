@@ -95,11 +95,8 @@ spec:
 
                             // 执行回滚
                             if (params.REVISION.toInteger() == 0) {
-                                sh "kubectl rollout undo deployment/${deployName} -n ${ns}"
-                            } else {
-                                echo "    回滚到历史版本 #${params.REVISION}..."
-                                sh "kubectl rollout undo deployment/${deployName} -n ${ns} --to-revision=${params.REVISION}"
-                            }
+                                sh "kubectl rollout undo deployment/${deployName} -n ${ns}"n                            } else {
+                                echo "    回滚到历史版本 #${params.REVISION}..."n                                sh "kubectl rollout undo deployment/${deployName} -n ${ns} --to-revision=${params.REVISION}"n                            }
 
                             // 等待回滚完成
                             sh "kubectl rollout status deployment/${deployName} -n ${ns} --timeout=120s"
