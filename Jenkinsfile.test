@@ -177,8 +177,8 @@ spec:
             sh '''
               SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
-              git config --global http.sslVerify false
-              git config --global https.sslVerify false
+              HOME=/tmp git config --global http.sslVerify false
+              HOME=/tmp git config --global https.sslVerify false
               git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
 
               run_analysis() {
@@ -319,14 +319,11 @@ spec:
       image: ${CI_TOOLS_IMAGE}
       imagePullPolicy: IfNotPresent
       command: ["sh","-lc"]
-      env:
-        - name: HOME
-          value: /home/jenkins/agent
       args:
         - |
           set -e
-          git config --global http.sslVerify false
-          git config --global https.sslVerify false
+          HOME=/tmp git config --global http.sslVerify false
+          HOME=/tmp git config --global https.sslVerify false
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
           mvn clean -T 1C -DskipTests -Dsonar.skip=true package -pl ${module} -am
@@ -413,14 +410,11 @@ spec:
       image: ${CI_TOOLS_IMAGE}
       imagePullPolicy: IfNotPresent
       command: ["sh","-lc"]
-      env:
-        - name: HOME
-          value: /home/jenkins/agent
       args:
         - |
           set -e
-          git config --global http.sslVerify false
-          git config --global https.sslVerify false
+          HOME=/tmp git config --global http.sslVerify false
+          HOME=/tmp git config --global https.sslVerify false
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src/aidevops-ui
           npm config set registry https://registry.npmmirror.com --location=user
