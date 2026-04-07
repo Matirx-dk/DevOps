@@ -119,7 +119,8 @@ spec:
               fi
             ''',
             returnStdout: true
-          ).trim().split('\n') as List
+          ).trim().split('
+') as List
 
           def targets = [] as Set
           changed.each { f ->
@@ -276,7 +277,7 @@ spec:
           set -e
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          mvn -T 1C -DskipTests package -pl ${module} -am
+          mvn -T 1C -DskipTests -Dsonar.skip=true package -pl ${module} -am
       volumeMounts:
         - name: workspace
           mountPath: /workspace
@@ -506,4 +507,3 @@ YAML
     }
   }
 }
-
