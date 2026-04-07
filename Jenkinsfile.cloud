@@ -21,9 +21,9 @@ spec:
       tty: true
       volumeMounts:
         - name: m2-cache
-          mountPath: /home/ubuntu/.m2
+          mountPath: /home/jenkins/agent/.m2
         - name: npm-cache
-          mountPath: /home/ubuntu/.npm
+          mountPath: /home/jenkins/agent/.npm
     - name: helm
       image: harbor.zoudekang.cloud/ci-tools/helm:3.16.4
       imagePullPolicy: IfNotPresent
@@ -88,8 +88,8 @@ spec:
         checkout scm
         script {
           sh '''
-            git config --global --add safe.directory "$WORKSPACE"
-            git config --global --add safe.directory "$(pwd)"
+            HOME=/tmp git config --global --add safe.directory "$WORKSPACE"
+            HOME=/tmp git config --global --add safe.directory "$(pwd)"
           '''
           env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
           env.GIT_COMMIT_MSG_RAW = sh(script: 'git log -1 --pretty=%s', returnStdout: true).trim()
@@ -276,12 +276,12 @@ spec:
           set -e
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          mvn -T 1C -DskipTests -Dsonar.skip=true package -pl ${module} -am
+          mvn -T 1C -DskipTests package -pl ${module} -am
       volumeMounts:
         - name: workspace
           mountPath: /workspace
         - name: m2-cache
-          mountPath: /home/ubuntu/.m2
+          mountPath: /home/jenkins/agent/.m2
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
@@ -376,7 +376,7 @@ spec:
         - name: workspace
           mountPath: /workspace
         - name: npm-cache
-          mountPath: /home/ubuntu/.npm
+          mountPath: /home/jenkins/agent/.npm
         - name: kaniko-cache
           mountPath: /kaniko-cache
   containers:
