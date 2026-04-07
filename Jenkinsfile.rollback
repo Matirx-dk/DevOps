@@ -36,13 +36,7 @@ spec:
         string(
             name: 'REVISION',
             defaultValue: '0',
-            description: '回滚版本（0=上一版本，填数字如1/2/3...）'
-        )
-        string(
-            name: 'REVISION',
-            defaultValue: '0',
-            description: '回滚版本（0=上一版本，填数字如1/2/3...）'
-        )
+            description: '回滚版本（0=上一版本，填数字如1/2/3...）
     }
 
     stages {
