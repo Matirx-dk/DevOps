@@ -173,6 +173,11 @@ spec:
 
                                 echo "    回滚后 revision: ${newRevision}"
                                 echo "    回滚后镜像: ${newImage}"
+                                def prevCause = sh(
+                                    script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.metadata.annotations.kubernetes.io/change-cause}' 2>/dev/null || echo ''",
+                                    returnStdout: true
+                                ).trim()
+                                sh "kubectl annotate deployment/${deployName} -n ${env.K8S_NS} kubernetes.io/change-cause=\"rollback \${prevCause}\" --overwrite"
                                 echo "<<< ${deployName} 回滚完成"
                                 successServices << deployName
                             } catch (Exception e) {
