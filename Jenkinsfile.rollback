@@ -1,0 +1,205 @@
+// Jenkinsfile.rollback - 一键回滚 AIDevOps 服务（优化版）
+pipeline {
+    agent {
+        kubernetes {
+            defaultContainer 'builder'
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: aidevops-rollback
+spec:
+  serviceAccountName: jenkins-agent
+  restartPolicy: Never
+  containers:
+    - name: builder
+      image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
+      imagePullPolicy: IfNotPresent
+      command: ["cat"]
+      tty: true
+"""
+        }
+    }
+
+    parameters {
+        choice(
+            name: 'SERVICE',
+            choices: ['all', 'auth', 'gateway', 'system', 'ui'],
+            description: '选择要回滚的服务（all=全部）'
+        )
+        choice(
+            name: 'ENV',
+            choices: ['cloud', 'test'],
+            description: '选择目标环境'
+        )
+        string(
+            name: 'REVISION',
+            defaultValue: '0',
+            description: '回滚版本（0=上一版本，填数字如1/2/3...指定历史版本号）'
+        )
+    }
+
+    stages {
+        stage('准备与校验') {
+            steps {
+                script {
+                    env.K8S_NS = params.ENV == 'cloud' ? 'aidevops-cloud' : 'aidevops-test'
+                    env.LOCK_NAME = params.ENV == 'cloud' ? 'aidevops-shared-release-lock' : 'aidevops-test-release-lock'
+                    env.SVC_LIST = params.SERVICE == 'all' ? 'auth gateway system ui' : params.SERVICE
+
+                    if (!(params.REVISION ==~ /^\d+$/)) {
+                        error "REVISION 必须是 0 或正整数，当前值: ${params.REVISION}"
+                    }
+
+                    def revisionNum = params.REVISION.toInteger()
+                    if (revisionNum < 0) {
+                        error "REVISION 不能小于 0，当前值: ${params.REVISION}"
+                    }
+
+                    if (params.SERVICE == 'all' && revisionNum > 0) {
+                        error "指定 REVISION 时不允许 SERVICE=all。请改为单服务回滚，避免不同服务 revision 不一致。"
+                    }
+
+                    currentBuild.displayName = "#${BUILD_NUMBER} rollback ${params.ENV}/${params.SERVICE} r${params.REVISION}"
+                    currentBuild.description = "env=${params.ENV}, service=${params.SERVICE}, revision=${params.REVISION}"
+                }
+
+                container('builder') {
+                    echo "Namespace: ${env.K8S_NS}"
+                    echo "Services: ${env.SVC_LIST}"
+                    echo "REVISION: ${params.REVISION}"
+                }
+            }
+        }
+
+        stage('获取发布锁') {
+            steps {
+                container('builder') {
+                    script {
+                        def created = sh(
+                            script: "kubectl create configmap ${env.LOCK_NAME} --from-literal=holder=${JOB_NAME}-${BUILD_NUMBER} --from-literal=job=${JOB_NAME} --from-literal=build=${BUILD_NUMBER} --from-literal=env=${params.ENV} --from-literal=service=${params.SERVICE} -n jenkins 2>/dev/null && echo acquired || echo failed",
+                            returnStdout: true
+                        ).trim()
+
+                        if (created != 'acquired') {
+                            def currentHolder = sh(
+                                script: "kubectl get configmap ${env.LOCK_NAME} -n jenkins -o jsonpath='{.data.holder}' 2>/dev/null || echo unknown",
+                                returnStdout: true
+                            ).trim()
+                            error "无法获取发布锁，当前持有者: ${currentHolder}"
+                        }
+                        echo "已获取发布锁: ${env.LOCK_NAME}"
+                    }
+                }
+            }
+        }
+
+        stage('查看可用版本') {
+            steps {
+                container('builder') {
+                    script {
+                        def services = env.SVC_LIST.tokenize(' ')
+                        services.each { svc ->
+                            def deployName = "aidevops-${svc}"
+                            echo "--- ${deployName} 历史版本 ---"
+                            sh "kubectl get deployment ${deployName} -n ${env.K8S_NS} >/dev/null 2>&1"
+                            sh "kubectl rollout history deployment/${deployName} -n ${env.K8S_NS} 2>&1"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('执行回滚') {
+            steps {
+                container('builder') {
+                    script {
+                        def services = env.SVC_LIST.tokenize(' ')
+                        def revisionNum = params.REVISION.toInteger()
+                        def successServices = []
+                        def failedServices = []
+
+                        services.each { svc ->
+                            def deployName = "aidevops-${svc}"
+                            try {
+                                echo ">>> 开始处理 ${deployName} ..."
+
+                                sh "kubectl get deployment ${deployName} -n ${env.K8S_NS} >/dev/null 2>&1"
+
+                                def history = sh(
+                                    script: "kubectl rollout history deployment/${deployName} -n ${env.K8S_NS} 2>&1",
+                                    returnStdout: true
+                                ).trim()
+                                echo history
+
+                                if (revisionNum > 0) {
+                                    def exists = history.readLines().any { line -> line ==~ /\s*${revisionNum}\s+.*/ }
+                                    if (!exists) {
+                                        error "指定 revision ${revisionNum} 不存在，无法回滚 ${deployName}"
+                                    }
+                                }
+
+                                def currentRevision = sh(
+                                    script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.metadata.annotations.deployment\\.kubernetes\\.io/revision}' 2>/dev/null || echo unknown",
+                                    returnStdout: true
+                                ).trim()
+                                def currentImage = sh(
+                                    script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo unknown",
+                                    returnStdout: true
+                                ).trim()
+
+                                echo "    当前 revision: ${currentRevision}"
+                                echo "    当前镜像: ${currentImage}"
+                                echo revisionNum == 0 ? "    目标: 回滚上一版本" : "    目标: 回滚到 revision ${revisionNum}"
+
+                                if (revisionNum == 0) {
+                                    sh "kubectl rollout undo deployment/${deployName} -n ${env.K8S_NS} 2>&1"
+                                } else {
+                                    sh "kubectl rollout undo deployment/${deployName} -n ${env.K8S_NS} --to-revision=${revisionNum} 2>&1"
+                                }
+
+                                echo "    等待 Pod 就绪 ..."
+                                sh "kubectl rollout status deployment/${deployName} -n ${env.K8S_NS} --timeout=300s 2>&1"
+
+                                def newRevision = sh(
+                                    script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.metadata.annotations.deployment\\.kubernetes\\.io/revision}' 2>/dev/null || echo unknown",
+                                    returnStdout: true
+                                ).trim()
+                                def newImage = sh(
+                                    script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo unknown",
+                                    returnStdout: true
+                                ).trim()
+
+                                echo "    回滚后 revision: ${newRevision}"
+                                echo "    回滚后镜像: ${newImage}"
+                                echo "<<< ${deployName} 回滚完成"
+                                successServices << deployName
+                            } catch (Exception e) {
+                                echo "xxx ${deployName} 回滚失败: ${e.getMessage()}"
+                                failedServices << "${deployName}: ${e.getMessage()}"
+                            }
+                        }
+
+                        echo "==== 回滚结果汇总 ===="
+                        echo "成功: ${successServices ? successServices.join(', ') : '无'}"
+                        echo "失败: ${failedServices ? failedServices.join(' | ') : '无'}"
+
+                        if (failedServices) {
+                            error "部分服务回滚失败：${failedServices.join(' | ')}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            container('builder') {
+                echo "释放发布锁 ..."
+                sh "kubectl delete configmap ${env.LOCK_NAME} -n jenkins --ignore-not-found=true 2>/dev/null || true"
+            }
+        }
+    }
+}
