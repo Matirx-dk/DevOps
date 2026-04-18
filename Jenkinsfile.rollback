@@ -38,6 +38,11 @@ spec:
             defaultValue: '0',
             description: '回滚版本（0=上一版本，填数字如1/2/3...指定历史版本号）'
         )
+        booleanParam(
+            name: 'VIEW_ONLY',
+            defaultValue: true,
+            description: 'true=仅查看可回滚版本，不执行回滚；false=执行回滚操作'
+        )
     }
 
     stages {
@@ -61,7 +66,8 @@ spec:
                         error "指定 REVISION 时不允许 SERVICE=all。请改为单服务回滚，避免不同服务 revision 不一致。"
                     }
 
-                    currentBuild.displayName = "#${BUILD_NUMBER} rollback ${params.ENV}/${params.SERVICE} r${params.REVISION}"
+                    def viewTag = params.VIEW_ONLY ? ' [VIEW]' : ''
+                    currentBuild.displayName = "#${BUILD_NUMBER} rollback ${params.ENV}/${params.SERVICE} r${params.REVISION}${viewTag}"
                     currentBuild.description = "env=${params.ENV}, service=${params.SERVICE}, revision=${params.REVISION}"
                 }
 
@@ -74,6 +80,7 @@ spec:
         }
 
         stage('获取发布锁') {
+            when { expression { params.VIEW_ONLY == false } }
             steps {
                 container('builder') {
                     script {
@@ -112,6 +119,7 @@ spec:
         }
 
         stage('执行回滚') {
+            when { expression { params.VIEW_ONLY == false } }
             steps {
                 container('builder') {
                     script {
