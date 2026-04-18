@@ -454,24 +454,28 @@ YAML
             set -eu
 
             if [ "${BUILD_AUTH:-false}" = "true" ]; then
+              kubectl patch deployment/aidevops-auth -n ${K8S_NAMESPACE} -p "{\"metadata\":{\"annotations\":{\"deployment.kubernetes.io/revision\":\"${BUILD_NUMBER}\"}}}"
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-auth kubernetes.io/change-cause="${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
             fi
 
             if [ "${BUILD_GATEWAY:-false}" = "true" ]; then
+              kubectl patch deployment/aidevops-gateway -n ${K8S_NAMESPACE} -p "{\"metadata\":{\"annotations\":{\"deployment.kubernetes.io/revision\":\"${BUILD_NUMBER}\"}}}"
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
             fi
 
             if [ "${BUILD_SYSTEM:-false}" = "true" ]; then
+              kubectl patch deployment/aidevops-system -n ${K8S_NAMESPACE} -p "{\"metadata\":{\"annotations\":{\"deployment.kubernetes.io/revision\":\"${BUILD_NUMBER}\"}}}"
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
             fi
 
             if [ "${BUILD_UI:-false}" = "true" ]; then
+              kubectl patch deployment/aidevops-ui -n ${K8S_NAMESPACE} -p "{\"metadata\":{\"annotations\":{\"deployment.kubernetes.io/revision\":\"${BUILD_NUMBER}\"}}}"
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
