@@ -50,6 +50,9 @@ spec:
   }
 
   environment {
+    CI = 'true'
+    GIT_TERMINAL_PROMPT = '0'
+    GIT_CONFIG_PARAMETERS = "'advice.statusHints=false'"
     REGISTRY = 'harbor.zoudekang.cloud'
     TEST_PROJECT = 'aidevops-cloud'
     K8S_NAMESPACE = 'aidevops-cloud'
