@@ -78,7 +78,7 @@ spec:
                 container('builder') {
                     script {
                         def created = sh(
-                            script: "kubectl create configmap ${env.LOCK_NAME} --from-literal=holder=${JOB_NAME}-${BUILD_NUMBER} --from-literal=job=${JOB_NAME} --from-literal=build=${BUILD_NUMBER} --from-literal=env=${params.ENV} --from-literal=service=${params.SERVICE} -n jenkins 2>/dev/null && echo acquired || echo failed",
+                            script: "if kubectl create configmap ${env.LOCK_NAME} --from-literal=holder=${JOB_NAME}-${BUILD_NUMBER} --from-literal=job=${JOB_NAME} --from-literal=build=${BUILD_NUMBER} --from-literal=env=${params.ENV} --from-literal=service=${params.SERVICE} -n jenkins >/dev/null 2>&1; then echo acquired; else echo failed; fi",
                             returnStdout: true
                         ).trim()
 
