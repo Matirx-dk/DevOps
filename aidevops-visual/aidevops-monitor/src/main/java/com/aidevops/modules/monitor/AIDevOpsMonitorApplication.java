@@ -16,7 +16,7 @@ public class AIDevOpsMonitorApplication
     public static void main(String[] args)
     {
         SpringApplication.run(AIDevOpsMonitorApplication.class, args);
-        System.out.println("(♥◠‿◠)ﾉﾞ  监控中心启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
+        System.out.println("(♥◠‿◠)ﾉﾞ  监控中心Hermes Test Build - ✓   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +
                 " | ( ' )  |       \\  _. /  '       \n" +
