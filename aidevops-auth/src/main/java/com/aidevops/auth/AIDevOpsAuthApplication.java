@@ -17,7 +17,7 @@ public class AIDevOpsAuthApplication
     public static void main(String[] args)
     {
         SpringApplication.run(AIDevOpsAuthApplication.class, args);
-        System.out.println("(♥◠‿◠)ﾉﾞ  认证授权中心启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
+        System.out.println("(♥◠‿◠)ﾉﾞ  Hermes Test Build v4 - full rollout test - Auth ✓   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +
                 " | ( ' )  |       \\  _. /  '       \n" +

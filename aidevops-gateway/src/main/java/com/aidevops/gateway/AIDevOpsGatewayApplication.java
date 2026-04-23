@@ -15,7 +15,7 @@ public class AIDevOpsGatewayApplication
     public static void main(String[] args)
     {
         SpringApplication.run(AIDevOpsGatewayApplication.class, args);
-        System.out.println("(♥◠‿◠)ﾉﾞ  AI智能运维网关启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
+        System.out.println("(♥◠‿◠)ﾉﾞ  AI智能运维网关Hermes Test Build v4 - full rollout test ✓   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +
                 " | ( ' )  |       \\  _. /  '       \n" +

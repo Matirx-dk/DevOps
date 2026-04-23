@@ -18,7 +18,7 @@ public class AIDevOpsSystemApplication
     public static void main(String[] args)
     {
         SpringApplication.run(AIDevOpsSystemApplication.class, args);
-        System.out.println("(♥◠‿◠)ﾉﾞ  系统模块启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
+        System.out.println("(♥◠‿◠)ﾉﾞ  系统模块Hermes Test Build v8 - parallel patch + probe test ✓   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +
                 " | ( ' )  |       \\  _. /  '       \n" +
