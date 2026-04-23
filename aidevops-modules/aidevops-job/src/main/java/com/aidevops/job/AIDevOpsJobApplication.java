@@ -18,7 +18,7 @@ public class AIDevOpsJobApplication
     public static void main(String[] args)
     {
         SpringApplication.run(AIDevOpsJobApplication.class, args);
-        System.out.println("(♥◠‿◠)ﾉﾞ  定时任务模块Hermes Test Build v4 - full rollout test ✓   ლ(´ڡ`ლ)ﾞ  \n" +
+        System.out.println("(♥◠‿◠)ﾉﾞ  定时任务模块Hermes Test Build v5 - Jenkinsfile parallel patch test ✓   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +
                 " | ( ' )  |       \\  _. /  '       \n" +
