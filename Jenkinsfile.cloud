@@ -460,30 +460,35 @@ YAML
           sh '''
             set -eu
 
-            # Step 1: patch + set image + annotate (串行)
+            # Step 1: patch + set image + annotate (全部并行)
+            pids=""
             if [ "${BUILD_AUTH:-false}" = "true" ]; then
-              kubectl patch deployment/aidevops-auth -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}'
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-auth kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
+              kubectl patch deployment/aidevops-auth -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}' \
+                && kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG} \
+                && kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-auth kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite &
+              pids="$pids $!"
             fi
-
             if [ "${BUILD_GATEWAY:-false}" = "true" ]; then
-              kubectl patch deployment/aidevops-gateway -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}'
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
+              kubectl patch deployment/aidevops-gateway -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}' \
+                && kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG} \
+                && kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite &
+              pids="$pids $!"
             fi
-
             if [ "${BUILD_SYSTEM:-false}" = "true" ]; then
-              kubectl patch deployment/aidevops-system -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}'
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
+              kubectl patch deployment/aidevops-system -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}' \
+                && kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG} \
+                && kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite &
+              pids="$pids $!"
             fi
-
             if [ "${BUILD_UI:-false}" = "true" ]; then
-              kubectl patch deployment/aidevops-ui -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}'
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
+              kubectl patch deployment/aidevops-ui -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}' \
+                && kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG} \
+                && kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite &
+              pids="$pids $!"
             fi
+            failed=0
+            for pid in $pids; do wait $pid || failed=$((failed + 1)); done
+            if [ $failed -gt 0 ]; then echo "[$failed service(s) failed image patch]"; exit 1; fi
 
             # Step 2: rollout status (并行)
             pids=""
