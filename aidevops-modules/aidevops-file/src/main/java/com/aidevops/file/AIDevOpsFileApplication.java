@@ -15,7 +15,7 @@ public class AIDevOpsFileApplication
     public static void main(String[] args)
     {
         SpringApplication.run(AIDevOpsFileApplication.class, args);
-        System.out.println("(♥◠‿◠)ﾉﾞ  文件服务模块Hermes Test Build v2 ✓   ლ(´ڡ`ლ)ﾞ  \n" +
+        System.out.println("(♥◠‿◠)ﾉﾞ  文件服务模块Hermes Test Build v3 - probe test ✓   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +
                 " | ( ' )  |       \\  _. /  '       \n" +
