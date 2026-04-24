@@ -430,7 +430,7 @@ YAML
       }
     }
 
-    stage('Render And Apply Helm ConfigMaps To Cloud') {
+    stage('渲染并应用Helm配置') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -454,7 +454,7 @@ YAML
       }
     }
 
-    stage('Rollout Changed Services To Cloud') {
+    stage('滚动更新服务') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
