@@ -15,7 +15,7 @@ spec:
     - name: builder
       image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
       imagePullPolicy: Always
-      command: [\"cat\"]
+      command: ["cat"]
       tty: true
       volumeMounts:
         - name: m2-cache
@@ -25,7 +25,7 @@ spec:
     - name: helm
       image: harbor.zoudekang.cloud/ci-tools/helm:3.16.4
       imagePullPolicy: IfNotPresent
-      command: [\"cat\"]
+      command: ["cat"]
       tty: true
   volumes:
     - name: m2-cache
@@ -36,6 +36,10 @@ spec:
         claimName: jenkins-npm-cache-pvc
 """
     }
+  }
+
+  parameters {
+    booleanParam(name: 'FORCE_FULL_BUILD', defaultValue: false, description: 'Force full build regardless of git changes')
   }
 
   options {
@@ -144,11 +148,11 @@ spec:
             f?.startsWith('aidevops-ui/src/api/ai/chat.js')
           } ? 'true' : 'false'
 
-          env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
-          env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
-          env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
-          env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
-          env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
+          env.BUILD_AUTH = (targets.contains('auth') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_GATEWAY = (targets.contains('gateway') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_SYSTEM = (targets.contains('system') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_UI = (targets.contains('ui') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.SKIP_PIPELINE = (targets.isEmpty() && !params.FORCE_FULL_BUILD) ? 'true' : 'false'
 
           if (env.SKIP_PIPELINE == 'true') {
             currentBuild.description = 'No relevant changes detected'
@@ -158,11 +162,10 @@ spec:
           env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
           env.BUILD_UI = env.BUILD_UI ?: 'false'
           env.AI_CHAT_CONFIG_CHANGED = env.AI_CHAT_CONFIG_CHANGED ?: 'false'
-          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
+          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}, FORCE_FULL_BUILD=${params.FORCE_FULL_BUILD}"
         }
       }
     }
-
 
 
     stage('Build And Push In Dedicated Pods') {
