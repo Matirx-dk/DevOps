@@ -275,7 +275,7 @@ spec:
       args:
         - |
           set -e
-          git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
+          git clone --branch ${GIT_BRANCH} --single-branch --depth 1 ${GIT_REPO} /workspace/src
           cd /workspace/src
           mvn -T 1C -DskipTests package -pl ${module} -am
       volumeMounts:
@@ -363,7 +363,7 @@ spec:
       args:
         - |
           set -e
-          git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
+          git clone --branch ${GIT_BRANCH} --single-branch --depth 1 ${GIT_REPO} /workspace/src
           cd /workspace/src/aidevops-ui
           npm config set registry https://registry.npmmirror.com --location=user
           if [ -f package-lock.json ]; then
