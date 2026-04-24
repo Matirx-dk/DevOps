@@ -193,27 +193,41 @@ spec:
                 echo "[sonar] $module done"
               }
 
-              # 统计各模块变更的 .java 文件数，只有实际源码变化才分析
-              JAVA_CHANGED_AUTH=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-auth/**/*.java' | wc -l)
-              JAVA_CHANGED_GATEWAY=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-gateway/**/*.java' | wc -l)
-              JAVA_CHANGED_SYSTEM=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-modules/aidevops-system/**/*.java' | wc -l)
+              # 获取各模块变更的 .java 文件列表，只分析改动过的文件
+              CHANGED_AUTH=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-auth/**/*.java' | tr '\n' ',' | sed 's/,$//')
+              CHANGED_GATEWAY=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-gateway/**/*.java' | tr '\n' ',' | sed 's/,$//')
+              CHANGED_SYSTEM=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-modules/aidevops-system/**/*.java' | tr '\n' ',' | sed 's/,$//')
 
-              echo "[sonar] Java files changed: auth=$JAVA_CHANGED_AUTH, gateway=$JAVA_CHANGED_GATEWAY, system=$JAVA_CHANGED_SYSTEM"
+              run_analysis_changed() {
+                local module="$1"
+                local project_key="$2"
+                local changed_files="$3"
+                if [ -z "$changed_files" ]; then
+                  echo "[sonar] skip $project_key (no .java changes)"
+                  return
+                fi
+                echo "[sonar] analyzing $project_key, changed files: $changed_files"
+                local inclusions=$(echo "$changed_files" | tr ',' '\n' | sed "s|^|$module/|" | tr '\n' ',' | sed 's/,$//')
+                mvn -q sonar:sonar -T1 || true \
+                  -f /tmp/sonar-src/pom.xml \
+                  -pl "$module" -am \
+                  -Dsonar.token=${SQ_PASS} \
+                  -Dsonar.host.url=${SQ_HOST} \
+                  -Dsonar.projectKey="$project_key" \
+                  -Dsonar.projectName="$project_key" \
+                  -Dsonar.skipTests=true \
+                  -Dsonar.inclusions="$inclusions"
+                echo "[sonar] $project_key done"
+              }
 
-              if [ "${BUILD_AUTH}" = "true" ] && [ "$JAVA_CHANGED_AUTH" -gt 0 ]; then
-                run_analysis "aidevops-auth" "auth"
-              else
-                echo "[sonar] skip auth (no .java changes)"
+              if [ "${BUILD_AUTH}" = "true" ]; then
+                run_analysis_changed "aidevops-auth" "auth" "$CHANGED_AUTH"
               fi
-              if [ "${BUILD_GATEWAY}" = "true" ] && [ "$JAVA_CHANGED_GATEWAY" -gt 0 ]; then
-                run_analysis "aidevops-gateway" "gateway"
-              else
-                echo "[sonar] skip gateway (no .java changes)"
+              if [ "${BUILD_GATEWAY}" = "true" ]; then
+                run_analysis_changed "aidevops-gateway" "gateway" "$CHANGED_GATEWAY"
               fi
-              if [ "${BUILD_SYSTEM}" = "true" ] && [ "$JAVA_CHANGED_SYSTEM" -gt 0 ]; then
-                run_analysis "aidevops-modules/aidevops-system" "system"
-              else
-                echo "[sonar] skip system (no .java changes)"
+              if [ "${BUILD_SYSTEM}" = "true" ]; then
+                run_analysis_changed "aidevops-modules/aidevops-system" "system" "$CHANGED_SYSTEM"
               fi
 
               rm -rf /tmp/sonar-src
