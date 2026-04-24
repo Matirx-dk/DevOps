@@ -193,14 +193,27 @@ spec:
                 echo "[sonar] $module done"
               }
 
-              if [ "${BUILD_AUTH}" = "true" ]; then
+              # 统计各模块变更的 .java 文件数，只有实际源码变化才分析
+              JAVA_CHANGED_AUTH=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-auth/**/*.java' | wc -l)
+              JAVA_CHANGED_GATEWAY=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-gateway/**/*.java' | wc -l)
+              JAVA_CHANGED_SYSTEM=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-modules/aidevops-system/**/*.java' | wc -l)
+
+              echo "[sonar] Java files changed: auth=$JAVA_CHANGED_AUTH, gateway=$JAVA_CHANGED_GATEWAY, system=$JAVA_CHANGED_SYSTEM"
+
+              if [ "${BUILD_AUTH}" = "true" ] && [ "$JAVA_CHANGED_AUTH" -gt 0 ]; then
                 run_analysis "aidevops-auth" "auth"
+              else
+                echo "[sonar] skip auth (no .java changes)"
               fi
-              if [ "${BUILD_GATEWAY}" = "true" ]; then
+              if [ "${BUILD_GATEWAY}" = "true" ] && [ "$JAVA_CHANGED_GATEWAY" -gt 0 ]; then
                 run_analysis "aidevops-gateway" "gateway"
+              else
+                echo "[sonar] skip gateway (no .java changes)"
               fi
-              if [ "${BUILD_SYSTEM}" = "true" ]; then
+              if [ "${BUILD_SYSTEM}" = "true" ] && [ "$JAVA_CHANGED_SYSTEM" -gt 0 ]; then
                 run_analysis "aidevops-modules/aidevops-system" "system"
+              else
+                echo "[sonar] skip system (no .java changes)"
               fi
 
               rm -rf /tmp/sonar-src
