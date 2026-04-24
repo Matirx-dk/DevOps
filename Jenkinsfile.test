@@ -39,7 +39,7 @@ spec:
   }
 
   parameters {
-    booleanParam(name: 'FORCE_FULL_BUILD', defaultValue: false, description: 'Force full build regardless of git changes')
+    booleanParam(name: 'FORCE_FULL_BUILD', defaultValue: true, description: 'Force full build regardless of git changes')
   }
 
   options {
