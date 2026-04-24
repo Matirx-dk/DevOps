@@ -60,24 +60,24 @@ spec:
   }
 
   stages {
-    stage('Acquire Shared Release Lock') {
+    stage('获取共享发布锁') {
       steps {
         container('builder') {
           sh '''
             set -eu
             LOCK_NAME=aidevops-shared-release-lock
             LOCK_HOLDER="${JOB_NAME}-${BUILD_NUMBER}"
-            echo "trying to acquire $LOCK_NAME as $LOCK_HOLDER"
+            echo "尝试获取锁: $LOCK_NAME (持有者: $LOCK_HOLDER)"
             while true; do
               if kubectl -n ${BUILD_NAMESPACE} create configmap "$LOCK_NAME" \
                 --from-literal=holder="$LOCK_HOLDER" \
                 --from-literal=job="${JOB_NAME}" \
                 --from-literal=build="${BUILD_NUMBER}" >/dev/null 2>&1; then
-                echo "acquired shared release lock: $LOCK_NAME"
+                echo "已获取共享发布锁: $LOCK_NAME"
                 break
               fi
               CURRENT=$(kubectl -n ${BUILD_NAMESPACE} get configmap "$LOCK_NAME" -o jsonpath='{.data.holder}' 2>/dev/null || true)
-              echo "lock busy, current holder=${CURRENT:-unknown}, waiting..."
+              echo "锁被占用，当前持有者=${CURRENT:-unknown}，等待中..."
               sleep 10
             done
           '''
@@ -85,7 +85,7 @@ spec:
       }
     }
 
-    stage('Checkout') {
+    stage('代码检出') {
       steps {
         checkout scm
         script {
@@ -109,7 +109,7 @@ spec:
       }
     }
 
-    stage('Detect Changed Services') {
+    stage('检测变更服务') {
       steps {
         script {
           def changed = sh(
@@ -162,13 +162,13 @@ spec:
           env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
           env.BUILD_UI = env.BUILD_UI ?: 'false'
           env.AI_CHAT_CONFIG_CHANGED = env.AI_CHAT_CONFIG_CHANGED ?: 'false'
-          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}, FORCE_FULL_BUILD=${params.FORCE_FULL_BUILD}"
+          echo "变更服务 => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}, FORCE_FULL_BUILD=${params.FORCE_FULL_BUILD}"
         }
       }
     }
 
 
-    stage('Build And Push In Dedicated Pods') {
+    stage('构建并推送镜像') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -185,24 +185,24 @@ spec:
                 phase=$(kubectl -n ${BUILD_NAMESPACE} get pod "$pod_name" -o jsonpath='{.status.phase}' 2>/dev/null || true)
                 case "$phase" in
                   Succeeded)
-                    echo "[ok] $pod_name succeeded"
+                    echo "[成功] $pod_name 完成"
                     break
                     ;;
                   Failed)
-                    echo "[fail] $pod_name failed"
+                    echo "[失败] $pod_name 失败"
                     kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                     kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                     return 1
                     ;;
                   '')
-                    echo "[wait] $pod_name not created yet"
+                    echo "[等待] $pod_name 尚未创建"
                     ;;
                   *)
-                    echo "[wait] $pod_name phase=$phase"
+                    echo "[等待] $pod_name 状态=$phase"
                     ;;
                 esac
                 if [ "$elapsed" -ge "$timeout_secs" ]; then
-                  echo "[timeout] $pod_name exceeded ${timeout_secs}s"
+                  echo "[超时] $pod_name 超过 ${timeout_secs}s"
                   kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                   kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                   return 1
@@ -430,7 +430,7 @@ YAML
       }
     }
 
-    stage('Render And Apply Helm ConfigMaps To Cloud') {
+    stage('渲染并应用Helm配置') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -454,7 +454,7 @@ YAML
       }
     }
 
-    stage('Rollout Changed Services To Cloud') {
+    stage('滚动更新服务') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -487,7 +487,7 @@ YAML
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
             fi
 
-            # Phase 2: parallel rollout status (wait for slowest)
+            # 阶段2: 并行滚动更新状态 (等待最慢的)
             failed=0
             pids=
             if [ "${BUILD_AUTH:-false}" = "true" ]; then
@@ -510,7 +510,7 @@ YAML
               wait $pid || failed=$(($failed + 1))
             done
             if [ $failed -gt 0 ]; then
-              echo "ERROR: $failed rollout(s) failed"
+              echo "错误: $failed 个滚动更新失败"
               exit 1
             fi
           '''
