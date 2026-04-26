@@ -156,7 +156,7 @@ spec:
           env.SKIP_PIPELINE = (targets.isEmpty() && !params.FORCE_FULL_BUILD) ? 'true' : 'false'
 
           if (env.SKIP_PIPELINE == 'true') {
-            currentBuild.description = 'No relevant changes detected'
+            currentBuild.description = '无相关变更，跳过构建'
           }
           env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
           env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
