@@ -38,6 +38,10 @@ spec:
     }
   }
 
+  parameters {
+    booleanParam(name: 'FORCE_FULL_BUILD', defaultValue: false, description: 'Force full build regardless of git changes')
+  }
+
   options {
     timestamps()
     disableConcurrentBuilds()
