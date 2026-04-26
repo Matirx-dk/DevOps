@@ -149,7 +149,7 @@ spec:
             f?.startsWith('aidevops-ui/src/api/ai/chat.js')
           } ? 'true' : 'false'
 
-          env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
+          env.BUILD_AUTH=(targets.contains('auth') || targets.contains('common') || targets.contains('api') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
           env.BUILD_GATEWAY = (targets.contains('gateway') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
           env.BUILD_SYSTEM = (targets.contains('system') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
           env.BUILD_UI = (targets.contains('ui') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
