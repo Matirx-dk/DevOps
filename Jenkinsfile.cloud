@@ -38,6 +38,10 @@ spec:
     }
   }
 
+  parameters {
+    booleanParam(name: 'FORCE_FULL_BUILD', defaultValue: false, description: 'Force full build regardless of git changes')
+  }
+
   options {
     timestamps()
     disableConcurrentBuilds()
@@ -144,12 +148,12 @@ spec:
             f?.startsWith('aidevops-ui/src/api/ai/chat.js')
           } ? 'true' : 'false'
 
-          env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
-          env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
-          env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
-          env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
+          env.BUILD_AUTH=(targets.contains('auth') || targets.contains('common') || targets.contains('api') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_GATEWAY = (targets.contains('gateway') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_SYSTEM = (targets.contains('system') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_UI = (targets.contains('ui') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
           env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
-
+          env.SKIP_PIPELINE = (targets.isEmpty() && !params.FORCE_FULL_BUILD) ? 'true' : 'false'
           if (env.SKIP_PIPELINE == 'true') {
             currentBuild.description = 'No relevant changes detected'
           }
