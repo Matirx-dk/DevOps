@@ -150,10 +150,10 @@ spec:
           } ? 'true' : 'false'
 
           env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
-          env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
-          env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
-          env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
-          env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
+          env.BUILD_GATEWAY = (targets.contains('gateway') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_SYSTEM = (targets.contains('system') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_UI = (targets.contains('ui') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.SKIP_PIPELINE = (targets.isEmpty() && !params.FORCE_FULL_BUILD) ? 'true' : 'false'
 
           if (env.SKIP_PIPELINE == 'true') {
             currentBuild.description = 'No relevant changes detected'
