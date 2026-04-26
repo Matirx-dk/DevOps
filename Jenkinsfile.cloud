@@ -60,7 +60,7 @@ spec:
   }
 
   stages {
-    stage('Acquire Shared Release Lock') {
+    stage('获取共享发布锁') {
       steps {
         container('builder') {
           sh '''
@@ -85,7 +85,7 @@ spec:
       }
     }
 
-    stage('Checkout') {
+    stage('代码检出') {
       steps {
         checkout scm
         script {
@@ -109,7 +109,7 @@ spec:
       }
     }
 
-    stage('Detect Changed Services') {
+    stage('检测变更服务') {
       steps {
         script {
           def changed = sh(
@@ -155,7 +155,7 @@ spec:
           env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
           env.SKIP_PIPELINE = (targets.isEmpty() && !params.FORCE_FULL_BUILD) ? 'true' : 'false'
           if (env.SKIP_PIPELINE == 'true') {
-            currentBuild.description = 'No relevant changes detected'
+            currentBuild.description = '无相关变更，跳过构建'
           }
           env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
           env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
@@ -169,7 +169,7 @@ spec:
 
 
 
-    stage('Build And Push In Dedicated Pods') {
+    stage('构建并推送镜像') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -430,7 +430,7 @@ YAML
       }
     }
 
-    stage('Render And Apply Helm ConfigMaps To Cloud') {
+    stage('渲染并应用Helm配置') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -454,7 +454,7 @@ YAML
       }
     }
 
-    stage('Rollout Changed Services To Cloud') {
+    stage('滚动更新服务') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
