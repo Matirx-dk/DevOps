@@ -314,7 +314,6 @@ spec:
         - --cache-ttl=336h
         - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
-        - --skip-push-permission-check
         - --build-arg=JAR_PATH=${jar_path}
       volumeMounts:
         - name: workspace
@@ -427,7 +426,6 @@ spec:
         - --cache-ttl=336h
         - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
-        - --skip-push-permission-check
       volumeMounts:
         - name: workspace
           mountPath: /workspace
