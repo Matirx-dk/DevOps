@@ -310,7 +310,7 @@ spec:
         - --cache-ttl=336h
         - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
-        - --build-arg=JAR_PATH=${jar_path}
+        - --build-arg=MODULE_DIR=${module}
       volumeMounts:
         - name: workspace
           mountPath: /workspace
