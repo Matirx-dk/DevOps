@@ -53,7 +53,7 @@ spec:
     TEST_PROJECT = 'aidevops-cloud'
     K8S_NAMESPACE = 'aidevops-cloud'
     BUILD_NAMESPACE = 'jenkins'
-    GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
+    GIT_REPO = 'https://github.com/Matirx-dk/DevOps.git'
     GIT_BRANCH = 'main'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
     KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug'
