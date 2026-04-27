@@ -150,10 +150,16 @@ spec:
               value: '6379'
           ports:
             - containerPort: {{ .Values.auth.servicePort }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.auth.servicePort }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 60
           readinessProbe:
             tcpSocket:
               port: {{ .Values.auth.servicePort }}
-            initialDelaySeconds: 15
+            initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 8
 ---
@@ -183,10 +189,16 @@ spec:
               value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
           ports:
             - containerPort: {{ .Values.system.servicePort }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.system.servicePort }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 60
           readinessProbe:
             tcpSocket:
               port: {{ .Values.system.servicePort }}
-            initialDelaySeconds: 15
+            initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 8
           volumeMounts:
@@ -233,7 +245,7 @@ spec:
           readinessProbe:
             tcpSocket:
               port: {{ .Values.gateway.servicePort }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 6
           volumeMounts:
@@ -270,6 +282,6 @@ spec:
             httpGet:
               path: /
               port: {{ .Values.ui.servicePort }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 6
