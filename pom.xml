@@ -219,8 +219,7 @@
     <modules>
         <module>aidevops-auth</module>
         <module>aidevops-gateway</module>
-        <module>aidevops-visual</module>
-        <module>aidevops-modules</module>
+            <module>aidevops-modules</module>
         <module>aidevops-api</module>
         <module>aidevops-common</module>
     </modules>
