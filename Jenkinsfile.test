@@ -438,6 +438,13 @@ spec:
     - name: kaniko
       image: ${KANIKO_IMAGE}
       imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: 512Mi
+          cpu: 500m
+        requests:
+          memory: 256Mi
+          cpu: 100m
       args:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/frontend.Dockerfile
