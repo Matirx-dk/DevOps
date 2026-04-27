@@ -1,16 +1,16 @@
-FROM harbor.zoudekang.cloud/dockerhub-proxy/library/node:18.20.8-bullseye AS node-runtime
+# Backend 微服务镜像
+# 用法: docker build -f docker/build/backend.Dockerfile --build-arg JAR_PATH=aidevops-gateway/target/aidevops-gateway.jar --build-arg EXPOSE=8080 -t aidevops-gateway .
+ARG JDK_IMAGE=harbor.zoudekang.cloud/dockerhub-proxy/library/eclipse-temurin:17-jre
+FROM ${JDK_IMAGE}
 
-FROM harbor.zoudekang.cloud/dockerhub-proxy/library/eclipse-temurin:17-jre
-COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
-COPY --from=node-runtime /usr/local/bin/npm /usr/local/bin/npm
-COPY --from=node-runtime /usr/local/bin/npx /usr/local/bin/npx
-COPY --from=node-runtime /usr/local/lib/node_modules /usr/local/lib/node_modules
+ARG JAR_PATH=aidevops-gateway/target/aidevops-gateway.jar
+ARG EXPOSE=8080
 
-RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
-    && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+WORKDIR /home/aidevops
 
-WORKDIR /app
-ARG JAR_PATH=aidevops-auth/target/aidevops-auth.jar
+# 复制 JAR（路径由 build arg 指定）
 COPY ${JAR_PATH} app.jar
-EXPOSE 8080
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+
+EXPOSE ${EXPOSE}
+
+ENTRYPOINT ["java", "-jar", "/home/aidevops/app.jar"]
