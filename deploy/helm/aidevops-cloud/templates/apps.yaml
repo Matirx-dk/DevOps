@@ -198,6 +198,18 @@ spec:
               value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
           ports:
             - containerPort: {{ .Values.gateway.servicePort }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.gateway.servicePort }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.gateway.servicePort }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 6
           volumeMounts:
             - name: gateway-local-config
               mountPath: /app/application.yml

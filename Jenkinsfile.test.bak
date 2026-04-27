@@ -7,7 +7,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: aidevops-cloud-pipeline
+    app: aidevops-test-pipeline
 spec:
   serviceAccountName: jenkins-agent
   restartPolicy: Never
@@ -15,7 +15,7 @@ spec:
     - name: builder
       image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
       imagePullPolicy: Always
-      command: ["cat"]
+      command: [\"cat\"]
       tty: true
       volumeMounts:
         - name: m2-cache
@@ -25,7 +25,7 @@ spec:
     - name: helm
       image: harbor.zoudekang.cloud/ci-tools/helm:3.16.4
       imagePullPolicy: IfNotPresent
-      command: ["cat"]
+      command: [\"cat\"]
       tty: true
   volumes:
     - name: m2-cache
@@ -50,36 +50,35 @@ spec:
 
   environment {
     REGISTRY = 'harbor.zoudekang.cloud'
-    TEST_PROJECT = 'aidevops-cloud'
-    K8S_NAMESPACE = 'aidevops-cloud'
+    TEST_PROJECT = 'aidevops-test'
+    K8S_NAMESPACE = 'aidevops-test'
     BUILD_NAMESPACE = 'jenkins'
-    GIT_REPO = 'https://github.com/Matirx-dk/DevOps.git'
-    GIT_BRANCH = 'main'
+    GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
+    GIT_BRANCH = 'test'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
     KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug'
-    MAVEN_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:v2'
-    NODE_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:node-v1'
+    SONAR_HOST_URL = 'http://sonarqube.sonarqube:9000/sonarqube'
   }
 
   stages {
-    stage('获取共享发布锁') {
+    stage('获取发布锁') {
       steps {
         container('builder') {
           sh '''
             set -eu
             LOCK_NAME=aidevops-shared-release-lock
             LOCK_HOLDER="${JOB_NAME}-${BUILD_NUMBER}"
-            echo "尝试获取锁: $LOCK_NAME (持有者: $LOCK_HOLDER)"
+            echo "trying to acquire $LOCK_NAME as $LOCK_HOLDER"
             while true; do
               if kubectl -n ${BUILD_NAMESPACE} create configmap "$LOCK_NAME" \
                 --from-literal=holder="$LOCK_HOLDER" \
                 --from-literal=job="${JOB_NAME}" \
                 --from-literal=build="${BUILD_NUMBER}" >/dev/null 2>&1; then
-                echo "已获取共享发布锁: $LOCK_NAME"
+                echo "acquired shared release lock: $LOCK_NAME"
                 break
               fi
               CURRENT=$(kubectl -n ${BUILD_NAMESPACE} get configmap "$LOCK_NAME" -o jsonpath='{.data.holder}' 2>/dev/null || true)
-              echo "锁被占用，当前持有者=${CURRENT:-unknown}，等待中..."
+              echo "lock busy, current holder=${CURRENT:-unknown}, waiting..."
               sleep 10
             done
           '''
@@ -102,7 +101,6 @@ spec:
               MSG=$(git log -1 --pretty=%s | tr '[:upper:]' '[:lower:]')
               MSG=$(printf "%s" "$MSG" | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//; s/-*$//')
               if [ -z "$MSG" ]; then MSG=commit; fi
-              MSG=$(printf "%.80s" "$MSG")
               printf "%s-%s" "$MSG" "$(git rev-parse --short HEAD)"
             ''',
             returnStdout: true
@@ -136,7 +134,7 @@ spec:
             if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'
             }
-            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == '.dockerignore' || f.startsWith('deploy/')) {
+            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == 'Jenkinsfile.test' || f == '.dockerignore' || f.startsWith('deploy/')) {
               targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
             }
           }
@@ -151,7 +149,7 @@ spec:
             f?.startsWith('aidevops-ui/src/api/ai/chat.js')
           } ? 'true' : 'false'
 
-          env.BUILD_AUTH = (targets.contains('auth') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_AUTH=(targets.contains('auth') || targets.contains('common') || targets.contains('api') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
           env.BUILD_GATEWAY = (targets.contains('gateway') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
           env.BUILD_SYSTEM = (targets.contains('system') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
           env.BUILD_UI = (targets.contains('ui') || params.FORCE_FULL_BUILD) ? 'true' : 'false'
@@ -165,12 +163,59 @@ spec:
           env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
           env.BUILD_UI = env.BUILD_UI ?: 'false'
           env.AI_CHAT_CONFIG_CHANGED = env.AI_CHAT_CONFIG_CHANGED ?: 'false'
-          echo "变更服务 => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}, FORCE_FULL_BUILD=${params.FORCE_FULL_BUILD}"
+          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
         }
       }
     }
 
 
+    stage('SonarQube 代码分析') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
+      }
+      steps {
+        container('builder') {
+          withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
+            sh '''
+              SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
+
+              git config --global http.sslVerify false
+              git config --global https.sslVerify false
+              git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
+
+              run_analysis() {
+                local module="$1"
+                local project_key="$2"
+                echo "[sonar] analyzing $module ..."
+                mvn sonar:sonar -T1 || true \
+                  -f /tmp/sonar-src/pom.xml \
+                  -pl "$module" -am \
+                  -Dsonar.token=${SQ_PASS} \
+                  -Dsonar.host.url=${SQ_HOST} \
+                  -Dsonar.projectKey="$project_key" \
+                  -Dsonar.projectName="$project_key" \
+                  -Dsonar.skipTests=true \
+                  -Dsonar.inclusions="**/*.java"
+                echo "[sonar] $module done"
+              }
+
+              if [ "${BUILD_AUTH}" = "true" ]; then
+                run_analysis "aidevops-auth" "auth"
+              fi
+              if [ "${BUILD_GATEWAY}" = "true" ]; then
+                run_analysis "aidevops-gateway" "gateway"
+              fi
+              if [ "${BUILD_SYSTEM}" = "true" ]; then
+                run_analysis "aidevops-modules/aidevops-system" "system"
+              fi
+
+              rm -rf /tmp/sonar-src
+              echo "[sonar] all analyses complete"
+            '''
+          }
+        }
+      }
+    }
 
     stage('构建并推送镜像') {
       when {
@@ -189,24 +234,24 @@ spec:
                 phase=$(kubectl -n ${BUILD_NAMESPACE} get pod "$pod_name" -o jsonpath='{.status.phase}' 2>/dev/null || true)
                 case "$phase" in
                   Succeeded)
-                    echo "[成功] $pod_name 完成"
+                    echo "[ok] $pod_name succeeded"
                     break
                     ;;
                   Failed)
-                    echo "[失败] $pod_name 失败"
+                    echo "[fail] $pod_name failed"
                     kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                     kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                     return 1
                     ;;
                   '')
-                    echo "[等待] $pod_name 尚未创建"
+                    echo "[wait] $pod_name not created yet"
                     ;;
                   *)
-                    echo "[等待] $pod_name 状态=$phase"
+                    echo "[wait] $pod_name phase=$phase"
                     ;;
                 esac
                 if [ "$elapsed" -ge "$timeout_secs" ]; then
-                  echo "[超时] $pod_name 超过 ${timeout_secs}s"
+                  echo "[timeout] $pod_name exceeded ${timeout_secs}s"
                   kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                   kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                   return 1
@@ -273,17 +318,17 @@ spec:
             path: config.json
   initContainers:
     - name: builder
-      image: ${MAVEN_IMAGE}
+      image: ${CI_TOOLS_IMAGE}
       imagePullPolicy: Always
       command: ["sh","-lc"]
       args:
         - |
           set -e
-          export MAVEN_OPTS="-Xmx512m -Xms256m"
-          git clone --branch ${GIT_BRANCH} --single-branch --depth 1 ${GIT_REPO} /workspace/src  # 浅克隆
+          git config --global http.sslVerify false
+          git config --global https.sslVerify false
+          git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          echo "[DEBUG] kaniko缓存目录内容:"; ls -la /kaniko-cache/ 2>/dev/null || echo "[DEBUG] 缓存目录为空"
-          mvn -T 1C -DskipTests package -pl ${module} -am
+          mvn clean -T 1C -DskipTests package -pl ${module} -am
       volumeMounts:
         - name: workspace
           mountPath: /workspace
@@ -293,21 +338,15 @@ spec:
     - name: kaniko
       image: ${KANIKO_IMAGE}
       imagePullPolicy: IfNotPresent
-      resources:
-        limits:
-          memory: 2Gi
-          cpu: 1000m
-        requests:
-          memory: 512Mi
-          cpu: 200m
       args:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/backend.Dockerfile
         - --destination=${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}
+        - --snapshot-mode=redo
+        - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache
         - --cache-ttl=336h
-        - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
         - --build-arg=JAR_PATH=${jar_path}
       volumeMounts:
@@ -370,14 +409,15 @@ spec:
             path: config.json
   initContainers:
     - name: builder
-      image: ${NODE_IMAGE}
+      image: ${CI_TOOLS_IMAGE}
       imagePullPolicy: Always
       command: ["sh","-lc"]
       args:
         - |
           set -e
-          export NODE_OPTIONS="--max-old-space-size=512"
-          git clone --branch ${GIT_BRANCH} --single-branch --depth 1 ${GIT_REPO} /workspace/src  # 浅克隆
+          git config --global http.sslVerify false
+          git config --global https.sslVerify false
+          git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src/aidevops-ui
           npm config set registry https://registry.npmmirror.com --location=user
           if [ -f package-lock.json ]; then
@@ -398,21 +438,15 @@ spec:
     - name: kaniko
       image: ${KANIKO_IMAGE}
       imagePullPolicy: IfNotPresent
-      resources:
-        limits:
-          memory: 2Gi
-          cpu: 1000m
-        requests:
-          memory: 512Mi
-          cpu: 200m
       args:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/frontend.Dockerfile
         - --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
+        - --snapshot-mode=redo
+        - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache
         - --cache-ttl=336h
-        - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
       volumeMounts:
         - name: workspace
@@ -433,24 +467,24 @@ YAML
             cleanup_pod "$UI_POD"
 
             pids=""
-            if [ "${BUILD_AUTH:-false}" = "true" ]; then apply_backend_pod "$AUTH_POD" 'aidevops-auth' 'aidevops-auth/target/aidevops-auth.jar' 'aidevops-auth' & pids="$pids $!"; fi
-            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then apply_backend_pod "$GATEWAY_POD" 'aidevops-gateway' 'aidevops-gateway/target/aidevops-gateway.jar' 'aidevops-gateway' & pids="$pids $!"; fi
-            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then apply_backend_pod "$SYSTEM_POD" 'aidevops-modules/aidevops-system' 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar' 'aidevops-system' & pids="$pids $!"; fi
-            if [ "${BUILD_UI:-false}" = "true" ]; then apply_ui_pod "$UI_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_AUTH}" = "true" ]; then apply_backend_pod "$AUTH_POD" 'aidevops-auth' 'aidevops-auth/target/aidevops-auth.jar' 'aidevops-auth' & pids="$pids $!"; fi
+            if [ "${BUILD_GATEWAY}" = "true" ]; then apply_backend_pod "$GATEWAY_POD" 'aidevops-gateway' 'aidevops-gateway/target/aidevops-gateway.jar' 'aidevops-gateway' & pids="$pids $!"; fi
+            if [ "${BUILD_SYSTEM}" = "true" ]; then apply_backend_pod "$SYSTEM_POD" 'aidevops-modules/aidevops-system' 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar' 'aidevops-system' & pids="$pids $!"; fi
+            if [ "${BUILD_UI}" = "true" ]; then apply_ui_pod "$UI_POD" & pids="$pids $!"; fi
             for pid in $pids; do wait "$pid"; done
 
             pids=""
-            if [ "${BUILD_AUTH:-false}" = "true" ]; then wait_pod "$AUTH_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then wait_pod "$GATEWAY_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then wait_pod "$SYSTEM_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_UI:-false}" = "true" ]; then wait_pod "$UI_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_AUTH}" = "true" ]; then wait_pod "$AUTH_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_GATEWAY}" = "true" ]; then wait_pod "$GATEWAY_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_SYSTEM}" = "true" ]; then wait_pod "$SYSTEM_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_UI}" = "true" ]; then wait_pod "$UI_POD" & pids="$pids $!"; fi
             for pid in $pids; do wait "$pid"; done
           '''
         }
       }
     }
 
-    stage('渲染并应用Helm配置') {
+    stage('渲染并应用 Helm 配置') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -474,7 +508,7 @@ YAML
       }
     }
 
-    stage('滚动更新服务') {
+    stage('滚动更新至测试环境') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -483,66 +517,37 @@ YAML
           sh '''
             set -eu
 
-            # Parallel rollout: set image first, then wait for all in background
+            # 并行滚动更新，所有服务同时触发
             pids=""
-            if [ "${BUILD_AUTH:-false}" = "true" ]; then
+            if [ "${BUILD_AUTH}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-auth kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
-            fi
-
-            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then
-              kubectl patch deployment/aidevops-gateway -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}'
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
-            fi
-
-            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then
-              kubectl patch deployment/aidevops-system -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}'
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
-            fi
-
-            if [ "${BUILD_UI:-false}" = "true" ]; then
-              kubectl patch deployment/aidevops-ui -n ${K8S_NAMESPACE} --type=strategic --patch='{"metadata":{"annotations":{"deployment.kubernetes.io/revision":"$BUILD_NUMBER"}}}'
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
-            fi
-
-            # 阶段2: 并行滚动更新状态 (等待最慢的)
-            failed=0
-            pids=
-            if [ "${BUILD_AUTH:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s &
               pids="$pids $!"
             fi
 
-            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then
+            if [ "${BUILD_GATEWAY}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s &
               pids="$pids $!"
             fi
 
-            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then
+            if [ "${BUILD_SYSTEM}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s &
               pids="$pids $!"
             fi
 
-            if [ "${BUILD_UI:-false}" = "true" ]; then
+            if [ "${BUILD_UI}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
               kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s &
               pids="$pids $!"
             fi
-            for pid in $pids; do
-              wait $pid || failed=$(($failed + 1))
-            done
-            if [ $failed -gt 0 ]; then
-              echo "错误: $failed 个滚动更新失败"
-              exit 1
-            fi
+
+            for pid in $pids; do wait "$pid"; done
           '''
         }
       }
