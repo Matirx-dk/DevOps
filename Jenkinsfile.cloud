@@ -117,8 +117,9 @@ spec:
         script {
           def changed = sh(
             script: '''
-              if git rev-parse HEAD~1 >/dev/null 2>&1; then
-                git diff --name-only HEAD~1 HEAD
+              git fetch origin ${GIT_BRANCH} --depth=1 2>/dev/null || true
+              if git rev-parse origin/${GIT_BRANCH}~1 >/dev/null 2>&1; then
+                git diff --name-only origin/${GIT_BRANCH}~1 origin/${GIT_BRANCH}
               else
                 git ls-files
               fi
@@ -517,22 +518,16 @@ YAML
             fi
 
             if [ "${BUILD_GATEWAY:-false}" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s &
               pids="$pids $!"
             fi
 
             if [ "${BUILD_SYSTEM:-false}" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s &
               pids="$pids $!"
             fi
 
             if [ "${BUILD_UI:-false}" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s &
               pids="$pids $!"
             fi
