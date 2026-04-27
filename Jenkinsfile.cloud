@@ -301,6 +301,9 @@ spec:
         requests:
           memory: 512Mi
           cpu: 200m
+      env:
+        - name: MAVEN_OPTS
+          value: "-Xmx512m -Xms256m -Dmaven.repo.local=/root/.m2/repository"
       args:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/backend.Dockerfile
@@ -311,6 +314,7 @@ spec:
         - --cache-copy-layers
         - --skip-tls-verify-registry=${REGISTRY}
         - --build-arg=MODULE_DIR=${module}
+        - --build-arg=MAVEN_OPTS=-Xmx512m
       volumeMounts:
         - name: workspace
           mountPath: /workspace
@@ -318,6 +322,8 @@ spec:
           mountPath: /kaniko-cache
         - name: harbor-config
           mountPath: /kaniko/.docker
+        - name: m2-cache
+          mountPath: /root/.m2
 YAML
             }
 
