@@ -4,6 +4,13 @@ images:
 mysql:
   image: harbor.zoudekang.cloud/dockerhub-proxy/library/mysql:8.0
   rootPassword: password
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 256Mi
+      cpu: 100m
   nfs:
     server: 192.168.1.100
     path: /data/nfs/share/aidevops-mysql
@@ -14,6 +21,13 @@ redis:
 
 nacos:
   image: harbor.zoudekang.cloud/dockerhub-proxy/nacos/nacos-server:v2.2.3
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 256Mi
+      cpu: 100m
 
 auth:
   image: harbor.zoudekang.cloud/aidevops/aidevops-auth:restored-auth
