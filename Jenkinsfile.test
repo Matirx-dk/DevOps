@@ -324,11 +324,19 @@ spec:
       args:
         - |
           set -e
+          export MAVEN_OPTS="-Xmx512m -Xms256m"
           git config --global http.sslVerify false
           git config --global https.sslVerify false
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
           mvn clean -T 1C -DskipTests package -pl ${module} -am
+      resources:
+        limits:
+          memory: 768Mi
+          cpu: 1
+        requests:
+          memory: 512Mi
+          cpu: 500m
       volumeMounts:
         - name: workspace
           mountPath: /workspace
@@ -415,6 +423,7 @@ spec:
       args:
         - |
           set -e
+          export NODE_OPTIONS="--max-old-space-size=512"
           git config --global http.sslVerify false
           git config --global https.sslVerify false
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
@@ -427,6 +436,13 @@ spec:
           fi
           npm run build:prod
           test -d dist
+      resources:
+        limits:
+          memory: 768Mi
+          cpu: 1
+        requests:
+          memory: 512Mi
+          cpu: 500m
       volumeMounts:
         - name: workspace
           mountPath: /workspace
