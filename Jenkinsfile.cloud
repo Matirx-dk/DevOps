@@ -57,6 +57,8 @@ spec:
     GIT_BRANCH = 'main'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
     KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-slim'
+    MAVEN_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:v2'
+    NODE_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:node-v1'
   }
 
   stages {
