@@ -1,62 +1,58 @@
-version : '3.8'
+version: '3.8'
 services:
-  aidevops-nacos:
-    container_name: aidevops-nacos
-    image: nacos/nacos-server:v3.0.2
-    build:
-      context: ./nacos
-    environment:
-      - MODE=standalone
-      - NACOS_AUTH_TOKEN=your_auth_token
-      - NACOS_AUTH_IDENTITY_KEY=your_identity_key
-      - NACOS_AUTH_IDENTITY_VALUE=your_identity_value
-    volumes:
-      - ./nacos/logs/:/home/nacos/logs
-      - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
-    ports:
-      - "8848:8848"
-      - "9848:9848"
-      - "9849:9849"
-    depends_on:
-      - aidevops-mysql
   aidevops-mysql:
     container_name: aidevops-mysql
     image: mysql:5.7
-    build:
-      context: ./mysql
+    build: ./mysql
     ports:
       - "3306:3306"
     volumes:
       - ./mysql/conf:/etc/mysql/conf.d
       - ./mysql/logs:/logs
       - ./mysql/data:/var/lib/mysql
-    command: [
-          'mysqld',
-          '--innodb-buffer-pool-size=80M',
-          '--character-set-server=utf8mb4',
-          '--collation-server=utf8mb4_unicode_ci',
-          '--default-time-zone=+8:00',
-          '--lower-case-table-names=1'
-        ]
+    command:
+      - mysqld
+      - --innodb-buffer-pool-size=80M
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+8:00
+      - --lower-case-table-names=1
     environment:
-      MYSQL_DATABASE: 'ry-cloud'
+      MYSQL_DATABASE: ry-cloud
       MYSQL_ROOT_PASSWORD: password
+
   aidevops-redis:
     container_name: aidevops-redis
     image: redis
-    build:
-      context: ./redis
+    build: ./redis
     ports:
       - "6379:6379"
     volumes:
       - ./redis/conf/redis.conf:/home/aidevops/redis/redis.conf
       - ./redis/data:/data
     command: redis-server /home/aidevops/redis/redis.conf
+
+  aidevops-nacos:
+    container_name: aidevops-nacos
+    image: nacos/nacos-server:v3.0.2
+    build: ./nacos
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - ./nacos/logs:/home/nacos/logs
+      - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
+    environment:
+      - MODE=standalone
+      - NACOS_AUTH_ENABLE=true
+    depends_on:
+      - aidevops-mysql
+
   aidevops-nginx:
     container_name: aidevops-nginx
     image: nginx
-    build:
-      context: ./nginx
+    build: ./nginx
     ports:
       - "80:80"
     volumes:
@@ -64,80 +60,3 @@ services:
       - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/logs:/var/log/nginx
       - ./nginx/conf.d:/etc/nginx/conf.d
-    depends_on:
-      - aidevops-gateway
-    links:
-      - aidevops-gateway
-  aidevops-gateway:
-    container_name: aidevops-gateway
-    build:
-      context: ./aidevops/gateway
-      dockerfile: dockerfile
-    ports:
-      - "8080:8080"
-    depends_on:
-      - aidevops-redis
-    links:
-      - aidevops-redis
-  aidevops-auth:
-    container_name: aidevops-auth
-    build:
-      context: ./aidevops/auth
-      dockerfile: dockerfile
-    ports:
-      - "9200:9200"
-    depends_on:
-      - aidevops-redis
-    links:
-      - aidevops-redis
-  aidevops-modules-system:
-    container_name: aidevops-modules-system
-    build:
-      context: ./aidevops/modules/system
-      dockerfile: dockerfile
-    ports:
-      - "9201:9201"
-    depends_on:
-      - aidevops-redis
-      - aidevops-mysql
-    links:
-      - aidevops-redis
-      - aidevops-mysql
-  aidevops-modules-gen:
-    container_name: aidevops-modules-gen
-    build:
-      context: ./aidevops/modules/gen
-      dockerfile: dockerfile
-    ports:
-      - "9202:9202"
-    depends_on:
-      - aidevops-mysql
-    links:
-      - aidevops-mysql
-  aidevops-modules-job:
-    container_name: aidevops-modules-job
-    build:
-      context: ./aidevops/modules/job
-      dockerfile: dockerfile
-    ports:
-      - "9203:9203"
-    depends_on:
-      - aidevops-mysql
-    links:
-      - aidevops-mysql
-  aidevops-modules-file:
-    container_name: aidevops-modules-file
-    build:
-      context: ./aidevops/modules/file
-      dockerfile: dockerfile
-    ports:
-      - "9300:9300"
-    volumes:
-    - ./aidevops/uploadPath:/home/aidevops/uploadPath
-  aidevops-visual-monitor:
-    container_name: aidevops-visual-monitor
-    build:
-      context: ./aidevops/visual/monitor
-      dockerfile: dockerfile
-    ports:
-      - "9100:9100"
