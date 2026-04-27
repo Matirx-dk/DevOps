@@ -284,6 +284,8 @@ spec:
           git clone --branch ${GIT_BRANCH} --single-branch --depth 1 ${GIT_REPO} /workspace/src  # 浅克隆
           cd /workspace/src
           echo "[DEBUG] kaniko缓存目录内容:"; ls -la /kaniko-cache/ 2>/dev/null || echo "[DEBUG] 缓存目录为空"
+          # 清理 Maven 本地仓库缓存，强制重新下载和编译
+          rm -rf /home/ubuntu/.m2/repository/com/aidevops/
           mvn clean -T 1C -DskipTests package -pl ${module} -am
       volumeMounts:
         - name: workspace
