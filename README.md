@@ -1,48 +1,44 @@
-# AIDevOps AI智能运维系统
+# AIDevOps 智能运维平台
 
-AIDevOps 是一个基于 Vue + Spring Cloud Alibaba + Kubernetes 的 AI 智能运维系统，目标是将集群巡检、故障排查、镜像构建、流水线发布、配置中心管理与运维入口统一到一个平台中。
+基于 Vue + Spring Cloud Alibaba + Kubernetes 的 AI 智能运维系统，统一管理集群巡检、故障排查、镜像构建、流水线发布与配置中心。
 
-## 核心定位
+## 技术栈
 
-- 面向 Kubernetes 的智能运维控制台
-- 面向 Harbor / Jenkins / Nacos 的统一运维入口
-- 支持 AI 对话式操作与日常巡检辅助
-- 支持镜像构建、发布部署、集群检查和入口治理
+- **K8s** v1.28 + Jenkins + Harbor + SonarQube + Nacos
+- **微服务**：auth / gateway / system
+- **前端**：Vue + Element Plus
+- **CI/CD**：Kaniko + Helm
 
-## 主要模块
+## 目录结构
 
-- `aidevops-ui`：前端控制台
-- `aidevops-gateway`：系统网关
-- `aidevops-auth`：认证服务
-- `aidevops-api`：接口定义
-- `aidevops-common`：公共组件
-- `aidevops-modules`：业务模块
-- `deploy/k8s`：Kubernetes 清单
-- `deploy/helm`：Helm 部署模板
-- `docker`：镜像构建与本地容器部署文件
-- `deploy/nginx/devops.zoudekang.cloud.conf`：香港公网入口机当前使用的单域名路径转发配置参考
+```
+aidevops-ui/          前端
+aidevops-auth/        认证服务
+aidevops-gateway/     API网关
+aidevops-modules/     业务模块（system/file/gen/job）
+aidevops-common/      公共依赖
+aidevops-api/         接口定义
+deploy/
+  helm/aidevops-cloud/   Helm部署模板
+  k8s/                    K8s原生清单（参考）
+docker/
+  build/                 多阶段构建Dockerfile
+  aidevops/              各模块独立Dockerfile
+sql/                     数据库初始化脚本
+```
 
-## 当前访问入口
+## CI/CD 流程
 
-- 控制台：`https://devops.zoudekang.cloud/`
-- Nacos：`https://devops.zoudekang.cloud/nacos/`
-- Jenkins：`https://devops.zoudekang.cloud/jenkins/`
+- **test 分支**：推送到 test 环境，自动构建部署到 `aidevops-test`
+- **main 分支**：合并后推送到 cloud 环境，自动构建部署到 `aidevops-cloud`
+- 变更检测：仅构建实际改动的服务（auth/gateway/system/ui）
+- SonarQube：仅分析变更的 .java 文件
 
-## 当前仓库用途
+## 部署
 
-这个仓库当前同时承担两类用途：
-
-1. AIDevOps 系统源码
-2. 与集群现网相关的 K8s / Helm / Docker 发布文件
-
-后续建议继续把：
-
-- AI 对话能力
-- 运维分析面板
-- Jenkins Pipeline
-- Harbor 镜像构建流程
-
-统一收敛成完整的智能运维平台发布链路。
-ci retest Sat Apr  4 23:58:29 UTC 2026
-# test
-# test2
+```bash
+# Cloud 环境
+helm upgrade --install aidevops-cloud deploy/helm/aidevops-cloud/ \
+  -n aidevops-cloud --create-namespace \
+  -f deploy/helm/aidevops-cloud/values.current-cluster.yaml
+```
