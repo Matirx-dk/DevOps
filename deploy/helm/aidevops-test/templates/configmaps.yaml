@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aidevops-gateway-local
+  namespace: {{ .Release.Namespace }}
+data:
+  application.yml: |
+    spring:
+      data:
+        redis:
+          host: aidevops-redis.{{ .Release.Namespace }}.svc.cluster.local
+          port: 6379
+          password:
+      cloud:
+        gateway:
+          server:
+            webflux:
+              discovery:
+                locator:
+                  lowerCaseServiceId: true
+                  enabled: true
+              routes:
+                - id: aidevops-auth
+                  uri: lb://aidevops-auth
+                  predicates:
+                    - Path=/auth/**
+                  filters:
+                    - name: CacheRequestBody
+                      args:
+                        bodyClass: java.lang.String
+                    - ValidateCodeFilter
+                    - StripPrefix=1
+                - id: aidevops-system
+                  uri: lb://aidevops-system
+                  predicates:
+                    - Path=/system/**
+                  filters:
+                    - StripPrefix=1
+    security:
+      captcha:
+        enabled: true
+        type: math
+      xss:
+        enabled: true
+        excludeUrls:
+          - /system/notice
+      ignore:
+        whites:
+          - /auth/logout
+          - /auth/login
+          - /auth/register
+          - /*/v2/api-docs
+          - /*/v3/api-docs
+          - /csrf
+    springdoc:
+      webjars:
+        prefix:
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aidevops-system-local
+  namespace: {{ .Release.Namespace }}
+data:
+  application.yml: |
+    spring:
+      data:
+        redis:
+          host: aidevops-redis.{{ .Release.Namespace }}.svc.cluster.local
+          port: 6379
+          password:
+      datasource:
+        druid:
+          stat-view-servlet:
+            enabled: true
+            loginUsername: aidevops
+            loginPassword: 123456
+        dynamic:
+          druid:
+            initial-size: 1
+            min-idle: 1
+            maxActive: 10
+            maxWait: 60000
+            connectTimeout: 30000
+            socketTimeout: 60000
+            timeBetweenEvictionRunsMillis: 60000
+            minEvictableIdleTimeMillis: 300000
+            validationQuery: SELECT 1
+            testWhileIdle: true
+            testOnBorrow: false
+            testOnReturn: false
+            poolPreparedStatements: true
+            maxPoolPreparedStatementPerConnectionSize: 20
+            filters: stat,slf4j
+            connectionProperties: druid.stat.mergeSql\=true;druid.stat.slowSqlMillis\=5000
+          datasource:
+            master:
+              driver-class-name: com.mysql.cj.jdbc.Driver
+              url: jdbc:mysql://aidevops-mysql.{{ .Release.Namespace }}.svc.cluster.local:3306/{{ .Values.mysql.database }}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+              username: root
+              password: {{ .Values.mysql.rootPassword }}
+    mybatis:
+      typeAliasesPackage: com.aidevops.system
+      mapperLocations: classpath*:mapper/**/*.xml
+    springdoc:
+      gatewayUrl: http://aidevops-gateway.{{ .Release.Namespace }}.svc.cluster.local:8080/${spring.application.name}
+      api-docs:
+        enabled: true
+    aidevops:
+      ai:
+        chat:
+          enabled: {{ .Values.system.aiChat.enabled | default false }}
+          gatewayUrl: {{ .Values.system.aiChat.gatewayUrl | default "https://ai.zoudekang.cloud/" | quote }}
+          gatewayWsUrl: {{ .Values.system.aiChat.gatewayWsUrl | default "wss://ai.zoudekang.cloud/" | quote }}
+          token: {{ .Values.system.aiChat.token | default "" | quote }}
+          experimentalSignerEnabled: {{ .Values.system.aiChat.experimentalSignerEnabled | default false }}
+          probeTimeoutMs: {{ .Values.system.aiChat.probeTimeoutMs | default 5000 }}
+{{- if .Values.sqlInit.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aidevops-sql-init
+  namespace: {{ .Release.Namespace }}
+data:
+  01-ry-config.sql: |
+{{- if eq .Values.sqlInit.mode "bundled" }}
+{{ (.Files.Get .Values.sqlInit.bundled.ryConfigFile) | indent 4 }}
+{{- else }}
+{{ .Values.sqlInit.inline.ryConfigSql | indent 4 }}
+{{- end }}
+  02-ry-cloud.sql: |
+{{- if eq .Values.sqlInit.mode "bundled" }}
+{{ (.Files.Get .Values.sqlInit.bundled.ryCloudFile) | indent 4 }}
+{{- else }}
+{{ .Values.sqlInit.inline.ryCloudSql | indent 4 }}
+{{- end }}
+  03-quartz.sql: |
+{{- if eq .Values.sqlInit.mode "bundled" }}
+{{ (.Files.Get .Values.sqlInit.bundled.quartzFile) | indent 4 }}
+{{- else }}
+{{ .Values.sqlInit.inline.quartzSql | indent 4 }}
+{{- end }}
+{{- end }}

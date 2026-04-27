@@ -1,0 +1,34 @@
+{{- if .Values.sqlInit.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aidevops-db-init
+  namespace: {{ .Release.Namespace }}
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mysql-init
+          image: {{ .Values.mysql.image }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              until mysqladmin ping -h aidevops-mysql -uroot -p{{ .Values.mysql.rootPassword }} --silent; do sleep 5; done
+              mysql -h aidevops-mysql -uroot -p{{ .Values.mysql.rootPassword }} -e "CREATE DATABASE IF NOT EXISTS \`ry-config\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              mysql -h aidevops-mysql -uroot -p{{ .Values.mysql.rootPassword }} -e "CREATE DATABASE IF NOT EXISTS \`{{ .Values.mysql.database }}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              mysql -h aidevops-mysql -uroot -p{{ .Values.mysql.rootPassword }} ry-config < /sql/01-ry-config.sql
+              mysql -h aidevops-mysql -uroot -p{{ .Values.mysql.rootPassword }} {{ .Values.mysql.database }} < /sql/02-ry-cloud.sql
+              mysql -h aidevops-mysql -uroot -p{{ .Values.mysql.rootPassword }} {{ .Values.mysql.database }} < /sql/03-quartz.sql
+          volumeMounts:
+            - name: sql
+              mountPath: /sql
+      volumes:
+        - name: sql
+          configMap:
+            name: aidevops-sql-init
+{{- end }}
