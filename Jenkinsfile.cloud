@@ -272,7 +272,7 @@ spec:
             path: config.json
   initContainers:
     - name: builder
-      image: ${CI_TOOLS_IMAGE}
+      image: ${MAVEN_IMAGE}
       imagePullPolicy: Always
       command: ["sh","-lc"]
       args:
@@ -282,13 +282,6 @@ spec:
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
           mvn -T 1C -DskipTests package -pl ${module} -am
-      resources:
-        limits:
-          memory: 768Mi
-          cpu: 1
-        requests:
-          memory: 512Mi
-          cpu: 500m
       volumeMounts:
         - name: workspace
           mountPath: /workspace
@@ -375,7 +368,7 @@ spec:
             path: config.json
   initContainers:
     - name: builder
-      image: ${CI_TOOLS_IMAGE}
+      image: ${NODE_IMAGE}
       imagePullPolicy: Always
       command: ["sh","-lc"]
       args:
@@ -392,13 +385,6 @@ spec:
           fi
           npm run build:prod
           test -d dist
-      resources:
-        limits:
-          memory: 768Mi
-          cpu: 1
-        requests:
-          memory: 512Mi
-          cpu: 500m
       volumeMounts:
         - name: workspace
           mountPath: /workspace
