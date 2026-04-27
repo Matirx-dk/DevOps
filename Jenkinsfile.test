@@ -384,7 +384,7 @@ spec:
         - --cache-dir=/kaniko-cache
         - --cache-ttl=336h
         - --skip-tls-verify-registry=${REGISTRY}
-        - --build-arg=MODULE_DIR=${module}
+        - --build-arg=JAR_PATH=${jar_path}
       volumeMounts:
         - name: workspace
           mountPath: /workspace
