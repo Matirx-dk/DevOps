@@ -10,6 +10,7 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 WORKDIR /app
-COPY aidevops-auth/target/aidevops-auth.jar app.jar
+ARG JAR_PATH=aidevops-auth/target/aidevops-auth.jar
+COPY ${JAR_PATH} app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app/app.jar"]
