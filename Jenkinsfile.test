@@ -312,7 +312,7 @@ spec:
   restartPolicy: Never
   serviceAccountName: jenkins-agent
   imagePullSecrets:
-    - name: harbor-regcred
+    - name: harbor-all-regcred
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -340,7 +340,7 @@ spec:
         claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
-        secretName: harbor-regcred
+        secretName: harbor-all-regcred
         items:
           - key: .dockerconfigjson
             path: config.json
@@ -412,7 +412,7 @@ spec:
   restartPolicy: Never
   serviceAccountName: jenkins-agent
   imagePullSecrets:
-    - name: harbor-regcred
+    - name: harbor-all-regcred
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -440,7 +440,7 @@ spec:
         claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
-        secretName: harbor-regcred
+        secretName: harbor-all-regcred
         items:
           - key: .dockerconfigjson
             path: config.json
