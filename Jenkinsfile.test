@@ -201,9 +201,9 @@ spec:
               }
 
               # 获取各模块变更的 .java 文件列表，只分析改动过的文件
-              CHANGED_AUTH=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-auth/**/*.java' | tr '\n' ',' | sed 's/,$//')
-              CHANGED_GATEWAY=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-gateway/**/*.java' | tr '\n' ',' | sed 's/,$//')
-              CHANGED_SYSTEM=$(git -C /tmp/sonar-src diff --name-only HEAD~1 HEAD -- 'aidevops-modules/aidevops-system/**/*.java' | tr '\n' ',' | sed 's/,$//')
+              CHANGED_AUTH=$(git -C /tmp/sonar-src diff --name-only origin/${GIT_BRANCH}~1 origin/${GIT_BRANCH} -- 'aidevops-auth/**/*.java' | tr '\n' ',' | sed 's/,$//')
+              CHANGED_GATEWAY=$(git -C /tmp/sonar-src diff --name-only origin/${GIT_BRANCH}~1 origin/${GIT_BRANCH} -- 'aidevops-gateway/**/*.java' | tr '\n' ',' | sed 's/,$//')
+              CHANGED_SYSTEM=$(git -C /tmp/sonar-src diff --name-only origin/${GIT_BRANCH}~1 origin/${GIT_BRANCH} -- 'aidevops-modules/aidevops-system/**/*.java' | tr '\n' ',' | sed 's/,$//')
 
               run_analysis_changed() {
                 local module="$1"
