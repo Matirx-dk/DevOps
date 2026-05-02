@@ -17,7 +17,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: builder
-      image: 192.168.1.100:3443/aidevops/jenkins-agent-tools:20260401
+      image: 192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401
       imagePullPolicy: Always
       command: [\"cat\"]
       tty: true
