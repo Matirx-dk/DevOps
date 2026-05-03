@@ -207,7 +207,7 @@ spec:
                 mvn sonar:sonar -T1C || true \
                   -f /tmp/sonar-src/pom.xml \
                   -pl "$module" -am \
-                  -Dsonar.token=${SQ_PASS} \
+                  -Dsonar.login=${SQ_USER} -Dsonar.password=${SQ_PASS} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.projectKey="$project_key" \
                   -Dsonar.projectName="$project_key" \
