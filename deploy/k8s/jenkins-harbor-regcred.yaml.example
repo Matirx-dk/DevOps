@@ -9,7 +9,7 @@ data:
 
 # 生成方式示例：
 # kubectl -n jenkins create secret docker-registry harbor-regcred \
-#   --docker-server=harbor.zoudekang.cloud \
+#   --docker-server=192.168.1.100:3443 \
 #   --docker-username='<user>' \
 #   --docker-password='<password>' \
 #   --docker-email='devops@example.com' \
