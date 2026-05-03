@@ -191,11 +191,12 @@ spec:
               local pod_name="$1"
               local timeout_secs="${2:-1800}"
               local elapsed=0
+              local prev_phase=""
               while true; do
                 phase=$(kubectl -n ${BUILD_NAMESPACE} get pod "$pod_name" -o jsonpath='{.status.phase}' 2>/dev/null || true)
                 case "$phase" in
                   Succeeded)
-                    echo "[ok] $pod_name succeeded"
+                    [ "$prev_phase" != "$phase" ] && echo "[ok] $pod_name succeeded"
                     break
                     ;;
                   Failed)
@@ -205,20 +206,21 @@ spec:
                     return 1
                     ;;
                   '')
-                    echo "[wait] $pod_name not created yet"
+                    [ "$prev_phase" != "$phase" ] && echo "[wait] $pod_name not created yet"
                     ;;
                   *)
-                    echo "[wait] $pod_name phase=$phase"
+                    [ "$prev_phase" != "$phase" ] && echo "[wait] $pod_name phase=$phase"
                     ;;
                 esac
+                prev_phase="$phase"
                 if [ "$elapsed" -ge "$timeout_secs" ]; then
                   echo "[timeout] $pod_name exceeded ${timeout_secs}s"
                   kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                   kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                   return 1
                 fi
-                sleep 5
-                elapsed=$((elapsed + 5))
+                sleep 10
+                elapsed=$((elapsed + 10))
               done
             }
 
@@ -231,7 +233,7 @@ spec:
               local module="$2"
               local jar_path="$3"
               local image_name="$4"
-              cat <<YAML | kubectl apply -f -
+              cat <<YAML | kubectl apply -f - >/dev/null 2>&1
 apiVersion: v1
 kind: Pod
 metadata:
@@ -285,7 +287,7 @@ spec:
           set -e
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          mvn -T 1C -DskipTests package -pl ${module} -am
+          mvn -T 1C -DskipTests package -pl ${module} -am -q
       volumeMounts:
         - name: workspace
           mountPath: /workspace
@@ -317,7 +319,7 @@ YAML
 
             apply_ui_pod() {
               local pod_name="$1"
-              cat <<YAML | kubectl apply -f -
+              cat <<YAML | kubectl apply -f - >/dev/null 2>&1
 apiVersion: v1
 kind: Pod
 metadata:
@@ -373,11 +375,11 @@ spec:
           cd /workspace/src/aidevops-ui
           npm config set registry https://registry.npmmirror.com --location=user
           if [ -f package-lock.json ]; then
-            npm ci --legacy-peer-deps
+            npm ci --legacy-peer-deps --quiet
           else
             npm install --legacy-peer-deps
           fi
-          npm run build:prod
+          npm run build:prod -- --no-audit
           test -d dist
       volumeMounts:
         - name: workspace
