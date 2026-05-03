@@ -33,9 +33,13 @@ spec:
       tty: true
   volumes:
     - name: m2-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
+        readOnly: false
     - name: npm-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
+        readOnly: false
 """
     }
   }
@@ -184,13 +188,13 @@ spec:
 
               git config --global http.sslVerify false
               git config --global https.sslVerify false
-              git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
+              git clone --branch ${GIT_BRANCH} --single-branch --depth=1 ${GIT_REPO} /tmp/sonar-src
 
               run_analysis() {
                 local module="$1"
                 local project_key="$2"
-                echo "[sonar] analyzing $module ..."
-                mvn sonar:sonar -T1 || true \
+                echo "[SonarQube] 开始分析 $module ..."
+                mvn sonar:sonar -T1C || true \
                   -f /tmp/sonar-src/pom.xml \
                   -pl "$module" -am \
                   -Dsonar.token=${SQ_PASS} \
@@ -199,7 +203,7 @@ spec:
                   -Dsonar.projectName="$project_key" \
                   -Dsonar.skipTests=true \
                   -Dsonar.inclusions="**/*.java"
-                echo "[sonar] $module done"
+                echo "[SonarQube] $module 分析完成"
               }
 
               if [ "${BUILD_AUTH}" = "true" ]; then
@@ -213,7 +217,7 @@ spec:
               fi
 
               rm -rf /tmp/sonar-src
-              echo "[sonar] all analyses complete"
+              echo "[SonarQube] 全部分析完成"
             '''
           }
         }
@@ -237,24 +241,24 @@ spec:
                 phase=$(kubectl -n ${BUILD_NAMESPACE} get pod "$pod_name" -o jsonpath='{.status.phase}' 2>/dev/null || true)
                 case "$phase" in
                   Succeeded)
-                    echo "[ok] $pod_name succeeded"
+                    echo "[完成] $pod_name 构建成功"
                     break
                     ;;
                   Failed)
-                    echo "[fail] $pod_name failed"
+                    echo "[失败] $pod_name 构建失败"
                     kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                     kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                     return 1
                     ;;
                   '')
-                    echo "[wait] $pod_name not created yet"
+                    echo "[等待] $pod_name 尚未创建"
                     ;;
                   *)
-                    echo "[wait] $pod_name phase=$phase"
+                    echo "[等待] $pod_name 状态=$phase"
                     ;;
                 esac
                 if [ "$elapsed" -ge "$timeout_secs" ]; then
-                  echo "[timeout] $pod_name exceeded ${timeout_secs}s"
+                  echo "[超时] $pod_name 超过 ${timeout_secs}s"
                   kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                   kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                   return 1
@@ -281,7 +285,7 @@ metadata:
   namespace: ${BUILD_NAMESPACE}
   labels:
     app: ci-build
-    ci-role: backend-builder
+    ci-role: 后端构建
     ci-service: ${image_name}
 spec:
   restartPolicy: Never
@@ -308,9 +312,13 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: m2-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
+        readOnly: false
     - name: kaniko-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
+        readOnly: false
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -346,7 +354,7 @@ spec:
         - --snapshot-mode=redo
         - --use-new-run
         - --cache=true
-        - --cache-dir=/kaniko-cache
+        - --cache-dir=/kaniko-cache/${BUILD_NUMBER}
         - --cache-ttl=336h
         - --skip-tls-verify-registry=${REGISTRY}
         - --build-arg=JAR_PATH=${jar_path}
@@ -370,7 +378,7 @@ metadata:
   namespace: ${BUILD_NAMESPACE}
   labels:
     app: ci-build
-    ci-role: ui-builder
+    ci-role: 前端构建
     ci-service: aidevops-ui
 spec:
   restartPolicy: Never
@@ -397,9 +405,13 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: npm-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
+        readOnly: false
     - name: kaniko-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
+        readOnly: false
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -444,7 +456,7 @@ spec:
         - --snapshot-mode=redo
         - --use-new-run
         - --cache=true
-        - --cache-dir=/kaniko-cache
+        - --cache-dir=/kaniko-cache/${BUILD_NUMBER}
         - --cache-ttl=336h
         - --skip-tls-verify-registry=${REGISTRY}
       volumeMounts:
