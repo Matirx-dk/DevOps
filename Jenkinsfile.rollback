@@ -1,0 +1,225 @@
+// Jenkinsfile.rollback - 一键回滚 AIDevOps 服务
+pipeline {
+    agent {
+        kubernetes {
+            defaultContainer 'builder'
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: aidevops-rollback
+spec:
+  serviceAccountName: jenkins-agent
+  restartPolicy: Never
+  containers:
+    - name: builder
+      image: 192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401
+      imagePullPolicy: IfNotPresent
+      command: ["cat"]
+      tty: true
+"""
+        }
+    }
+
+    parameters {
+        choice(
+            name: 'SERVICE',
+            choices: ['all', 'auth', 'gateway', 'system', 'ui'],
+            description: '选择要回滚的服务（all=全部）'
+        )
+        choice(
+            name: 'ENV',
+            choices: ['cloud', 'test'],
+            description: '选择目标环境'
+        )
+        string(
+            name: 'REVISION',
+            defaultValue: '0',
+            description: '回滚版本（0=上一版本，填数字如1/2/3...指定历史版本号）'
+        )
+        booleanParam(
+            name: 'AUTO_CONFIRM',
+            defaultValue: false,
+            description: '勾选后跳过二次确认直接执行回滚'
+        )
+    }
+
+    stages {
+        stage('获取发布锁') {
+            steps {
+                container('builder') {
+                    script {
+                        env.K8S_NS = params.ENV == 'cloud' ? 'aidevops-cloud' : 'aidevops-test'
+                        env.LOCK_NAME = params.ENV == 'cloud' ? 'aidevops-shared-release-lock' : 'aidevops-test-release-lock'
+
+                        echo "Namespace: ${env.K8S_NS}"
+                        echo "目标服务: ${params.SERVICE}"
+
+                        // 等待锁释放，最长等待10分钟
+                        def waited = 0
+                        def maxWait = 600
+                        while (true) {
+                            def holder = sh(
+                                script: "kubectl get configmap ${env.LOCK_NAME} -n jenkins -o jsonpath='{.data.holder}' 2>/dev/null || echo ''",
+                                returnStdout: true
+                            ).trim()
+
+                            if (!holder) {
+                                echo "发布锁可用"
+                                break
+                            }
+
+                            if (waited >= maxWait) {
+                                error "等待锁超时（${maxWait}s），当前持有者: ${holder}"
+                            }
+
+                            echo "等待发布锁，当前持有者: ${holder}，已等待 ${waited}s ..."
+                            sleep 10
+                            waited += 10
+                        }
+
+                        // 抢占锁
+                        sh "kubectl create configmap ${env.LOCK_NAME} --from-literal=holder=${JOB_NAME}-${BUILD_NUMBER} --from-literal=job=${JOB_NAME} --from-literal=build=${BUILD_NUMBER} -n jenkins 2>/dev/null || true"
+                        def acquired = sh(
+                            script: "kubectl get configmap ${env.LOCK_NAME} -n jenkins -o jsonpath='{.data.holder}' 2>/dev/null || echo ''",
+                            returnStdout: true
+                        ).trim()
+
+                        if (acquired != "${JOB_NAME}-${BUILD_NUMBER}") {
+                            error "抢占锁失败，当前持有者: ${acquired}"
+                        }
+                        echo "已获取发布锁: ${acquired}"
+                    }
+                }
+            }
+        }
+
+        stage('查看历史版本') {
+            steps {
+                container('builder') {
+                    script {
+                        def svcList = params.SERVICE == 'all' ? ['auth', 'gateway', 'system', 'ui'] : [params.SERVICE]
+                        svcList.each { svc ->
+                            echo "=== aidevops-${svc} 历史版本 ==="
+                            try {
+                                sh "kubectl rollout history deployment/aidevops-${svc} -n ${env.K8S_NS} 2>&1"
+                            } catch(Exception e) {
+                                echo "无法获取版本历史"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('回滚前确认') {
+            when {
+                expression { params.AUTO_CONFIRM == false }
+            }
+            steps {
+                container('builder') {
+                    script {
+                        def svcList = params.SERVICE == 'all' ? 'auth gateway system ui' : params.SERVICE
+                        def revisionHint = params.REVISION == '0' ? '上一版本' : "revision ${params.REVISION}"
+                        def userInput = input(
+                            id: 'confirm',
+                            message: '确认回滚?',
+                            parameters: [
+                                choice(name: 'CONFIRM', choices: ['否', '是'], description: "将对 aidevops-${svcList} 执行回滚到 ${revisionHint}")
+                            ]
+                        )
+                        if (userInput.CONFIRM == '否') {
+                            error '用户取消回滚'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('执行回滚') {
+            steps {
+                container('builder') {
+                    script {
+                        def svcList = params.SERVICE == 'all' ? ['auth', 'gateway', 'system', 'ui'] : [params.SERVICE]
+                        def revisionNum = params.REVISION.toInteger()
+
+                        // 并行回滚所有服务
+                        def branches = [:]
+                        svcList.each { svc ->
+                            def deployName = "aidevops-${svc}"
+                            branches[svc] = {
+                                echo ">>> 开始回滚 ${deployName} ..."
+
+                                def currentImage = sh(
+                                    script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo 'unknown'",
+                                    returnStdout: true
+                                ).trim()
+                                echo "    当前镜像: ${currentImage}"
+
+                                if (revisionNum == 0) {
+                                    echo "    执行 kubectl rollout undo"
+                                    sh "kubectl rollout undo deployment/${deployName} -n ${env.K8S_NS} >/dev/null 2>&1"
+                                } else {
+                                    echo "    执行 kubectl rollout undo --to-revision=${revisionNum}"
+                                    sh "kubectl rollout undo deployment/${deployName} -n ${env.K8S_NS} --to-revision=${revisionNum} >/dev/null 2>&1"
+                                }
+
+                                echo "    等待 Pod 就绪 ..."
+                                def statusOutput = sh(
+                                    script: "kubectl rollout status deployment/${deployName} -n ${env.K8S_NS} --timeout=300s 2>&1 || echo 'STATUS_FAILED'",
+                                    returnStdout: true
+                                ).trim()
+                                if (statusOutput.contains('STATUS_FAILED')) {
+                                    echo "    [警告] rollout 等待超时，Pod 可能仍在启动中"
+                                } else {
+                                    echo "    ${statusOutput}"
+                                }
+
+                                def newImage = sh(
+                                    script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo 'unknown'",
+                                    returnStdout: true
+                                ).trim()
+                                echo "    回滚后镜像: ${newImage}"
+                                echo "<<< ${deployName} 回滚完成"
+                            }
+                        }
+                        parallel branches
+                    }
+                }
+            }
+        }
+
+        stage('验证部署') {
+            steps {
+                container('builder') {
+                    script {
+                        def svcList = params.SERVICE == 'all' ? ['auth', 'gateway', 'system', 'ui'] : [params.SERVICE]
+                        svcList.each { svc ->
+                            def deployName = "aidevops-${svc}"
+                            def ready = sh(
+                                script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo '0'",
+                                returnStdout: true
+                            ).trim()
+                            def desired = sh(
+                                script: "kubectl get deployment ${deployName} -n ${env.K8S_NS} -o jsonpath='{.spec.replicas}' 2>/dev/null || echo '1'",
+                                returnStdout: true
+                            ).trim()
+                            def status = (ready == desired && ready != '0') ? '就绪' : '未就绪'
+                            echo "${deployName}: ${status} (${ready}/${desired})"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            container('builder') {
+                echo "释放发布锁 ..."
+                sh "kubectl delete configmap ${env.LOCK_NAME} -n jenkins --ignore-not-found=true 2>/dev/null || true"
+            }
+        }
+    }
+}
