@@ -40,6 +40,7 @@ spec:
     timestamps()
     disableConcurrentBuilds()
     buildDiscarder(logRotator(numToKeepStr: '20'))
+    skipDefaultCheckout(true)
   }
 
   environment {
@@ -85,7 +86,7 @@ spec:
 
     stage('代码检出') {
       steps {
-        checkout scm
+        sh 'git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} .'
         script {
           sh '''
             git config --global --add safe.directory "$WORKSPACE"
