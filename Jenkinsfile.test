@@ -117,7 +117,7 @@ spec:
       }
     }
 
-    stage('检测变更服务') {
+    stage('检查变更服务') {
       steps {
         script {
           def changed = sh(
