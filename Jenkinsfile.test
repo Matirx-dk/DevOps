@@ -120,52 +120,62 @@ spec:
     stage('检测变更服务') {
       steps {
         script {
-          def changed = sh(
-            script: '''
-              if git rev-parse HEAD~1 >/dev/null 2>&1; then
-                git diff --name-only HEAD~1 HEAD
-              else
-                git ls-files
-              fi
-            ''',
-            returnStdout: true
-          ).trim().split('\n') as List
+          if (params.FULL_BUILD) {
+            echo 'FULL_BUILD=true — 跳过变更检测，全量构建所有服务'
+            env.BUILD_AUTH = 'true'
+            env.BUILD_GATEWAY = 'true'
+            env.BUILD_SYSTEM = 'true'
+            env.BUILD_UI = 'true'
+            env.AI_CHAT_CONFIG_CHANGED = 'true'
+            env.SKIP_PIPELINE = 'false'
+          } else {
+            def changed = sh(
+              script: '''
+                if git rev-parse HEAD~1 >/dev/null 2>&1; then
+                  git diff --name-only HEAD~1 HEAD
+                else
+                  git ls-files
+                fi
+              ''',
+              returnStdout: true
+            ).trim().split('\n') as List
 
-          def targets = [] as Set
-          changed.each { f ->
-            if (!f?.trim()) return
-            if (f.startsWith('aidevops-auth/')) targets << 'auth'
-            if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
-            if (f.startsWith('aidevops-modules/aidevops-system/')) targets << 'system'
-            if (f.startsWith('aidevops-ui/')) targets << 'ui'
-            if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
-              targets << 'auth'; targets << 'gateway'; targets << 'system'
+            def targets = [] as Set
+            changed.each { f ->
+              if (!f?.trim()) return
+              if (f.startsWith('aidevops-auth/')) targets << 'auth'
+              if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
+              if (f.startsWith('aidevops-modules/aidevops-system/')) targets << 'system'
+              if (f.startsWith('aidevops-ui/')) targets << 'ui'
+              if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
+                targets << 'auth'; targets << 'gateway'; targets << 'system'
+              }
+              if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == 'Jenkinsfile.test' || f == '.dockerignore' || f.startsWith('deploy/')) {
+                targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
+              }
             }
-            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == 'Jenkinsfile.test' || f == '.dockerignore' || f.startsWith('deploy/')) {
-              targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
+
+            env.AI_CHAT_CONFIG_CHANGED = changed.any { f ->
+              f?.startsWith('deploy/helm/aidevops-cloud/') ||
+              f == 'Jenkinsfile' ||
+              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/controller/AiChatController.java') ||
+              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/config/AiChatProperties.java') ||
+              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/service/') ||
+              f?.startsWith('aidevops-ui/src/views/ai/chat/') ||
+              f?.startsWith('aidevops-ui/src/api/ai/chat.js')
+            } ? 'true' : 'false'
+
+            env.BUILD_AUTH=target...th') ? 'true' : 'false'
+            env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
+            env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
+            env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
+            env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
+
+            if (env.SKIP_PIPELINE == 'true') {
+              currentBuild.description = 'No relevant changes detected'
             }
           }
-
-          env.AI_CHAT_CONFIG_CHANGED = changed.any { f ->
-            f?.startsWith('deploy/helm/aidevops-cloud/') ||
-            f == 'Jenkinsfile' ||
-            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/controller/AiChatController.java') ||
-            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/config/AiChatProperties.java') ||
-            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/service/') ||
-            f?.startsWith('aidevops-ui/src/views/ai/chat/') ||
-            f?.startsWith('aidevops-ui/src/api/ai/chat.js')
-          } ? 'true' : 'false'
-
-          env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
-          env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
-          env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
-          env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
-          env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
-
-          if (env.SKIP_PIPELINE == 'true') {
-            currentBuild.description = 'No relevant changes detected'
-          }
-          env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
+          env.BUILD_AUTH=*** ?: 'false'
           env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
           env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
           env.BUILD_UI = env.BUILD_UI ?: 'false'
