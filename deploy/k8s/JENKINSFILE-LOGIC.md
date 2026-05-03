@@ -15,7 +15,7 @@
 
 ## 当前约定
 
-- Harbor 地址：`harbor.zoudekang.cloud`
+- Harbor 地址：`192.168.1.100:3443`
 - 测试镜像项目：`aidevops-test`
 - 测试命名空间：`aidevops-test`
 - Jenkins agent namespace：`jenkins`
@@ -128,14 +128,14 @@ Jenkinsfile 会根据 `git diff` 识别改动：
 
 ## 推送策略
 
-当前联调阶段，Kaniko 对 Harbor 临时启用按 registry 的 TLS 校验跳过（`--skip-tls-verify-registry harbor.zoudekang.cloud`），用于绕过现网证书域名不匹配问题；后续应在 Harbor 证书修复后移除。
+当前联调阶段，Kaniko 对 Harbor 临时启用按 registry 的 TLS 校验跳过（`--skip-tls-verify-registry 192.168.1.100:3443`），用于绕过现网证书域名不匹配问题；后续应在 Harbor 证书修复后移除。
 
 测试环境镜像统一推送到：
 
-- `harbor.zoudekang.cloud/aidevops-test/aidevops-auth:<tag>`
-- `harbor.zoudekang.cloud/aidevops-test/aidevops-gateway:<tag>`
-- `harbor.zoudekang.cloud/aidevops-test/aidevops-system:<tag>`
-- `harbor.zoudekang.cloud/aidevops-test/aidevops-ui:<tag>`
+- `192.168.1.100:3443/aidevops-test/aidevops-auth:<tag>`
+- `192.168.1.100:3443/aidevops-test/aidevops-gateway:<tag>`
+- `192.168.1.100:3443/aidevops-test/aidevops-system:<tag>`
+- `192.168.1.100:3443/aidevops-test/aidevops-ui:<tag>`
 
 ## 部署策略
 
@@ -185,7 +185,7 @@ Jenkins 只更新有改动的 Deployment：
 
 1. Jenkins 已安装 Kubernetes plugin
 2. Jenkins 已配置 Kubernetes Cloud
-3. `harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401` 已构建并推送
+3. `192.168.1.100:3443/aidevops/jenkins-agent-tools:20260401` 已构建并推送
 4. `jenkins-agent-rbac.yaml` 已应用
 5. `jenkins` namespace 中已创建 `harbor-regcred`
 6. Jenkins pipeline job 仍然从仓库 `test` 分支读取根目录 `Jenkinsfile`

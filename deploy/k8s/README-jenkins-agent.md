@@ -64,7 +64,7 @@ kubectl apply -f deploy/k8s/jenkins-agent-rbac.yaml
 
 ```bash
 kubectl -n jenkins create secret docker-registry harbor-regcred \
-  --docker-server=harbor.zoudekang.cloud \
+  --docker-server=192.168.1.100:3443 \
   --docker-username='<user>' \
   --docker-password='<password>' \
   --docker-email='devops@example.com'
@@ -83,10 +83,10 @@ kubectl -n jenkins create secret docker-registry harbor-regcred \
 
 统一推送到：
 
-- `harbor.zoudekang.cloud/aidevops-test/aidevops-auth:<tag>`
-- `harbor.zoudekang.cloud/aidevops-test/aidevops-gateway:<tag>`
-- `harbor.zoudekang.cloud/aidevops-test/aidevops-system:<tag>`
-- `harbor.zoudekang.cloud/aidevops-test/aidevops-ui:<tag>`
+- `192.168.1.100:3443/aidevops-test/aidevops-auth:<tag>`
+- `192.168.1.100:3443/aidevops-test/aidevops-gateway:<tag>`
+- `192.168.1.100:3443/aidevops-test/aidevops-system:<tag>`
+- `192.168.1.100:3443/aidevops-test/aidevops-ui:<tag>`
 
 ## 发布权限说明
 

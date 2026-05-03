@@ -49,13 +49,13 @@ kubectl get pods -n aidevops-cloud -w
 3. 对于**全新安装**，`192.168.1.100:/data/nfs/share/aidevops-mysql` 可被集群挂载
 4. 如果是从旧环境平滑升级，且已有 MySQL PV 已绑定旧路径，则需要注意：现网可能仍在使用 `/data/nfs/share/ruoyi-mysql`，不能直接在原 PV 上改 `persistentVolumeSource`
 5. 集群节点能拉取这些镜像：
-   - `harbor.zoudekang.cloud/dockerhub-proxy/library/mysql:8.0`
-   - `harbor.zoudekang.cloud/dockerhub-proxy/library/redis:7-alpine`
-   - `harbor.zoudekang.cloud/dockerhub-proxy/nacos/nacos-server:v2.2.3`
-   - `harbor.zoudekang.cloud/aidevops/aidevops-auth:restored-auth`
-   - `harbor.zoudekang.cloud/aidevops/aidevops-system:restored-system`
-   - `harbor.zoudekang.cloud/aidevops/aidevops-gateway:release-gateway-20260330-124936`
-   - `harbor.zoudekang.cloud/aidevops/aidevops-ui:release-ui-20260330-155056`
+   - `192.168.1.100:3443/dockerhub-proxy/library/mysql:8.0`
+   - `192.168.1.100:3443/dockerhub-proxy/library/redis:7-alpine`
+   - `192.168.1.100:3443/dockerhub-proxy/nacos/nacos-server:v2.2.3`
+   - `192.168.1.100:3443/aidevops/aidevops-auth:restored-auth`
+   - `192.168.1.100:3443/aidevops/aidevops-system:restored-system`
+   - `192.168.1.100:3443/aidevops/aidevops-gateway:release-gateway-20260330-124936`
+   - `192.168.1.100:3443/aidevops/aidevops-ui:release-ui-20260330-155056`
 
 ## 说明
 
@@ -86,5 +86,5 @@ kubectl get pods -n aidevops-cloud -w
 - `aidevops-test-data-pv/pvc` 与 `aidevops-test-logs-pv/pvc` 已确认闲置并清理。
 - Harbor 已从手工共享卷（`harbor-shared-pv` / `harbor-shared-pvc`）迁移到动态 PVC：`harbor-shared-dynamic-pvc`。
 - Harbor 旧 NFS 数据未直接删除，已归档到：`/vol1/1000/Devops/backup/harbor-manual-backup-20260401-172058`
-- 当前镜像入口已统一收敛到：`harbor.zoudekang.cloud`
+- 当前镜像入口已统一收敛到：`192.168.1.100:3443`
 - 当前建议：后续新建持久化工作负载优先使用 `storageClassName: nfs-client`，避免继续手工写死 NFS 路径。

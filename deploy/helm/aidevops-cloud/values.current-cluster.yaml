@@ -1,8 +1,8 @@
 images:
-  initPerms: harbor.zoudekang.cloud/dockerhub-proxy/library/busybox:1.36
+  initPerms: 192.168.1.100:3443/dockerhub-proxy/library/busybox:1.36
 
 mysql:
-  image: harbor.zoudekang.cloud/dockerhub-proxy/library/mysql:8.0
+  image: 192.168.1.100:3443/dockerhub-proxy/library/mysql:8.0
   rootPassword: password
   nfs:
     server: 192.168.1.100
@@ -10,16 +10,16 @@ mysql:
     size: 20Gi
 
 redis:
-  image: harbor.zoudekang.cloud/dockerhub-proxy/library/redis:7-alpine
+  image: 192.168.1.100:3443/dockerhub-proxy/library/redis:7-alpine
 
 nacos:
-  image: harbor.zoudekang.cloud/dockerhub-proxy/nacos/nacos-server:v2.2.3
+  image: 192.168.1.100:3443/dockerhub-proxy/nacos/nacos-server:v2.2.3
 
 auth:
-  image: harbor.zoudekang.cloud/aidevops/aidevops-auth:restored-auth
+  image: 192.168.1.100:3443/aidevops/aidevops-auth:restored-auth
 
 system:
-  image: harbor.zoudekang.cloud/aidevops/aidevops-system:restored-system
+  image: 192.168.1.100:3443/aidevops/aidevops-system:restored-system
   aiChat:
     enabled: true
     gatewayUrl: https://ai.zoudekang.cloud/
@@ -29,10 +29,10 @@ system:
     probeTimeoutMs: 8000
 
 gateway:
-  image: harbor.zoudekang.cloud/aidevops/aidevops-gateway:release-gateway-20260330-124936
+  image: 192.168.1.100:3443/aidevops/aidevops-gateway:release-gateway-20260330-124936
 
 ui:
-  image: harbor.zoudekang.cloud/aidevops/aidevops-ui:release-ui-20260330-155056
+  image: 192.168.1.100:3443/aidevops/aidevops-ui:release-ui-20260330-155056
 
 ingress:
   enabled: true
