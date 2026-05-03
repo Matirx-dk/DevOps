@@ -7,55 +7,56 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: aidevops-cloud-pipeline
+    app: aidevops-test-pipeline
 spec:
   serviceAccountName: jenkins-agent
+  imagePullSecrets:
+    - name: harbor-pull-secret
   restartPolicy: Never
   containers:
     - name: builder
-      image: 192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401
-      imagePullPolicy: Always
-      command: [\"cat\"]
+      image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
+      imagePullPolicy: IfNotPresent
+      command: ["cat"]
       tty: true
       volumeMounts:
         - name: m2-cache
-          mountPath: /home/ubuntu/.m2
+          mountPath: /home/jenkins/agent/.m2
         - name: npm-cache
-          mountPath: /home/ubuntu/.npm
-    - name: helm
-      image: 192.168.1.100:3443/ci-tools/helm:3.16.4
-      imagePullPolicy: IfNotPresent
-      command: [\"cat\"]
-      tty: true
+          mountPath: /home/jenkins/agent/.npm
+
   volumes:
     - name: m2-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
     - name: npm-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
 """
     }
+  }
+
+  parameters {
+    booleanParam(name: 'FULL_BUILD', defaultValue: false, description: 'Force full build regardless of git changes')
   }
 
   options {
     timestamps()
     disableConcurrentBuilds()
     buildDiscarder(logRotator(numToKeepStr: '20'))
-    skipDefaultCheckout(true)
   }
 
   environment {
-    REGISTRY = '192.168.1.100:3443'
-    TEST_PROJECT = 'aidevops-cloud'
-    K8S_NAMESPACE = 'aidevops-cloud'
+    REGISTRY = 'harbor.zoudekang.cloud:3443'
+    TEST_PROJECT = 'aidevops-test'
+    K8S_NAMESPACE = 'aidevops-test'
     BUILD_NAMESPACE = 'jenkins'
-    GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
-    GIT_BRANCH = 'main'
-    CI_TOOLS_IMAGE = '192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401'
-    KANIKO_IMAGE = '192.168.1.100:3443/ci-tools/kaniko-executor:v1.23.2-debug'
-  }
-
-  parameters {
-    booleanParam(name: 'FULL_BUILD', defaultValue: false, description: 'Enable full build (all modules, ignoring git diff)')
+    GIT_REPO = 'https://github.com/Matirx-dk/DevOps.git'
+    GIT_BRANCH = 'test'
+    CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
+    DOCKER_IMAGE = 'harbor.zoudekang.cloud:3443/library/docker:24-cli'
+    DIND_IMAGE = 'harbor.zoudekang.cloud:3443/library/docker:24-dind'
+    SONAR_HOST_URL = 'http://sonarqube.sonarqube:9000/sonarqube'
   }
 
   stages {
@@ -86,7 +87,7 @@ spec:
 
     stage('代码检出') {
       steps {
-        sh 'git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} .'
+        checkout scm
         script {
           sh '''
             git config --global --add safe.directory "$WORKSPACE"
@@ -94,91 +95,107 @@ spec:
           '''
           env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
           env.GIT_COMMIT_MSG_RAW = sh(script: 'git log -1 --pretty=%s', returnStdout: true).trim()
-          env.GIT_COMMIT_TAG = sh(
-            script: '''
-              MSG=$(git log -1 --pretty=%s | tr '[:upper:]' '[:lower:]')
-              MSG=$(printf "%s" "$MSG" | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//; s/-*$//')
-              if [ -z "$MSG" ]; then MSG=commit; fi
-              printf "%s-%s" "$MSG" "$(git rev-parse --short HEAD)"
-            ''',
-            returnStdout: true
-          ).trim()
-          currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.GIT_COMMIT_TAG}"
+          env.GIT_COMMIT_TAG = env.BUILD_NUMBER
+          currentBuild.displayName = "#${env.BUILD_NUMBER}"
         }
       }
     }
 
-    stage('检查变更服务') {
+    stage('检测变更服务') {
       steps {
         script {
-          if (params.FULL_BUILD) {
-            echo 'FULL_BUILD=true - building all modules'
-            env.BUILD_AUTH = 'true'
-            env.BUILD_GATEWAY = 'true'
-            env.BUILD_SYSTEM = 'true'
-            env.BUILD_UI = 'true'
-            env.AI_CHAT_CONFIG_CHANGED = 'true'
-            env.SKIP_PIPELINE = 'false'
-          } else {
-            def changed = sh(
-              script: '''
+          def changed = sh(
+            script: '''
               if git rev-parse HEAD~1 >/dev/null 2>&1; then
                 git diff --name-only HEAD~1 HEAD
               else
                 git ls-files
               fi
             ''',
-              returnStdout: true
-            ).trim().split('\n') as List
+            returnStdout: true
+          ).trim().split('\n') as List
 
-            def targets = [] as Set
-            changed.each { f ->
-              if (!f?.trim()) return
-              if (f.startsWith('aidevops-auth/')) targets << 'auth'
-              if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
-              if (f.startsWith('aidevops-modules/aidevops-system/')) targets << 'system'
-              if (f.startsWith('aidevops-ui/')) targets << 'ui'
-              if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
-                targets << 'auth'; targets << 'gateway'; targets << 'system'
-              }
-              if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == '.dockerignore' || f.startsWith('deploy/')) {
-                targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
-              }
+          def targets = [] as Set
+          changed.each { f ->
+            if (!f?.trim()) return
+            if (f.startsWith('aidevops-auth/')) targets << 'auth'
+            if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
+            if (f.startsWith('aidevops-modules/aidevops-system/')) targets << 'system'
+            if (f.startsWith('aidevops-ui/')) targets << 'ui'
+            if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
+              targets << 'auth'; targets << 'gateway'; targets << 'system'
             }
-
-            env.AI_CHAT_CONFIG_CHANGED = changed.any { f ->
-              f?.startsWith('deploy/helm/aidevops-cloud/') ||
-              f == 'Jenkinsfile' ||
-              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/controller/AiChatController.java') ||
-              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/config/AiChatProperties.java') ||
-              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/service/') ||
-              f?.startsWith('aidevops-ui/src/views/ai/chat/') ||
-              f?.startsWith('aidevops-ui/src/api/ai/chat.js')
-            } ? 'true' : 'false'
-
-            env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
-            env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
-            env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
-            env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
-            env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
-
-            if (env.SKIP_PIPELINE == 'true') {
-              currentBuild.description = 'No relevant changes detected'
+            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == 'Jenkinsfile.test' || f == 'Jenkinsfile.cloud' || f == '.dockerignore' || f.startsWith('deploy/')) {
+              targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
             }
-            env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
-            env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
-            env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
-            env.BUILD_UI = env.BUILD_UI ?: 'false'
-            env.AI_CHAT_CONFIG_CHANGED = env.AI_CHAT_CONFIG_CHANGED ?: 'false'
-            echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
-          } // end else FULL_BUILD
+          }
+
+          env.BUILD_AUTH = (targets.contains('auth') || params.FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_GATEWAY = (targets.contains('gateway') || params.FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_SYSTEM = (targets.contains('system') || params.FULL_BUILD) ? 'true' : 'false'
+          env.BUILD_UI = (targets.contains('ui') || params.FULL_BUILD) ? 'true' : 'false'
+          env.SKIP_PIPELINE = (targets.isEmpty() && !params.FULL_BUILD) ? 'true' : 'false'
+
+          if (env.SKIP_PIPELINE == 'true') {
+            currentBuild.description = 'No relevant changes detected'
+          }
+          env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
+          env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
+          env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
+          env.BUILD_UI = env.BUILD_UI ?: 'false'
+          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, FORCE_FULL_BUILD=${params.FULL_BUILD}"
         }
       }
     }
 
+    stage('SonarQube 代码分析') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
+      }
+      steps {
+        container('builder') {
+          withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
+            sh '''
+              SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
+              HOME=/tmp git config --global http.sslVerify false
+              HOME=/tmp git config --global https.sslVerify false
+              git clone --quiet --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /tmp/sonar-src
 
+              run_analysis() {
+                local module="$1"
+                local project_key="$2"
+                echo "[sonar] analyzing $module ..."
+                mvn -q sonar:sonar -T1C || true \
+                  -f /tmp/sonar-src/pom.xml \
+                  -pl "$module" -am \
+                  -Dsonar.token=${SQ_PASS} \
+                  -Dsonar.host.url=${SQ_HOST} \
+                  -Dsonar.projectKey="$project_key" \
+                  -Dsonar.projectName="$project_key" \
+                  -Dsonar.skipTests=true \
+                  -Dsonar.inclusions="**/*.java"
+                echo "[sonar] $module done"
+              }
 
-    stage('构建并推送镜像') {
+              if [ "${BUILD_AUTH}" = "true" ]; then
+                run_analysis "aidevops-auth" "auth"
+              fi
+              if [ "${BUILD_GATEWAY}" = "true" ]; then
+                run_analysis "aidevops-gateway" "gateway"
+              fi
+              if [ "${BUILD_SYSTEM}" = "true" ]; then
+                run_analysis "aidevops-modules/aidevops-system" "system"
+              fi
+
+              rm -rf /tmp/sonar-src
+              echo "[sonar] all analyses complete"
+            '''
+          }
+        }
+      }
+    }
+
+    stage('构建并推送镜像 (BuildKit)') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -191,12 +208,11 @@ spec:
               local pod_name="$1"
               local timeout_secs="${2:-1800}"
               local elapsed=0
-              local prev_phase=""
               while true; do
                 phase=$(kubectl -n ${BUILD_NAMESPACE} get pod "$pod_name" -o jsonpath='{.status.phase}' 2>/dev/null || true)
                 case "$phase" in
                   Succeeded)
-                    [ "$prev_phase" != "$phase" ] && echo "[ok] $pod_name succeeded"
+                    echo "[ok] $pod_name succeeded"
                     break
                     ;;
                   Failed)
@@ -206,21 +222,20 @@ spec:
                     return 1
                     ;;
                   '')
-                    [ "$prev_phase" != "$phase" ] && echo "[wait] $pod_name not created yet"
+                    echo "[wait] $pod_name not created yet"
                     ;;
                   *)
-                    [ "$prev_phase" != "$phase" ] && echo "[wait] $pod_name phase=$phase"
+                    echo "[wait] $pod_name phase=$phase"
                     ;;
                 esac
-                prev_phase="$phase"
                 if [ "$elapsed" -ge "$timeout_secs" ]; then
                   echo "[timeout] $pod_name exceeded ${timeout_secs}s"
                   kubectl -n ${BUILD_NAMESPACE} describe pod "$pod_name" || true
                   kubectl -n ${BUILD_NAMESPACE} logs "$pod_name" --all-containers=true || true
                   return 1
                 fi
-                sleep 10
-                elapsed=$((elapsed + 10))
+                sleep 5
+                elapsed=$((elapsed + 5))
               done
             }
 
@@ -233,7 +248,7 @@ spec:
               local module="$2"
               local jar_path="$3"
               local image_name="$4"
-              cat <<YAML | kubectl apply -f - >/dev/null 2>&1
+              cat <<YAML | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -241,7 +256,7 @@ metadata:
   namespace: ${BUILD_NAMESPACE}
   labels:
     app: ci-build
-    ci-role: Jenkins#${BUILD_NUMBER}
+    ci-role: backend-builder
     ci-service: ${image_name}
 spec:
   restartPolicy: Never
@@ -267,59 +282,78 @@ spec:
   volumes:
     - name: workspace
       emptyDir: {}
+    - name: docker-graphstore
+      emptyDir: {}
     - name: m2-cache
-      emptyDir: {}
-    - name: kaniko-cache
-      emptyDir: {}
-    - name: harbor-config
-      secret:
-        secretName: harbor-regcred
-        items:
-          - key: .dockerconfigjson
-            path: config.json
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
   initContainers:
     - name: builder
       image: ${CI_TOOLS_IMAGE}
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: ["sh","-lc"]
       args:
         - |
           set -e
-          git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
+          HOME=/tmp git config --global http.sslVerify false
+          HOME=/tmp git config --global https.sslVerify false
+          git clone --quiet --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          mvn -T 1C -DskipTests package -pl ${module} -am -q
+          mvn -T 1C -DskipTests -Dsonar.skip=true -q package -pl ${module} -am
       volumeMounts:
         - name: workspace
           mountPath: /workspace
         - name: m2-cache
-          mountPath: /home/ubuntu/.m2
+          mountPath: /home/jenkins/agent/.m2
   containers:
-    - name: kaniko
-      image: ${KANIKO_IMAGE}
+    - name: dind
+      image: ${DIND_IMAGE}
       imagePullPolicy: IfNotPresent
-      args:
-        - --context=/workspace/src
-        - --dockerfile=/workspace/src/docker/build/backend.Dockerfile
-        - --destination=${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}
-        - --cache=true
-        - --cache-dir=/kaniko-cache
-        - --cache-ttl=336h
-        - --cache-copy-layers
-        - --skip-tls-verify-registry=${REGISTRY}
-        - --build-arg=JAR_PATH=${jar_path}
+      securityContext:
+        privileged: true
+      env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+      volumeMounts:
+        - name: docker-graphstore
+          mountPath: /var/lib/docker
+    - name: buildx
+      image: ${DOCKER_IMAGE}
+      imagePullPolicy: IfNotPresent
+      command: ["cat"]
+      tty: true
+      env:
+        - name: DOCKER_HOST
+          value: tcp://localhost:2375
       volumeMounts:
         - name: workspace
           mountPath: /workspace
-        - name: kaniko-cache
-          mountPath: /kaniko-cache
-        - name: harbor-config
-          mountPath: /kaniko/.docker
+        - name: docker-graphstore
+          mountPath: /var/lib/docker
+      args:
+        - |
+          set -e
+          sleep 3
+          docker info
+          docker buildx create --name ci-builder --driver docker-container --use 2>/dev/null || docker buildx use ci-builder
+          docker buildx inspect ci-builder --bootstrap
+          docker buildx build \
+            --platform linux/amd64 \
+            --context /workspace/src \
+            --dockerfile /workspace/src/docker/build/backend.Dockerfile \
+            --build-arg=JAR_PATH=${jar_path} \
+            --push \
+            --tag ${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG} \
+            --tag ${REGISTRY}/${TEST_PROJECT}/${image_name}:latest \
+            --cache-from=type=registry,ref=${REGISTRY}/${TEST_PROJECT}/${image_name}:latest \
+            --cache-to=type=registry,ref=${REGISTRY}/${TEST_PROJECT}/${image_name}:buildcache,mode=max
+          echo "[buildx] ${image_name} pushed to ${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}"
 YAML
             }
 
             apply_ui_pod() {
               local pod_name="$1"
-              cat <<YAML | kubectl apply -f - >/dev/null 2>&1
+              cat <<YAML | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -327,7 +361,7 @@ metadata:
   namespace: ${BUILD_NAMESPACE}
   labels:
     app: ci-build
-    ci-role: Jenkins#${BUILD_NUMBER}
+    ci-role: ui-builder
     ci-service: aidevops-ui
 spec:
   restartPolicy: Never
@@ -353,59 +387,78 @@ spec:
   volumes:
     - name: workspace
       emptyDir: {}
+    - name: docker-graphstore
+      emptyDir: {}
     - name: npm-cache
-      emptyDir: {}
-    - name: kaniko-cache
-      emptyDir: {}
-    - name: harbor-config
-      secret:
-        secretName: harbor-regcred
-        items:
-          - key: .dockerconfigjson
-            path: config.json
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
   initContainers:
     - name: builder
       image: ${CI_TOOLS_IMAGE}
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: ["sh","-lc"]
       args:
         - |
           set -e
-          git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
+          HOME=/tmp git config --global http.sslVerify false
+          HOME=/tmp git config --global https.sslVerify false
+          git clone --quiet --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src/aidevops-ui
           npm config set registry https://registry.npmmirror.com --location=user
           if [ -f package-lock.json ]; then
-            npm ci --legacy-peer-deps --quiet
+            npm ci --silent --legacy-peer-deps
           else
-            npm install --legacy-peer-deps
+            npm install --silent --legacy-peer-deps
           fi
-          npm run build:prod -- --no-audit
+          CI=true npm run build:prod
           test -d dist
       volumeMounts:
         - name: workspace
           mountPath: /workspace
         - name: npm-cache
-          mountPath: /home/ubuntu/.npm
-        - name: kaniko-cache
-          mountPath: /kaniko-cache
+          mountPath: /home/jenkins/agent/.npm
   containers:
-    - name: kaniko
-      image: ${KANIKO_IMAGE}
+    - name: dind
+      image: ${DIND_IMAGE}
       imagePullPolicy: IfNotPresent
-      args:
-        - --context=/workspace/src
-        - --dockerfile=/workspace/src/docker/build/frontend.Dockerfile
-        - --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-        - --cache=true
-        - --cache-dir=/kaniko-cache
-        - --cache-ttl=336h
-        - --cache-copy-layers
-        - --skip-tls-verify-registry=${REGISTRY}
+      securityContext:
+        privileged: true
+      env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+      volumeMounts:
+        - name: docker-graphstore
+          mountPath: /var/lib/docker
+    - name: buildx
+      image: ${DOCKER_IMAGE}
+      imagePullPolicy: IfNotPresent
+      command: ["cat"]
+      tty: true
+      env:
+        - name: DOCKER_HOST
+          value: tcp://localhost:2375
       volumeMounts:
         - name: workspace
           mountPath: /workspace
-        - name: harbor-config
-          mountPath: /kaniko/.docker
+        - name: docker-graphstore
+          mountPath: /var/lib/docker
+      args:
+        - |
+          set -e
+          sleep 3
+          docker info
+          docker buildx create --name ci-builder --driver docker-container --use 2>/dev/null || docker buildx use ci-builder
+          docker buildx inspect ci-builder --bootstrap
+          docker buildx build \
+            --platform linux/amd64 \
+            --context /workspace/src \
+            --dockerfile /workspace/src/docker/build/frontend.Dockerfile \
+            --push \
+            --tag ${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG} \
+            --tag ${REGISTRY}/${TEST_PROJECT}/aidevops-ui:latest \
+            --cache-from=type=registry,ref=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:latest \
+            --cache-to=type=registry,ref=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:buildcache,mode=max
+          echo "[buildx] aidevops-ui pushed to ${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}"
 YAML
             }
 
@@ -420,17 +473,17 @@ YAML
             cleanup_pod "$UI_POD"
 
             pids=""
-            if [ "${BUILD_AUTH:-false}" = "true" ]; then apply_backend_pod "$AUTH_POD" 'aidevops-auth' 'aidevops-auth/target/aidevops-auth.jar' 'aidevops-auth' & pids="$pids $!"; fi
-            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then apply_backend_pod "$GATEWAY_POD" 'aidevops-gateway' 'aidevops-gateway/target/aidevops-gateway.jar' 'aidevops-gateway' & pids="$pids $!"; fi
-            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then apply_backend_pod "$SYSTEM_POD" 'aidevops-modules/aidevops-system' 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar' 'aidevops-system' & pids="$pids $!"; fi
-            if [ "${BUILD_UI:-false}" = "true" ]; then apply_ui_pod "$UI_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_AUTH}" = "true" ]; then apply_backend_pod "$AUTH_POD" 'aidevops-auth' 'aidevops-auth/target/aidevops-auth.jar' 'aidevops-auth' & pids="$pids $!"; fi
+            if [ "${BUILD_GATEWAY}" = "true" ]; then apply_backend_pod "$GATEWAY_POD" 'aidevops-gateway' 'aidevops-gateway/target/aidevops-gateway.jar' 'aidevops-gateway' & pids="$pids $!"; fi
+            if [ "${BUILD_SYSTEM}" = "true" ]; then apply_backend_pod "$SYSTEM_POD" 'aidevops-modules/aidevops-system' 'aidevops-modules/aidevops-system/target/aidevops-modules-system.jar' 'aidevops-system' & pids="$pids $!"; fi
+            if [ "${BUILD_UI}" = "true" ]; then apply_ui_pod "$UI_POD" & pids="$pids $!"; fi
             for pid in $pids; do wait "$pid"; done
 
             pids=""
-            if [ "${BUILD_AUTH:-false}" = "true" ]; then wait_pod "$AUTH_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then wait_pod "$GATEWAY_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then wait_pod "$SYSTEM_POD" & pids="$pids $!"; fi
-            if [ "${BUILD_UI:-false}" = "true" ]; then wait_pod "$UI_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_AUTH}" = "true" ]; then wait_pod "$AUTH_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_GATEWAY}" = "true" ]; then wait_pod "$GATEWAY_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_SYSTEM}" = "true" ]; then wait_pod "$SYSTEM_POD" & pids="$pids $!"; fi
+            if [ "${BUILD_UI}" = "true" ]; then wait_pod "$UI_POD" & pids="$pids $!"; fi
             for pid in $pids; do wait "$pid"; done
           '''
         }
@@ -442,10 +495,13 @@ YAML
         expression { env.SKIP_PIPELINE != 'true' }
       }
       steps {
-        container('helm') {
+        container('builder') {
           sh '''
             set -eu
-            helm template aidevops-cloud deploy/helm/aidevops-cloud \
+            docker run --rm \
+              -v $(pwd):/workspace \
+              -w /workspace \
+              harbor.zoudekang.cloud:3443/ci-tools/helm:3.17.4 template aidevops-cloud deploy/helm/aidevops-cloud \
               -n ${K8S_NAMESPACE} \
               -f deploy/helm/aidevops-cloud/values.current-cluster.yaml \
               --show-only templates/configmaps.yaml > /home/jenkins/agent/aidevops-configmaps.yaml
@@ -461,7 +517,7 @@ YAML
       }
     }
 
-    stage('滚动更新至测试环境') {
+    stage('部署到测试环境') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -469,30 +525,13 @@ YAML
         container('builder') {
           sh '''
             set -eu
-
-            if [ "${BUILD_AUTH:-false}" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-auth kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
-              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
-            fi
-
-            if [ "${BUILD_GATEWAY:-false}" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
-              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
-            fi
-
-            if [ "${BUILD_SYSTEM:-false}" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
-              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
-            fi
-
-            if [ "${BUILD_UI:-false}" = "true" ]; then
-              kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
-              kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
-            fi
+            docker run --rm \
+              -v $(pwd):/workspace \
+              -w /workspace \
+              harbor.zoudekang.cloud:3443/ci-tools/helm:3.17.4 template aidevops-cloud deploy/helm/aidevops-cloud \
+              -n ${K8S_NAMESPACE} \
+              -f deploy/helm/aidevops-cloud/values.current-cluster.yaml \
+              | kubectl apply -n ${K8S_NAMESPACE} -f -
           '''
         }
       }
@@ -503,13 +542,7 @@ YAML
     always {
       container('builder') {
         sh '''
-          LOCK_NAME=aidevops-shared-release-lock
-          LOCK_HOLDER="${JOB_NAME}-${BUILD_NUMBER}"
-          CURRENT=$(kubectl -n ${BUILD_NAMESPACE} get configmap "$LOCK_NAME" -o jsonpath='{.data.holder}' 2>/dev/null || true)
-          if [ "$CURRENT" = "$LOCK_HOLDER" ]; then
-            kubectl -n ${BUILD_NAMESPACE} delete configmap "$LOCK_NAME" --ignore-not-found=true >/dev/null 2>&1 || true
-          fi
-          kubectl -n ${BUILD_NAMESPACE} delete pod build-auth-${BUILD_NUMBER} build-gateway-${BUILD_NUMBER} build-system-${BUILD_NUMBER} build-ui-${BUILD_NUMBER} --ignore-not-found=true >/dev/null 2>&1 || true
+          kubectl -n ${BUILD_NAMESPACE} delete configmap aidevops-shared-release-lock --ignore-not-found=true 2>/dev/null || true
         '''
       }
     }
