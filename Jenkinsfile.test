@@ -40,6 +40,10 @@ spec:
     }
   }
 
+  parameters {
+    booleanParam name: 'FULL_BUILD', defaultValue: false, description: '忽略变更检测，全量构建所有服务'
+  }
+
   options {
     timestamps()
     disableConcurrentBuilds()
@@ -56,6 +60,7 @@ spec:
     CI_TOOLS_IMAGE = '192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401'
     KANIKO_IMAGE = '192.168.1.100:3443/ci-tools/kaniko-executor:v1.23.2-debug'
     SONAR_HOST_URL = 'http://sonarqube.sonarqube:9000/sonarqube'
+    FULL_BUILD = '${params.FULL_BUILD ?: false}'
   }
 
   stages {
@@ -169,7 +174,7 @@ spec:
 
     stage('SonarQube 代码分析') {
       when {
-        expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
+        expression { env.FULL_BUILD == 'true' || (env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true')) }
       }
       steps {
         container('builder') {
@@ -217,7 +222,7 @@ spec:
 
     stage('构建并推送镜像') {
       when {
-        expression { env.SKIP_PIPELINE != 'true' }
+        expression { env.FULL_BUILD == 'true' || env.SKIP_PIPELINE != 'true' }
       }
       steps {
         container('builder') {
@@ -480,7 +485,7 @@ YAML
 
     stage('渲染并应用 Helm 配置') {
       when {
-        expression { env.SKIP_PIPELINE != 'true' }
+        expression { env.FULL_BUILD == 'true' || env.SKIP_PIPELINE != 'true' }
       }
       steps {
         container('helm') {
@@ -504,7 +509,7 @@ YAML
 
     stage('滚动更新至测试环境') {
       when {
-        expression { env.SKIP_PIPELINE != 'true' }
+        expression { env.FULL_BUILD == 'true' || env.SKIP_PIPELINE != 'true' }
       }
       steps {
         container('builder') {
