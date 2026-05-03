@@ -148,6 +148,12 @@ spec:
       }
     }
 
+    // ============================================================
+    // SonarQube 代码分析
+    // 触发条件：构建后端模块（auth/gateway/system）时执行
+    // 分析方式：mvn sonar:sonar，仅分析 *.java 文件，跳过测试
+    // 凭证：sonarqube-token（SonarQube 用户名 + 令牌）
+    // ============================================================
     stage('SonarQube 代码分析') {
       when {
         expression { env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true') }
