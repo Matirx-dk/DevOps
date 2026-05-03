@@ -122,7 +122,7 @@ spec:
         script {
           if (params.FULL_BUILD) {
             echo 'FULL_BUILD=true — 跳过变更检测，全量构建所有服务'
-            env.BUILD_AUTH = 'true'
+            env.BUILD_AUTH='true'
             env.BUILD_GATEWAY = 'true'
             env.BUILD_SYSTEM = 'true'
             env.BUILD_UI = 'true'
@@ -165,7 +165,7 @@ spec:
               f?.startsWith('aidevops-ui/src/api/ai/chat.js')
             } ? 'true' : 'false'
 
-            env.BUILD_AUTH=target...th') ? 'true' : 'false'
+            env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
             env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
             env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
             env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
@@ -175,7 +175,7 @@ spec:
               currentBuild.description = 'No relevant changes detected'
             }
           }
-          env.BUILD_AUTH=*** ?: 'false'
+          env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
           env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
           env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
           env.BUILD_UI = env.BUILD_UI ?: 'false'
