@@ -1,5 +1,5 @@
 # 基础镜像
-FROM nacos/nacos-server:v3.0.2
+FROM 192.168.1.100:3443/ci-tools/nacos-server:v3.0.2
 # author
 MAINTAINER aidevops
 
