@@ -13,7 +13,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: builder
-      image: 192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401
+      image: harbor.zoudekang.cloud:3443/ci-tools/jenkins-agent-tools:20260401
       imagePullPolicy: Always
       command: [\"cat\"]
       tty: true
@@ -23,7 +23,7 @@ spec:
         - name: npm-cache
           mountPath: /home/ubuntu/.npm
     - name: helm
-      image: 192.168.1.100:3443/ci-tools/helm:3.16.4
+      image: harbor.zoudekang.cloud:3443/ci-tools/helm:3.16.4
       imagePullPolicy: IfNotPresent
       command: [\"cat\"]
       tty: true
@@ -49,8 +49,8 @@ spec:
     BUILD_NAMESPACE = 'jenkins'
     GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
     GIT_BRANCH = 'main'
-    CI_TOOLS_IMAGE = '192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401'
-    KANIKO_IMAGE = '192.168.1.100:3443/ci-tools/kaniko-executor:v1.23.2-debug'
+    CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud:3443/ci-tools/jenkins-agent-tools:20260401'
+    KANIKO_IMAGE = 'harbor.zoudekang.cloud:3443/ci-tools/kaniko-executor:v1.23.2-debug'
   }
 
   parameters {
