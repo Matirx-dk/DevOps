@@ -1,0 +1,230 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aidevops-mysql
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aidevops-mysql
+  template:
+    metadata:
+      labels:
+        app: aidevops-mysql
+    spec:
+      initContainers:
+        - name: init-perms
+          image: {{ .Values.images.initPerms }}
+          command: ['sh','-c','mkdir -p /var/lib/mysql && chown -R 999:999 /var/lib/mysql']
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      containers:
+        - name: mysql
+          image: {{ .Values.mysql.image }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+            - --lower-case-table-names=1
+            - --default-time-zone=+8:00
+            - --default-authentication-plugin=mysql_native_password
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ .Values.mysql.rootPassword | quote }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mysql.database | quote }}
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: aidevops-mysql-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aidevops-redis
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aidevops-redis
+  template:
+    metadata:
+      labels:
+        app: aidevops-redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aidevops-nacos
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aidevops-nacos
+  template:
+    metadata:
+      labels:
+        app: aidevops-nacos
+    spec:
+      containers:
+        - name: nacos
+          image: {{ .Values.nacos.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MODE
+              value: standalone
+            - name: SPRING_DATASOURCE_PLATFORM
+              value: mysql
+            - name: MYSQL_SERVICE_HOST
+              value: aidevops-mysql.{{ .Release.Namespace }}.svc.cluster.local
+            - name: MYSQL_SERVICE_PORT
+              value: '3306'
+            - name: MYSQL_SERVICE_DB_NAME
+              value: ry-config
+            - name: MYSQL_SERVICE_USER
+              value: root
+            - name: MYSQL_SERVICE_PASSWORD
+              value: {{ .Values.mysql.rootPassword | quote }}
+          ports:
+            - containerPort: 8848
+            - containerPort: 9848
+            - containerPort: 9849
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aidevops-auth
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aidevops-auth
+  template:
+    metadata:
+      labels:
+        app: aidevops-auth
+    spec:
+      containers:
+        - name: auth
+          image: {{ .Values.auth.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+            - name: SPRING_DATA_REDIS_HOST
+              value: aidevops-redis.{{ .Release.Namespace }}.svc.cluster.local
+            - name: SPRING_DATA_REDIS_PORT
+              value: '6379'
+          ports:
+            - containerPort: {{ .Values.auth.servicePort }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aidevops-system
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aidevops-system
+  template:
+    metadata:
+      labels:
+        app: aidevops-system
+    spec:
+      containers:
+        - name: system
+          image: {{ .Values.system.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+          ports:
+            - containerPort: {{ .Values.system.servicePort }}
+          volumeMounts:
+            - name: system-local-config
+              mountPath: /app/application.yml
+              subPath: application.yml
+      volumes:
+        - name: system-local-config
+          configMap:
+            name: aidevops-system-local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aidevops-gateway
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aidevops-gateway
+  template:
+    metadata:
+      labels:
+        app: aidevops-gateway
+    spec:
+      containers:
+        - name: gateway
+          image: {{ .Values.gateway.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+            - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
+              value: aidevops-nacos.{{ .Release.Namespace }}.svc.cluster.local:8848
+          ports:
+            - containerPort: {{ .Values.gateway.servicePort }}
+          volumeMounts:
+            - name: gateway-local-config
+              mountPath: /app/application.yml
+              subPath: application.yml
+      volumes:
+        - name: gateway-local-config
+          configMap:
+            name: aidevops-gateway-local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aidevops-ui
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aidevops-ui
+  template:
+    metadata:
+      labels:
+        app: aidevops-ui
+    spec:
+      containers:
+        - name: ui
+          image: {{ .Values.ui.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.ui.servicePort }}
