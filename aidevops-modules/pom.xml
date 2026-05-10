@@ -13,6 +13,7 @@
         <module>aidevops-gen</module>
         <module>aidevops-job</module>
         <module>aidevops-file</module>
+        <module>aidevops-visual</module>
     </modules>
 
     <artifactId>aidevops-modules</artifactId>

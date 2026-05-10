@@ -134,8 +134,8 @@ services:
       - "9300:9300"
     volumes:
     - ./aidevops/uploadPath:/home/aidevops/uploadPath
-  aidevops-visual-monitor:
-    container_name: aidevops-visual-monitor
+  aidevops-monitor:
+    container_name: aidevops-monitor
     build:
       context: ./aidevops/visual/monitor
       dockerfile: dockerfile
