@@ -29,9 +29,11 @@ spec:
       tty: true
   volumes:
     - name: m2-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
     - name: npm-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
 """
     }
   }
@@ -47,7 +49,7 @@ spec:
     TEST_PROJECT = 'aidevops-cloud'
     K8S_NAMESPACE = 'aidevops-cloud'
     BUILD_NAMESPACE = 'jenkins'
-    GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
+    GIT_REPO = 'https://github.com/Matirx-dk/DevOps.git'
     GIT_BRANCH = 'main'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud:3443/ci-tools/jenkins-agent-tools:20260401'
     KANIKO_IMAGE = 'harbor.zoudekang.cloud:3443/ci-tools/kaniko-executor:v1.23.2-debug'
@@ -256,9 +258,11 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: m2-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
     - name: kaniko-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -275,7 +279,7 @@ spec:
           set -e
           git clone --branch ${GIT_BRANCH} --single-branch ${GIT_REPO} /workspace/src
           cd /workspace/src
-          mvn -T 1C -DskipTests package -pl ${module} -am
+          mvn -T 1C -DskipTests install -N && mvn -T 1C -DskipTests package -pl ${module} -am
       volumeMounts:
         - name: workspace
           mountPath: /workspace
@@ -342,9 +346,11 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: npm-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
     - name: kaniko-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
