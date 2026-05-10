@@ -183,7 +183,7 @@ spec:
       }
       steps {
         container('builder') {
-          withCredentials([stringCredentials(credentialsId: 'sonarqube-token', variable: 'SQ_TOKEN')]) {
+          withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SQ_TOKEN')]) {
             sh '''
               SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
