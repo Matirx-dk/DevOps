@@ -10,32 +10,28 @@ metadata:
     app: aidevops-cloud-pipeline
 spec:
   serviceAccountName: jenkins-agent
-  imagePullSecrets:
-    - name: harbor-pull-secret
   restartPolicy: Never
   containers:
     - name: builder
-      image: harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401
-      imagePullPolicy: IfNotPresent
+      image: 192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401
+      imagePullPolicy: Always
       command: [\"cat\"]
       tty: true
       volumeMounts:
         - name: m2-cache
-          mountPath: /home/jenkins/agent/.m2
+          mountPath: /home/ubuntu/.m2
         - name: npm-cache
-          mountPath: /home/jenkins/agent/.npm
+          mountPath: /home/ubuntu/.npm
     - name: helm
-      image: harbor.zoudekang.cloud/ci-tools/helm:3.16.4
+      image: 192.168.1.100:3443/ci-tools/helm:3.16.4
       imagePullPolicy: IfNotPresent
       command: [\"cat\"]
       tty: true
   volumes:
     - name: m2-cache
-      persistentVolumeClaim:
-        claimName: jenkins-m2-cache-pvc
+      emptyDir: {}
     - name: npm-cache
-      persistentVolumeClaim:
-        claimName: jenkins-npm-cache-pvc
+      emptyDir: {}
 """
     }
   }
@@ -47,14 +43,18 @@ spec:
   }
 
   environment {
-    REGISTRY = 'harbor.zoudekang.cloud'
+    REGISTRY = '192.168.1.100:3443'
     TEST_PROJECT = 'aidevops-cloud'
     K8S_NAMESPACE = 'aidevops-cloud'
     BUILD_NAMESPACE = 'jenkins'
     GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
     GIT_BRANCH = 'main'
-    CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud/aidevops/jenkins-agent-tools:20260401'
-    KANIKO_IMAGE = 'harbor.zoudekang.cloud/ci-tools/kaniko-executor:v1.23.2-debug'
+    CI_TOOLS_IMAGE = '192.168.1.100:3443/ci-tools/jenkins-agent-tools:20260401'
+    KANIKO_IMAGE = '192.168.1.100:3443/ci-tools/kaniko-executor:v1.23.2-debug'
+  }
+
+  parameters {
+    booleanParam(name: 'FULL_BUILD', defaultValue: false, description: 'Enable full build (all modules, ignoring git diff)')
   }
 
   stages {
@@ -88,13 +88,21 @@ spec:
         checkout scm
         script {
           sh '''
-            HOME=/tmp git config --global --add safe.directory "$WORKSPACE"
-            HOME=/tmp git config --global --add safe.directory "$(pwd)"
+            git config --global --add safe.directory "$WORKSPACE"
+            git config --global --add safe.directory "$(pwd)"
           '''
           env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
           env.GIT_COMMIT_MSG_RAW = sh(script: 'git log -1 --pretty=%s', returnStdout: true).trim()
-          env.GIT_COMMIT_TAG = env.BUILD_NUMBER
-          currentBuild.displayName = "#${env.BUILD_NUMBER}"
+          env.GIT_COMMIT_TAG = sh(
+            script: '''
+              MSG=$(git log -1 --pretty=%s | tr '[:upper:]' '[:lower:]')
+              MSG=$(printf "%s" "$MSG" | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//; s/-*$//')
+              if [ -z "$MSG" ]; then MSG=commit; fi
+              printf "%s-%s" "$MSG" "$(git rev-parse --short HEAD)"
+            ''',
+            returnStdout: true
+          ).trim()
+          currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.GIT_COMMIT_TAG}"
         }
       }
     }
@@ -102,57 +110,67 @@ spec:
     stage('检测变更服务') {
       steps {
         script {
-          def changed = sh(
-            script: '''
+          if (params.FULL_BUILD) {
+            echo 'FULL_BUILD=true - building all modules'
+            env.BUILD_AUTH = 'true'
+            env.BUILD_GATEWAY = 'true'
+            env.BUILD_SYSTEM = 'true'
+            env.BUILD_UI = 'true'
+            env.AI_CHAT_CONFIG_CHANGED = 'true'
+            env.SKIP_PIPELINE = 'false'
+          } else {
+            def changed = sh(
+              script: '''
               if git rev-parse HEAD~1 >/dev/null 2>&1; then
                 git diff --name-only HEAD~1 HEAD
               else
                 git ls-files
               fi
             ''',
-            returnStdout: true
-          ).trim().split('\n') as List
+              returnStdout: true
+            ).trim().split('\n') as List
 
-          def targets = [] as Set
-          changed.each { f ->
-            if (!f?.trim()) return
-            if (f.startsWith('aidevops-auth/')) targets << 'auth'
-            if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
-            if (f.startsWith('aidevops-modules/aidevops-system/')) targets << 'system'
-            if (f.startsWith('aidevops-ui/')) targets << 'ui'
-            if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
-              targets << 'auth'; targets << 'gateway'; targets << 'system'
+            def targets = [] as Set
+            changed.each { f ->
+              if (!f?.trim()) return
+              if (f.startsWith('aidevops-auth/')) targets << 'auth'
+              if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
+              if (f.startsWith('aidevops-modules/aidevops-system/')) targets << 'system'
+              if (f.startsWith('aidevops-ui/')) targets << 'ui'
+              if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
+                targets << 'auth'; targets << 'gateway'; targets << 'system'
+              }
+              if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == '.dockerignore' || f.startsWith('deploy/')) {
+                targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
+              }
             }
-            if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == '.dockerignore' || f.startsWith('deploy/')) {
-              targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
+
+            env.AI_CHAT_CONFIG_CHANGED = changed.any { f ->
+              f?.startsWith('deploy/helm/aidevops-cloud/') ||
+              f == 'Jenkinsfile' ||
+              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/controller/AiChatController.java') ||
+              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/config/AiChatProperties.java') ||
+              f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/service/') ||
+              f?.startsWith('aidevops-ui/src/views/ai/chat/') ||
+              f?.startsWith('aidevops-ui/src/api/ai/chat.js')
+            } ? 'true' : 'false'
+
+            env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
+            env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
+            env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
+            env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
+            env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
+
+            if (env.SKIP_PIPELINE == 'true') {
+              currentBuild.description = 'No relevant changes detected'
             }
-          }
-
-          env.AI_CHAT_CONFIG_CHANGED = changed.any { f ->
-            f?.startsWith('deploy/helm/aidevops-cloud/') ||
-            f == 'Jenkinsfile' ||
-            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/controller/AiChatController.java') ||
-            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/config/AiChatProperties.java') ||
-            f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/service/') ||
-            f?.startsWith('aidevops-ui/src/views/ai/chat/') ||
-            f?.startsWith('aidevops-ui/src/api/ai/chat.js')
-          } ? 'true' : 'false'
-
-          env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
-          env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
-          env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
-          env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
-          env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
-
-          if (env.SKIP_PIPELINE == 'true') {
-            currentBuild.description = 'No relevant changes detected'
-          }
-          env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
-          env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
-          env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
-          env.BUILD_UI = env.BUILD_UI ?: 'false'
-          env.AI_CHAT_CONFIG_CHANGED = env.AI_CHAT_CONFIG_CHANGED ?: 'false'
-          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
+            env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
+            env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
+            env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
+            env.BUILD_UI = env.BUILD_UI ?: 'false'
+            env.AI_CHAT_CONFIG_CHANGED = env.AI_CHAT_CONFIG_CHANGED ?: 'false'
+            echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
+          } // end else FULL_BUILD
         }
       }
     }
@@ -220,7 +238,7 @@ metadata:
   namespace: ${BUILD_NAMESPACE}
   labels:
     app: ci-build
-    ci-role: backend-builder
+    ci-role: "Jenkins-${BUILD_NUMBER}-backend"
     ci-service: ${image_name}
 spec:
   restartPolicy: Never
@@ -247,11 +265,9 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: m2-cache
-      persistentVolumeClaim:
-        claimName: jenkins-m2-cache-pvc
+      emptyDir: {}
     - name: kaniko-cache
-      persistentVolumeClaim:
-        claimName: jenkins-kaniko-cache-pvc
+      emptyDir: {}
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -261,7 +277,7 @@ spec:
   initContainers:
     - name: builder
       image: ${CI_TOOLS_IMAGE}
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
       command: ["sh","-lc"]
       args:
         - |
@@ -273,7 +289,7 @@ spec:
         - name: workspace
           mountPath: /workspace
         - name: m2-cache
-          mountPath: /home/jenkins/agent/.m2
+          mountPath: /home/ubuntu/.m2
   containers:
     - name: kaniko
       image: ${KANIKO_IMAGE}
@@ -308,7 +324,7 @@ metadata:
   namespace: ${BUILD_NAMESPACE}
   labels:
     app: ci-build
-    ci-role: ui-builder
+    ci-role: "Jenkins-${BUILD_NUMBER}-ui"
     ci-service: aidevops-ui
 spec:
   restartPolicy: Never
@@ -335,11 +351,9 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: npm-cache
-      persistentVolumeClaim:
-        claimName: jenkins-npm-cache-pvc
+      emptyDir: {}
     - name: kaniko-cache
-      persistentVolumeClaim:
-        claimName: jenkins-kaniko-cache-pvc
+      emptyDir: {}
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -349,7 +363,7 @@ spec:
   initContainers:
     - name: builder
       image: ${CI_TOOLS_IMAGE}
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
       command: ["sh","-lc"]
       args:
         - |
@@ -368,7 +382,7 @@ spec:
         - name: workspace
           mountPath: /workspace
         - name: npm-cache
-          mountPath: /home/jenkins/agent/.npm
+          mountPath: /home/ubuntu/.npm
         - name: kaniko-cache
           mountPath: /kaniko-cache
   containers:
@@ -444,7 +458,7 @@ YAML
       }
     }
 
-    stage('滚动更新至正式环境') {
+    stage('滚动更新至测试环境') {
       when {
         expression { env.SKIP_PIPELINE != 'true' }
       }
@@ -455,25 +469,25 @@ YAML
 
             if [ "${BUILD_AUTH:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-auth auth=${REGISTRY}/${TEST_PROJECT}/aidevops-auth:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-auth kubernetes.io/change-cause="${BUILD_NUMBER}" --overwrite
+              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-auth kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-auth --timeout=300s
             fi
 
             if [ "${BUILD_GATEWAY:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-gateway gateway=${REGISTRY}/${TEST_PROJECT}/aidevops-gateway:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="${BUILD_NUMBER}" --overwrite
+              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-gateway kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-gateway --timeout=300s
             fi
 
             if [ "${BUILD_SYSTEM:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-system system=${REGISTRY}/${TEST_PROJECT}/aidevops-system:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="${BUILD_NUMBER}" --overwrite
+              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-system kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-system --timeout=300s
             fi
 
             if [ "${BUILD_UI:-false}" = "true" ]; then
               kubectl -n ${K8S_NAMESPACE} set image deployment/aidevops-ui ui=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="${BUILD_NUMBER}" --overwrite
+              kubectl -n ${K8S_NAMESPACE} annotate deployment/aidevops-ui kubernetes.io/change-cause="jenkins build #${BUILD_NUMBER}" --overwrite
               kubectl -n ${K8S_NAMESPACE} rollout status deployment/aidevops-ui --timeout=300s
             fi
           '''

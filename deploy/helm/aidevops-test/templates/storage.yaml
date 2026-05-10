@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "aidevops-cloud.fullname" . }}-mysql-pv
+spec:
+  capacity:
+    storage: {{ .Values.mysql.nfs.size }}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: {{ .Values.mysql.nfs.server | quote }}
+    path: {{ .Values.mysql.nfs.path | quote }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aidevops-mysql-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.mysql.nfs.size }}
+  volumeName: {{ include "aidevops-cloud.fullname" . }}-mysql-pv

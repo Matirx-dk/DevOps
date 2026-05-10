@@ -54,7 +54,7 @@ ui:
 ingress:
   enabled: true
   className: nginx
-  host: devops.zoudekang.cloud
+  host: test.zoudekang.cloud
   uiPath: /
   nacosPath: /nacos
 
@@ -69,4 +69,3 @@ sqlInit:
     ryConfigSql: ""
     ryCloudSql: ""
     quartzSql: ""
-# trigger cloud
