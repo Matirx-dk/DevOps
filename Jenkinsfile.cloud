@@ -29,9 +29,11 @@ spec:
       tty: true
   volumes:
     - name: m2-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
     - name: npm-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
 """
     }
   }
@@ -256,9 +258,11 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: m2-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-m2-cache-pvc
     - name: kaniko-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
@@ -342,9 +346,11 @@ spec:
     - name: workspace
       emptyDir: {}
     - name: npm-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-npm-cache-pvc
     - name: kaniko-cache
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: jenkins-kaniko-cache-pvc
     - name: harbor-config
       secret:
         secretName: harbor-regcred
