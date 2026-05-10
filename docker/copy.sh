@@ -25,7 +25,7 @@ echo "begin copy aidevops-auth "
 cp ../aidevops-auth/target/aidevops-auth.jar ./aidevops/auth/jar
 
 echo "begin copy aidevops-visual "
-cp ../aidevops-visual/aidevops-monitor/target/aidevops-visual-monitor.jar  ./aidevops/visual/monitor/jar
+cp ../aidevops-modules/aidevops-visual/aidevops-monitor/target/aidevops-visual-monitor.jar  ./aidevops/visual/monitor/jar
 
 echo "begin copy aidevops-modules-system "
 cp ../aidevops-modules/aidevops-system/target/aidevops-modules-system.jar ./aidevops/modules/system/jar
