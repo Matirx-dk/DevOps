@@ -201,9 +201,8 @@ spec:
                   -pl "$module" -am \
                   -DskipTests=true \
                   -q
-                # 计算 binaries 路径
-                local mod_path="${module//\//\/}"
-                local bin_path="/tmp/sonar-src/${mod_path}/target/classes"
+                # binaries 路径：模块路径即目录路径
+                local bin_path="/tmp/sonar-src/${module}/target/classes"
                 # SonarQube 分析
                 mvn sonar:sonar \
                   -f /tmp/sonar-src/pom.xml \
