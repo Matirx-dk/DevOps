@@ -183,7 +183,7 @@ spec:
       }
       steps {
         container('builder') {
-          withCredentials([usernamePassword(credentialsId: 'sonarqube-token', usernameVariable: 'SQ_USER', passwordVariable: 'SQ_PASS')]) {
+          withCredentials([stringCredentials(credentialsId: 'sonarqube-token', variable: 'SQ_TOKEN')]) {
             sh '''
               SQ_HOST="http://sonarqube.sonarqube:9000/sonarqube"
 
@@ -198,7 +198,7 @@ spec:
                 mvn sonar:sonar -T1C || true \
                   -f /tmp/sonar-src/pom.xml \
                   -pl "$module" -am \
-                  -Dsonar.token=${SQ_PASS} \
+                  -Dsonar.token=${SQ_TOKEN} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.projectKey="$project_key" \
                   -Dsonar.projectName="$project_key" \
