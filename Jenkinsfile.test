@@ -101,18 +101,9 @@ spec:
             git config --global --add safe.directory "$WORKSPACE"
             git config --global --add safe.directory "$(pwd)"
           '''
+          env.GIT_COMMIT_TAG = "jenkins-${env.BUILD_NUMBER}"
           env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-          env.GIT_COMMIT_MSG_RAW = sh(script: 'git log -1 --pretty=%s', returnStdout: true).trim()
-          env.GIT_COMMIT_TAG = sh(
-            script: '''
-              MSG=$(git log -1 --pretty=%s | tr '[:upper:]' '[:lower:]')
-              MSG=$(printf "%s" "$MSG" | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//; s/-*$//')
-              if [ -z "$MSG" ]; then MSG=commit; fi
-              printf "%s-%s" "$MSG" "$(git rev-parse --short HEAD)"
-            ''',
-            returnStdout: true
-          ).trim()
-          currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.GIT_COMMIT_TAG}"
+          currentBuild.displayName = "#${env.BUILD_NUMBER}"
         }
       }
     }
