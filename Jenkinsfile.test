@@ -59,11 +59,11 @@ spec:
     TEST_PROJECT = 'aidevops-test'
     K8S_NAMESPACE = 'aidevops-test'
     BUILD_NAMESPACE = 'jenkins'
-    GIT_REPO = 'https://github.com/Matirx-dk/DevOps.git'
+    GIT_REPO = 'https://github.com/dekangzou/DevOps.git'
     GIT_BRANCH = 'test'
     CI_TOOLS_IMAGE = 'harbor.zoudekang.cloud:3443/ci-tools/jenkins-agent-tools:20260401'
     KANIKO_IMAGE = 'harbor.zoudekang.cloud:3443/ci-tools/kaniko-executor:v1.23.2-debug'
-    SONAR_HOST_URL = 'http://10.10.67.242:9000/sonarqube'
+    SONAR_HOST_URL = 'http://sonarqube.sonarqube:9000/sonarqube'
     FULL_BUILD = '${params.FULL_BUILD ?: false}'
   }
 
@@ -115,7 +115,7 @@ spec:
             echo 'FULL_BUILD=true — 跳过变更检测，全量构建所有服务'
             env.BUILD_AUTH='true'
             env.BUILD_GATEWAY = 'true'
-            env.BUILD_COMMON = 'true'
+            env.BUILD_SYSTEM = 'true'
             env.BUILD_UI = 'true'
             env.AI_CHAT_CONFIG_CHANGED = 'true'
             env.SKIP_PIPELINE = 'false'
@@ -136,12 +136,13 @@ spec:
               if (!f?.trim()) return
               if (f.startsWith('aidevops-auth/')) targets << 'auth'
               if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
+              if (f.startsWith('aidevops-modules/aidevops-system/')) targets << 'system'
               if (f.startsWith('aidevops-ui/')) targets << 'ui'
               if (f == 'pom.xml' || f.startsWith('aidevops-common/') || f.startsWith('aidevops-api/') || f.startsWith('aidevops-modules/pom.xml') || f.startsWith('aidevops-common/pom.xml')) {
-                targets << 'common'; targets << 'auth'; targets << 'gateway'
+                targets << 'auth'; targets << 'gateway'; targets << 'system'
               }
               if (f.startsWith('docker/build/') || f == 'Jenkinsfile' || f == 'Jenkinsfile.test' || f == '.dockerignore' || f.startsWith('deploy/')) {
-                targets << 'auth'; targets << 'gateway'; targets << 'common'; targets << 'ui'
+                targets << 'auth'; targets << 'gateway'; targets << 'system'; targets << 'ui'
               }
             }
 
@@ -157,7 +158,7 @@ spec:
 
             env.BUILD_AUTH = targets.contains('auth') ? 'true' : 'false'
             env.BUILD_GATEWAY = targets.contains('gateway') ? 'true' : 'false'
-            env.BUILD_COMMON = targets.contains('common') ? 'true' : 'false'
+            env.BUILD_SYSTEM = targets.contains('system') ? 'true' : 'false'
             env.BUILD_UI = targets.contains('ui') ? 'true' : 'false'
             env.SKIP_PIPELINE = targets.isEmpty() ? 'true' : 'false'
 
@@ -167,10 +168,10 @@ spec:
           }
           env.BUILD_AUTH = env.BUILD_AUTH ?: 'false'
           env.BUILD_GATEWAY = env.BUILD_GATEWAY ?: 'false'
-          env.BUILD_COMMON = env.BUILD_COMMON ?: 'false'
+          env.BUILD_SYSTEM = env.BUILD_SYSTEM ?: 'false'
           env.BUILD_UI = env.BUILD_UI ?: 'false'
           env.AI_CHAT_CONFIG_CHANGED = env.AI_CHAT_CONFIG_CHANGED ?: 'false'
-          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, common=${env.BUILD_COMMON}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
+          echo "Changed services => auth=${env.BUILD_AUTH}, gateway=${env.BUILD_GATEWAY}, system=${env.BUILD_SYSTEM}, ui=${env.BUILD_UI}, aiChatConfig=${env.AI_CHAT_CONFIG_CHANGED}"
         }
       }
     }
@@ -178,7 +179,7 @@ spec:
 
     stage('SonarQube 代码分析') {
       when {
-        expression { env.FULL_BUILD == 'true' || (env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_COMMON == 'true' || env.BUILD_UI == 'true')) }
+        expression { env.FULL_BUILD == 'true' || (env.SKIP_PIPELINE != 'true' && (env.BUILD_AUTH == 'true' || env.BUILD_GATEWAY == 'true' || env.BUILD_SYSTEM == 'true')) }
       }
       steps {
         container('builder') {
@@ -194,16 +195,18 @@ spec:
                 local module="$1"
                 local project_key="$2"
                 echo "[SonarQube] 开始分析 $module ..."
-                # 每个模块有自己的 pom.xml，直接用模块路径
-                mvn compile \
-                  -f "/tmp/sonar-src/${module}/pom.xml" \
+                # 先编译获取 class 文件
+                mvn compile -T1C \
+                  -f /tmp/sonar-src/pom.xml \
+                  -pl "$module" -am \
                   -DskipTests=true \
                   -q
-                # binaries 路径
+                # binaries 路径：模块路径即目录路径
                 local bin_path="/tmp/sonar-src/${module}/target/classes"
-                # SonarQube 分析（用模块自己的 pom，无 -pl）
+                # SonarQube 分析
                 mvn sonar:sonar \
-                  -f "/tmp/sonar-src/${module}/pom.xml" \
+                  -f /tmp/sonar-src/pom.xml \
+                  -pl "$module" \
                   -Dsonar.token=${SQ_TOKEN} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.projectKey="$project_key" \
@@ -215,16 +218,13 @@ spec:
               }
 
               if [ "${BUILD_AUTH}" = "true" ]; then
-                run_analysis "aidevops-auth" "aidevops-auth"
+                run_analysis "aidevops-auth" "auth"
               fi
               if [ "${BUILD_GATEWAY}" = "true" ]; then
-                run_analysis "aidevops-gateway" "aidevops-gateway"
+                run_analysis "aidevops-gateway" "gateway"
               fi
-              if [ "${BUILD_COMMON}" = "true" ]; then
-                run_analysis "aidevops-common" "aidevops-common"
-              fi
-              if [ "${BUILD_UI}" = "true" ]; then
-                echo "[SonarQube] aidevops-ui 跳过（Maven 分析不适用前端项目）"
+              if [ "${BUILD_SYSTEM}" = "true" ]; then
+                run_analysis "aidevops-modules/aidevops-system" "system"
               fi
 
               rm -rf /tmp/sonar-src
