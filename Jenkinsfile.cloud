@@ -43,7 +43,7 @@ spec:
   }
 
   environment {
-    REGISTRY = '192.168.1.100:3443'
+    REGISTRY = 'harbor.zoudekang.cloud:3443'
     TEST_PROJECT = 'aidevops-cloud'
     K8S_NAMESPACE = 'aidevops-cloud'
     BUILD_NAMESPACE = 'jenkins'
