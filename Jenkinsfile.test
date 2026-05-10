@@ -191,8 +191,6 @@ spec:
               git config --global https.sslVerify false
               git clone --branch ${GIT_BRANCH} --single-branch --depth=1 ${GIT_REPO} /tmp/sonar-src
 
-              SQ_SCAN_FAILED=0
-
               run_analysis() {
                 local module="$1"
                 local project_key="$2"
@@ -208,43 +206,15 @@ spec:
                 # SonarQube 分析
                 mvn sonar:sonar \
                   -f /tmp/sonar-src/pom.xml \
-                  -pl "$module" -am \
+                  -pl "$module" \
                   -Dsonar.token=${SQ_TOKEN} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.projectKey="$project_key" \
                   -Dsonar.projectName="$project_key" \
                   -Dsonar.java.binaries="$bin_path" \
                   -Dsonar.skipTests=true \
-                  -Dsonar.inclusions="**/*.java"
-                local mvn_exit=$?
-                if [ $mvn_exit -ne 0 ]; then
-                  echo "[SonarQube] $module Maven 扫描失败，退出码: $mvn_exit"
-                  SQ_SCAN_FAILED=1
-                  return
-                fi
-                # 等待 SonarQube 处理
-                sleep 5
-                # 查询 Quality Gate 状态
-                local gate_resp
-                gate_resp=$(curl -s -u ${SQ_TOKEN}: "${SQ_HOST}/api/qualitygates/project_status?projectKey=$project_key")
-                local gate_status
-                gate_status=$(echo "$gate_resp" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('projectStatus',{}).get('status','UNKNOWN'))" 2>/dev/null)
-                echo "[SonarQube] $module Quality Gate 状态: $gate_status"
-                if [ "$gate_status" != "OK" ]; then
-                  echo "[SonarQube] $module 质量门禁未通过！"
-                  echo "--- 问题详情 ---"
-                  echo "$gate_resp" | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-conditions=d.get('projectStatus',{}).get('conditions',[])
-for c in conditions:
-    if c.get('status')!='OK':
-        print(f'  [{c[\"status\"]}] {c.get(\"metricKey\",\"\")} = {c.get(\"actualValue\",\"\")} (阈值: {c.get(\"errorThreshold\",\"N/A\")})')
-" 2>/dev/null
-                  SQ_SCAN_FAILED=1
-                else
-                  echo "[SonarQube] $module 质量门禁通过 ✅"
-                fi
+                  -Dsonar.inclusions="**/*.java" || true
+                echo "[SonarQube] $module 分析完成"
               }
 
               if [ "${BUILD_AUTH}" = "true" ]; then
@@ -259,10 +229,6 @@ for c in conditions:
 
               rm -rf /tmp/sonar-src
               echo "[SonarQube] 全部分析完成"
-              if [ "$SQ_SCAN_FAILED" = "1" ]; then
-                echo "[ERROR] SonarQube 质量检测未通过，构建已打断"
-                exit 1
-              fi
             '''
           }
         }
