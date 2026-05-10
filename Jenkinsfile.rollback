@@ -218,7 +218,7 @@ spec:
         always {
             container('builder') {
                 echo "释放发布锁 ..."
-                sh "kubectl delete configmap ${env.LOCK_NAME} -n jenkins --ignore-not-found=true 2>/dev/null || true"
+                sh "kubectl delete configmap ${env.LOCK_NAME} -n jenkins --ignore-not-found=true || true"
             }
         }
     }

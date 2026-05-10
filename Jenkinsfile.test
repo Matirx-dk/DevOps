@@ -286,7 +286,7 @@ metadata:
   namespace: ${BUILD_NAMESPACE}
   labels:
     app: ci-build
-    ci-role: "Jenkins-${BUILD_NUMBER}-backend"
+    ci-role: "jenkins-${BUILD_NUMBER}-backend"
     ci-service: ${image_name}
 spec:
   restartPolicy: Never
@@ -379,7 +379,7 @@ metadata:
   namespace: ${BUILD_NAMESPACE}
   labels:
     app: ci-build
-    ci-role: "Jenkins-${BUILD_NUMBER}-ui"
+    ci-role: "jenkins-${BUILD_NUMBER}-ui"
     ci-service: aidevops-ui
 spec:
   restartPolicy: Never
