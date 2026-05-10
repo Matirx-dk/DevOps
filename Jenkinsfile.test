@@ -195,13 +195,24 @@ spec:
                 local module="$1"
                 local project_key="$2"
                 echo "[SonarQube] 开始分析 $module ..."
-                mvn sonar:sonar -T1C \
+                # 先编译获取 class 文件
+                mvn compile -T1C \
                   -f /tmp/sonar-src/pom.xml \
                   -pl "$module" -am \
+                  -DskipTests=true \
+                  -q
+                # 计算 binaries 路径
+                local mod_path="${module//\//\/}"
+                local bin_path="/tmp/sonar-src/${mod_path}/target/classes"
+                # SonarQube 分析
+                mvn sonar:sonar \
+                  -f /tmp/sonar-src/pom.xml \
+                  -pl "$module" \
                   -Dsonar.token=${SQ_TOKEN} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.projectKey="$project_key" \
                   -Dsonar.projectName="$project_key" \
+                  -Dsonar.java.binaries="$bin_path" \
                   -Dsonar.skipTests=true \
                   -Dsonar.inclusions="**/*.java" || true
                 echo "[SonarQube] $module 分析完成"
