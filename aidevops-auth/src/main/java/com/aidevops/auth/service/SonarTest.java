@@ -60,6 +60,7 @@ public class SonarTest {
         System.out.println("log2");
         System.out.println("log1");
         System.out.println("log2");
+        System.out.println("log2");
     }
 
     public static void main(String[] args) {
