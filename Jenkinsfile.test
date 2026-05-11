@@ -206,7 +206,7 @@ spec:
                 # SonarQube 分析
                 mvn sonar:sonar \
                   -f /tmp/sonar-src/pom.xml \
-                  -pl "$module" \
+                  -pl "$module" -am \
                   -Dsonar.token=${SQ_TOKEN} \
                   -Dsonar.host.url=${SQ_HOST} \
                   -Dsonar.projectKey="$project_key" \
