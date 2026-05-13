@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -387,7 +388,7 @@ public class OpenClawGatewayClient {
 
     private String receiveFirstFrame(String wsUrl, int timeoutMs) throws Exception {
         CompletableFuture<String> firstFrameFuture = new CompletableFuture<>();
-        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
+        HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).connectTimeout(Duration.ofMillis(timeoutMs)).build();
         WebSocket.Listener listener = new WebSocket.Listener() {
             private final StringBuilder textBuffer = new StringBuilder();
             @Override public void onOpen(WebSocket webSocket) { webSocket.request(1); }
@@ -468,7 +469,7 @@ public class OpenClawGatewayClient {
     private Map<String, Object> sendConnectAndReceive(String wsUrl, int timeoutMs) throws Exception {
         CompletableFuture<String> challengeFuture = new CompletableFuture<>();
         CompletableFuture<String> responseFuture = new CompletableFuture<>();
-        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
+        HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).connectTimeout(Duration.ofMillis(timeoutMs)).build();
 
         WebSocket.Listener listener = new WebSocket.Listener() {
             private final StringBuilder textBuffer = new StringBuilder();
@@ -527,7 +528,7 @@ public class OpenClawGatewayClient {
         CompletableFuture<String> chatAckFuture = new CompletableFuture<>();
         CompletableFuture<String> chatFinalFuture = new CompletableFuture<>();
         CompletableFuture<String> historyFuture = new CompletableFuture<>();
-        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
+        HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).connectTimeout(Duration.ofMillis(timeoutMs)).build();
         final String[] runIdHolder = new String[1];
         final StringBuilder latestDelta = new StringBuilder();
 
