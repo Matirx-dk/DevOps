@@ -52,10 +52,7 @@ public class OpenClawGatewayClient {
         data.put("connectionMode", "pooled-scaffold");
         data.put("probe", probeChallenge());
         data.put("connectDraft", buildConnectDraft());
-        data.put("message", enabled()
-            ? "已启用 Gateway 探测模式：当前可验证 challenge，并测试真实 connect。"
-            : "当前未启用真实 Gateway 对接，系统继续使用本地 mock 会话回退。"
-        );
+        data.put("message", "AI 运维助手已就绪，请输入您的问题。");
         return data;
     }
 

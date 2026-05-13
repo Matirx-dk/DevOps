@@ -42,15 +42,7 @@ public class AiChatServiceImpl implements IAiChatService {
             return row;
         });
 
-        messageStore.computeIfAbsent("chat_demo_main", key -> {
-            List<Map<String, Object>> messages = new ArrayList<>();
-            messages.add(buildMessage("assistant", "你好，这里是 AI 运维对话页。当前后端已经不是纯 mock，而是补上了本地消息存储和 Gateway WS challenge 探测。"));
-            messages.add(buildMessage("assistant", gatewayClient.enabled()
-                ? "当前已启用 Gateway 探测模式。下一步是继续补 connect.challenge 之后的设备签名与 connect/chat.send。"
-                : "当前未启用真实 Gateway 配置，所以仍会先走本地回退流程。"
-            ));
-            return messages;
-        });
+        messageStore.computeIfAbsent("chat_demo_main", key -> new ArrayList<>());
     }
 
     @Override
