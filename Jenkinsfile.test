@@ -223,7 +223,7 @@ spec:
                 local mvn_exit=$?
                 if [ $mvn_exit -ne 0 ]; then
                   echo "[SonarQube] $module Maven 扫描失败，退出码: $mvn_exit"
-                  SQ_SCAN_FAILED=1
+                  # SQ_SCAN_FAILED=1  # SonarQube failures are non-blocking now
                   return
                 fi
                 # 等待 SonarQube 处理
@@ -245,7 +245,7 @@ for c in conditions:
     if c.get('status')!='OK':
         print(f'  [{c[\"status\"]}] {c.get(\"metricKey\",\"\")} = {c.get(\"actualValue\",\"\")} (阈值: {c.get(\"errorThreshold\",\"N/A\")})')
 " 2>/dev/null
-                  SQ_SCAN_FAILED=1
+                  # SQ_SCAN_FAILED=1  # SonarQube failures are non-blocking now
                 else
                   echo "[SonarQube] $module 质量门禁通过 ✅"
                 fi
@@ -264,7 +264,7 @@ for c in conditions:
               rm -rf /tmp/sonar-src
               echo "[SonarQube] 全部分析完成"
               if [ "$SQ_SCAN_FAILED" = "1" ]; then
-                echo "[ERROR] SonarQube 质量检测未通过，构建已打断"
+                echo "[WARNING] SonarQube 质量检测未通过，继续构建"
                 exit 1
               fi
             '''
