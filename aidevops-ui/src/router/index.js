@@ -126,7 +126,7 @@ export const dynamicRoutes = [
       }
     ]
   },
-{ path: '/ip', component: Layout, children: [{ path: '', component: () => import('@/views/ip/index'), name: 'IpManagement', meta: { title: 'IP管理', icon: 'server' } }] },
+//{ path: '/ip', component: Layout, children: [{ path: '', component: () => import('@/views/ip/index'), name: 'IpManagement', meta: { title: 'IP管理', icon: 'server' } }] },
 
 ]
 
