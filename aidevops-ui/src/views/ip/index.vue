@@ -62,10 +62,10 @@
           </template>
         </el-table-column>
         <el-table-column label="用途" align="center" key="purpose" prop="purpose" v-if="columns.purpose.visible" :show-overflow-tooltip="true" />
-        <el-table-column label="标签" align="center" key="tags" prop="tags" v-if="columns.tags.visible">
+        <el-table-column label="标签" align="center" key="tags" prop="tags" v-if="columns.tags.visible" :show-overflow-tooltip="true">
           <template slot-scope="scope">
             <span v-if="!scope.row.tags">-</span>
-            <el-tag v-else v-for="tag in scope.row.tags.split(',')" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
+            <el-tag v-else v-for="tag in scope.row.tags.split(',')" :key="tag" size="small" style="margin-right: 4px">{{ tag }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="状态" align="center" key="status" prop="status" v-if="columns.status.visible" width="80">
@@ -85,16 +85,17 @@
       <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
     </div>
 
+    <!-- 新增/修改对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="IP地址" prop="ipAddress">
-          <el-input v-model="form.ipAddress" placeholder="请输入IP地址" style="width:100%" />
+          <el-input v-model="form.ipAddress" placeholder="请输入IP地址" style="width: 100%" />
         </el-form-item>
         <el-form-item label="主机名" prop="hostName">
-          <el-input v-model="form.hostName" placeholder="请输入主机名" style="width:100%" />
+          <el-input v-model="form.hostName" placeholder="请输入主机名" style="width: 100%" />
         </el-form-item>
         <el-form-item label="端口" prop="port">
-          <el-input-number v-model="form.port" :min="1" :max="65535" style="width:100%" />
+          <el-input-number v-model="form.port" :min="1" :max="65535" style="width: 100%" placeholder="端口号" />
         </el-form-item>
         <el-form-item label="环境" prop="env">
           <el-radio-group v-model="form.env">
@@ -103,13 +104,13 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="用途" prop="purpose">
-          <el-input v-model="form.purpose" placeholder="请输入用途" style="width:100%" />
+          <el-input v-model="form.purpose" placeholder="请输入用途" style="width: 100%" />
         </el-form-item>
         <el-form-item label="标签" prop="tags">
-          <el-input v-model="form.tags" placeholder="多个标签用逗号分隔，如: k8s,mysql" style="width:100%" />
+          <el-input v-model="form.tags" placeholder="多个标签用逗号分隔，如: k8s,mysql,redis" style="width: 100%" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" style="width:100%" />
+          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" style="width: 100%" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -166,71 +167,127 @@ export default {
       rules: {
         ipAddress: [
           { required: true, message: 'IP地址不能为空', trigger: 'blur' },
-          { pattern: /^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$/, message: '请输入正确的IP地址', trigger: 'blur' }
+          {
+            pattern: /^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$/,
+            message: '请输入正确的IP地址',
+            trigger: 'blur'
+          }
         ],
         hostName: [{ required: true, message: '主机名不能为空', trigger: 'blur' }],
         env: [{ required: true, message: '请选择环境', trigger: 'change' }]
       },
       ids: [],
+      // 模拟数据（后端实现前先用这个展示）
       mockData: [
         { ipId: 1, ipAddress: '192.168.10.101', hostName: 'devops-1', port: 22, env: 'test', purpose: 'K8s 控制面 / Jenkins', tags: 'k8s,jenkins', status: '0', remark: '内网 FRP 映射 47.115.133.185:4101', createTime: '2026-03-28 10:00:00' },
         { ipId: 2, ipAddress: '192.168.10.102', hostName: 'devops-2', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s', status: '0', remark: '内网 FRP 映射 47.115.133.185:4102', createTime: '2026-03-28 10:01:00' },
-        { ipId: 3, ipAddress: '192.168.10.103', hostName: 'devops-3', port: 22, env: 'test', purpose: 'K8s 工作节点 / SonarQube', tags: 'k8s,sonarqube', status: '0', remark: '内网 FRP 映射 47.115.133.185:4103', createTime: '2026-03-28 10:02:00' },
+        { ipId: 3, ipAddress: '192.168.10.103', hostName: 'devops-3', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s,sonarqube', status: '0', remark: '内网 FRP 映射 47.115.133.185:4103', createTime: '2026-03-28 10:02:00' },
         { ipId: 4, ipAddress: '192.168.10.104', hostName: 'devops-4', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s', status: '0', remark: '内网 FRP 映射 47.115.133.185:4104', createTime: '2026-03-28 10:03:00' },
         { ipId: 5, ipAddress: '47.115.133.185', hostName: 'beijing-proxy', port: 22, env: 'cloud', purpose: '公网入口 / Nginx / FRP Server', tags: 'frp,nginx,mihomo', status: '0', remark: '香港云服务器，代理节点', createTime: '2026-03-25 09:00:00' },
         { ipId: 6, ipAddress: '38.76.217.113', hostName: 'hk-server', port: 22, env: 'cloud', purpose: '香港云服务器', tags: 'proxy', status: '0', remark: '无密码 SSH', createTime: '2026-03-20 08:00:00' },
         { ipId: 7, ipAddress: '192.168.1.104', hostName: 'harbor', port: 80, env: 'cloud', purpose: 'Harbor 镜像仓库', tags: 'harbor', status: '0', remark: '内网地址，Nginx 反代公网访问', createTime: '2026-03-25 10:00:00' },
-        { ipId: 8, ipAddress: '10.137.88.151', hostName: 'mihomo-proxy', port: 7890, env: 'test', purpose: '开发环境 HTTP 代理', tags: 'mihomo,proxy', status: '0', remark: 'devops-1 上的透明代理', createTime: '2026-04-01 12:00:00' }
+        { ipId: 8, ipAddress: '10.137.88.151', hostName: 'mihomo-proxy', port: 7890, env: 'test', purpose: '开发环境 HTTP 代理', tags: 'mihomo,proxy', status: '0', remark: 'devops-1 上的透明代理，frp 内网机器均配置此代理', createTime: '2026-04-01 12:00:00' }
       ]
     }
   },
-  created() { this.getList() },
+  created() {
+    this.getList()
+  },
   methods: {
     getList() {
       this.loading = true
+      // TODO: 后端实现后替换为真实接口
+      // this.$axios.get('/system/ip', { params: this.queryParams }).then(res => { ... })
       setTimeout(() => {
         let data = this.mockData
-        if (this.queryParams.ipAddress) data = data.filter(d => d.ipAddress.includes(this.queryParams.ipAddress))
-        if (this.queryParams.hostName) data = data.filter(d => d.hostName.includes(this.queryParams.hostName))
-        if (this.queryParams.env) data = data.filter(d => d.env === this.queryParams.env)
-        if (this.queryParams.status) data = data.filter(d => d.status === this.queryParams.status)
-        this.ipList = data.slice((this.queryParams.pageNum - 1) * this.queryParams.pageSize, this.queryParams.pageNum * this.queryParams.pageSize)
+        if (this.queryParams.ipAddress) {
+          data = data.filter(d => d.ipAddress.includes(this.queryParams.ipAddress))
+        }
+        if (this.queryParams.hostName) {
+          data = data.filter(d => d.hostName.includes(this.queryParams.hostName))
+        }
+        if (this.queryParams.env) {
+          data = data.filter(d => d.env === this.queryParams.env)
+        }
+        if (this.queryParams.status) {
+          data = data.filter(d => d.status === this.queryParams.status)
+        }
+        const start = (this.queryParams.pageNum - 1) * this.queryParams.pageSize
+        const end = start + this.queryParams.pageSize
+        this.ipList = data.slice(start, end)
         this.total = data.length
         this.loading = false
       }, 200)
     },
-    handleQuery() { this.queryParams.pageNum = 1; this.getList() },
-    resetQuery() { this.dateRange = []; this.$resetForm('queryForm'); this.handleQuery() },
+    handleQuery() {
+      this.queryParams.pageNum = 1
+      this.getList()
+    },
+    resetQuery() {
+      this.dateRange = []
+      this.$resetForm('queryForm')
+      this.handleQuery()
+    },
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.ipId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
     },
-    handleAdd() { this.reset(); this.dialogTitle = '添加IP'; this.dialogVisible = true },
+    handleAdd() {
+      this.reset()
+      this.dialogTitle = '添加IP'
+      this.dialogVisible = true
+    },
     handleUpdate(row) {
       this.reset()
-      this.form = { ...(row.ipId ? row : this.ipList.find(d => d.ipId === this.ids[0])) }
+      const rowData = row.ipId ? row : this.ipList.find(d => d.ipId === this.ids[0])
+      this.form = { ...rowData }
       this.dialogTitle = '修改IP'
       this.dialogVisible = true
     },
     handleDelete(row) {
       const ipIds = row.ipId ? [row.ipId] : this.ids
-      this.$confirm('是否确认删除所选IP记录？', '警告', { type: 'warning' })
-        .then(() => { this.$modal.msgSuccess('删除成功（Mock）'); this.getList() })
-        .catch(() => {})
+      this.$confirm('是否确认删除所选IP记录？', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        // TODO: 后端实现后替换为真实接口
+        // this.$axios.delete('/system/ip/' + ipIds.join(',')).then(() => { this.getList() })
+        this.$modal.msgSuccess('删除成功（Mock）')
+        this.getList()
+      }).catch(() => {})
     },
-    handleStatusChange() { this.$modal.msgSuccess('状态修改成功（Mock）') },
-    handleExport() { this.download('system/ip/export', { ...this.queryParams }, `ip_management_${Date.now()}.xlsx`) },
+    handleStatusChange(row) {
+      // TODO: 后端实现后替换为真实接口
+      // this.$axios.put('/system/ip/' + row.ipId + '/status?status=' + row.status)
+      this.$modal.msgSuccess('状态修改成功（Mock）')
+    },
+    handleExport() {
+      this.download('system/ip/export', { ...this.queryParams }, `ip_management_${new Date().getTime()}.xlsx`)
+    },
     submitForm() {
       this.$refs.form.validate(valid => {
         if (!valid) return
+        // TODO: 后端实现后替换为真实接口
+        // const action = this.form.ipId ? 'put' : 'post'
+        // this.$axios[action]('/system/ip', this.form).then(() => { ... })
         this.$modal.msgSuccess((this.form.ipId ? '修改' : '新增') + '成功（Mock）')
         this.dialogVisible = false
         this.getList()
       })
     },
     reset() {
-      this.form = { ipAddress: '', hostName: '', port: 22, env: 'test', purpose: '', tags: '', remark: '', status: '0' }
+      this.form = {
+        ipAddress: '',
+        hostName: '',
+        port: 22,
+        env: 'test',
+        purpose: '',
+        tags: '',
+        remark: '',
+        status: '0'
+      }
       this.$resetForm('form')
     }
   }
@@ -238,5 +295,7 @@ export default {
 </script>
 
 <style scoped>
-.page-ip .el-input-number { width: 100%; }
+.page-ip .el-input-number {
+  width: 100%;
+}
 </style>
