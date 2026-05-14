@@ -129,7 +129,7 @@ spec:
                                 choice(name: 'CONFIRM', choices: ['否', '是'], description: "将对 aidevops-${svcList} 执行回滚到 ${revisionHint}")
                             ]
                         )
-                        if (userInput['CONFIRM'] == '否') {
+                        if (userInput.CONFIRM == '否') {
                             error '用户取消回滚'
                         }
                     }
