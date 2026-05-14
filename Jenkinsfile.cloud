@@ -124,7 +124,7 @@ spec:
             ).trim().split('\n') as List
 
             def targets = [] as Set
-            changed.each { f ->
+            changed.each { String f ->
               if (!f?.trim()) return
               if (f.startsWith('aidevops-auth/')) targets << 'auth'
               if (f.startsWith('aidevops-gateway/')) targets << 'gateway'
@@ -138,7 +138,7 @@ spec:
               }
             }
 
-            env.AI_CHAT_CONFIG_CHANGED = changed.any { f ->
+            env.AI_CHAT_CONFIG_CHANGED = changed.any { String f ->
               f?.startsWith('deploy/helm/aidevops-cloud/') ||
               f == 'Jenkinsfile' ||
               f?.startsWith('aidevops-modules/aidevops-system/src/main/java/com/aidevops/system/controller/AiChatController.java') ||
