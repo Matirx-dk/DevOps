@@ -122,6 +122,39 @@
 </template>
 
 <script>
+const STORAGE_KEY = 'aidevops_ip_list'
+
+const DEFAULT_DATA = [
+  { ipId: 1, ipAddress: '192.168.10.101', hostName: 'devops-1', port: 22, env: 'test', purpose: 'K8s 控制面 / Jenkins', tags: 'k8s,jenkins', status: '0', remark: '内网 FRP 映射 47.115.133.185:4101', createTime: '2026-03-28 10:00:00' },
+  { ipId: 2, ipAddress: '192.168.10.102', hostName: 'devops-2', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s', status: '0', remark: '内网 FRP 映射 47.115.133.185:4102', createTime: '2026-03-28 10:01:00' },
+  { ipId: 3, ipAddress: '192.168.10.103', hostName: 'devops-3', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s,sonarqube', status: '0', remark: '内网 FRP 映射 47.115.133.185:4103', createTime: '2026-03-28 10:02:00' },
+  { ipId: 4, ipAddress: '192.168.10.104', hostName: 'devops-4', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s', status: '0', remark: '内网 FRP 映射 47.115.133.185:4104', createTime: '2026-03-28 10:03:00' },
+  { ipId: 5, ipAddress: '47.115.133.185', hostName: 'beijing-proxy', port: 22, env: 'cloud', purpose: '公网入口 / Nginx / FRP Server', tags: 'frp,nginx,mihomo', status: '0', remark: '香港云服务器，代理节点', createTime: '2026-03-25 09:00:00' },
+  { ipId: 6, ipAddress: '38.76.217.113', hostName: 'hk-server', port: 22, env: 'cloud', purpose: '香港云服务器', tags: 'proxy', status: '0', remark: '无密码 SSH', createTime: '2026-03-20 08:00:00' },
+  { ipId: 7, ipAddress: '192.168.1.104', hostName: 'harbor', port: 80, env: 'cloud', purpose: 'Harbor 镜像仓库', tags: 'harbor', status: '0', remark: '内网地址，Nginx 反代公网访问', createTime: '2026-03-25 10:00:00' },
+  { ipId: 8, ipAddress: '10.137.88.151', hostName: 'mihomo-proxy', port: 7890, env: 'test', purpose: '开发环境 HTTP 代理', tags: 'mihomo,proxy', status: '0', remark: 'devops-1 上的透明代理，frp 内网机器均配置此代理', createTime: '2026-04-01 12:00:00' }
+]
+
+function getStoredData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch (e) {}
+  // 首次或损坏：用默认数据初始化
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA))
+  return DEFAULT_DATA
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+}
+
+function formatDate() {
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
 export default {
   name: 'IpManagement',
   data() {
@@ -155,6 +188,7 @@ export default {
       dialogTitle: '',
       dialogVisible: false,
       form: {
+        ipId: null,
         ipAddress: '',
         hostName: '',
         port: 22,
@@ -176,18 +210,7 @@ export default {
         hostName: [{ required: true, message: '主机名不能为空', trigger: 'blur' }],
         env: [{ required: true, message: '请选择环境', trigger: 'change' }]
       },
-      ids: [],
-      // 模拟数据（后端实现前先用这个展示）
-      mockData: [
-        { ipId: 1, ipAddress: '192.168.10.101', hostName: 'devops-1', port: 22, env: 'test', purpose: 'K8s 控制面 / Jenkins', tags: 'k8s,jenkins', status: '0', remark: '内网 FRP 映射 47.115.133.185:4101', createTime: '2026-03-28 10:00:00' },
-        { ipId: 2, ipAddress: '192.168.10.102', hostName: 'devops-2', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s', status: '0', remark: '内网 FRP 映射 47.115.133.185:4102', createTime: '2026-03-28 10:01:00' },
-        { ipId: 3, ipAddress: '192.168.10.103', hostName: 'devops-3', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s,sonarqube', status: '0', remark: '内网 FRP 映射 47.115.133.185:4103', createTime: '2026-03-28 10:02:00' },
-        { ipId: 4, ipAddress: '192.168.10.104', hostName: 'devops-4', port: 22, env: 'test', purpose: 'K8s 工作节点', tags: 'k8s', status: '0', remark: '内网 FRP 映射 47.115.133.185:4104', createTime: '2026-03-28 10:03:00' },
-        { ipId: 5, ipAddress: '47.115.133.185', hostName: 'beijing-proxy', port: 22, env: 'cloud', purpose: '公网入口 / Nginx / FRP Server', tags: 'frp,nginx,mihomo', status: '0', remark: '香港云服务器，代理节点', createTime: '2026-03-25 09:00:00' },
-        { ipId: 6, ipAddress: '38.76.217.113', hostName: 'hk-server', port: 22, env: 'cloud', purpose: '香港云服务器', tags: 'proxy', status: '0', remark: '无密码 SSH', createTime: '2026-03-20 08:00:00' },
-        { ipId: 7, ipAddress: '192.168.1.104', hostName: 'harbor', port: 80, env: 'cloud', purpose: 'Harbor 镜像仓库', tags: 'harbor', status: '0', remark: '内网地址，Nginx 反代公网访问', createTime: '2026-03-25 10:00:00' },
-        { ipId: 8, ipAddress: '10.137.88.151', hostName: 'mihomo-proxy', port: 7890, env: 'test', purpose: '开发环境 HTTP 代理', tags: 'mihomo,proxy', status: '0', remark: 'devops-1 上的透明代理，frp 内网机器均配置此代理', createTime: '2026-04-01 12:00:00' }
-      ]
+      ids: []
     }
   },
   created() {
@@ -196,28 +219,34 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      // TODO: 后端实现后替换为真实接口
-      // this.$axios.get('/system/ip', { params: this.queryParams }).then(res => { ... })
-      setTimeout(() => {
-        let data = this.mockData
-        if (this.queryParams.ipAddress) {
-          data = data.filter(d => d.ipAddress.includes(this.queryParams.ipAddress))
-        }
-        if (this.queryParams.hostName) {
-          data = data.filter(d => d.hostName.includes(this.queryParams.hostName))
-        }
-        if (this.queryParams.env) {
-          data = data.filter(d => d.env === this.queryParams.env)
-        }
-        if (this.queryParams.status) {
-          data = data.filter(d => d.status === this.queryParams.status)
-        }
-        const start = (this.queryParams.pageNum - 1) * this.queryParams.pageSize
-        const end = start + this.queryParams.pageSize
-        this.ipList = data.slice(start, end)
-        this.total = data.length
-        this.loading = false
-      }, 200)
+      const all = getStoredData()
+      let data = all
+
+      if (this.queryParams.ipAddress) {
+        data = data.filter(d => d.ipAddress.includes(this.queryParams.ipAddress))
+      }
+      if (this.queryParams.hostName) {
+        data = data.filter(d => d.hostName.includes(this.queryParams.hostName))
+      }
+      if (this.queryParams.env) {
+        data = data.filter(d => d.env === this.queryParams.env)
+      }
+      if (this.queryParams.status) {
+        data = data.filter(d => d.status === this.queryParams.status)
+      }
+      if (this.dateRange && this.dateRange.length === 2) {
+        const [start, end] = this.dateRange
+        data = data.filter(d => {
+          const ct = d.createTime.split(' ')[0]
+          return ct >= start && ct <= end
+        })
+      }
+
+      this.total = data.length
+      const start = (this.queryParams.pageNum - 1) * this.queryParams.pageSize
+      const end = start + this.queryParams.pageSize
+      this.ipList = data.slice(start, end)
+      this.loading = false
     },
     handleQuery() {
       this.queryParams.pageNum = 1
@@ -247,38 +276,72 @@ export default {
     },
     handleDelete(row) {
       const ipIds = row.ipId ? [row.ipId] : this.ids
-      this.$confirm('是否确认删除所选IP记录？', '警告', {
+      this.$confirm(`是否确认删除所选的 ${ipIds.length} 条IP记录？`, '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        // TODO: 后端实现后替换为真实接口
-        // this.$axios.delete('/system/ip/' + ipIds.join(',')).then(() => { this.getList() })
-        this.$modal.msgSuccess('删除成功（Mock）')
+        const all = getStoredData()
+        const filtered = all.filter(item => !ipIds.includes(item.ipId))
+        saveData(filtered)
+        this.$modal.msgSuccess('删除成功')
         this.getList()
       }).catch(() => {})
     },
     handleStatusChange(row) {
-      // TODO: 后端实现后替换为真实接口
-      // this.$axios.put('/system/ip/' + row.ipId + '/status?status=' + row.status)
-      this.$modal.msgSuccess('状态修改成功（Mock）')
+      const all = getStoredData()
+      const idx = all.findIndex(item => item.ipId === row.ipId)
+      if (idx !== -1) {
+        all[idx].status = row.status
+        saveData(all)
+        this.$modal.msgSuccess('状态修改成功')
+      }
     },
     handleExport() {
-      this.download('system/ip/export', { ...this.queryParams }, `ip_management_${new Date().getTime()}.xlsx`)
+      const all = getStoredData()
+      const headers = ['IP地址', '主机名', '端口', '环境', '用途', '标签', '状态', '备注', '创建时间']
+      const rows = all.map(d => [
+        d.ipAddress, d.hostName, d.port,
+        d.env === 'cloud' ? '生产' : '测试',
+        d.purpose, d.tags, d.status === '0' ? '正常' : '禁用',
+        d.remark, d.createTime
+      ])
+      const csvContent = [headers, ...rows].map(r => r.map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',')).join('\n')
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `ip_management_${Date.now()}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
     },
     submitForm() {
       this.$refs.form.validate(valid => {
         if (!valid) return
-        // TODO: 后端实现后替换为真实接口
-        // const action = this.form.ipId ? 'put' : 'post'
-        // this.$axios[action]('/system/ip', this.form).then(() => { ... })
-        this.$modal.msgSuccess((this.form.ipId ? '修改' : '新增') + '成功（Mock）')
+        const all = getStoredData()
+        if (this.form.ipId) {
+          // 修改
+          const idx = all.findIndex(item => item.ipId === this.form.ipId)
+          if (idx !== -1) {
+            all[idx] = { ...all[idx], ...this.form }
+            saveData(all)
+            this.$modal.msgSuccess('修改成功')
+          }
+        } else {
+          // 新增
+          const newId = all.length > 0 ? Math.max(...all.map(i => i.ipId)) + 1 : 1
+          const newItem = { ...this.form, ipId: newId, createTime: formatDate() }
+          all.unshift(newItem)
+          saveData(all)
+          this.$modal.msgSuccess('新增成功')
+        }
         this.dialogVisible = false
         this.getList()
       })
     },
     reset() {
       this.form = {
+        ipId: null,
         ipAddress: '',
         hostName: '',
         port: 22,
@@ -299,4 +362,3 @@ export default {
   width: 100%;
 }
 </style>
- 
