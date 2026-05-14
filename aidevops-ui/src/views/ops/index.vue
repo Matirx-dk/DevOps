@@ -33,12 +33,9 @@
       <el-col :xs="24" :lg="7">
         <el-card shadow="hover" class="ops-card">
           <div slot="header"><span>监控与集群</span></div>
-          <div class="ops-status">
-            <el-tag type="info">Grafana 待接入</el-tag>
-            <el-tag type="info">Prometheus 待接入</el-tag>
-            <el-tag type="info">Kuboard 待接入</el-tag>
+          <div class="ops-links">
+            <el-link href="https://test.zoudekang.cloud/grafana/" target="_blank">K8s 集群监控</el-link>
           </div>
-          <p class="ops-tip">预留给监控大盘、指标系统和集群控制台，后续接入后可统一在本页聚合展示。</p>
         </el-card>
       </el-col>
     </el-row>
