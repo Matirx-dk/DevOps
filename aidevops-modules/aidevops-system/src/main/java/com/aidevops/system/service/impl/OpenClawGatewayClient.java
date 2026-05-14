@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class OpenClawGatewayClient {
+    private static final String MSG_KEY = "message";
 
     private static final int PROTOCOL_VERSION = 3;
 
@@ -53,7 +54,7 @@ public class OpenClawGatewayClient {
         data.put("connectionMode", "pooled-scaffold");
         data.put("probe", probeChallenge());
         data.put("connectDraft", buildConnectDraft());
-        data.put("message", "AI 运维助手已就绪，请输入您的问题。");
+        data.put(MSG_KEY, "AI 运维助手已就绪，请输入您的问题。");
         return data;
     }
 
@@ -66,7 +67,7 @@ public class OpenClawGatewayClient {
         if (!enabled()) {
             result.put("ok", false);
             result.put("stage", "disabled");
-            result.put("message", "AI 对话 Gateway 对接未启用，未执行 WS 探测。");
+            result.put(MSG_KEY, "AI 对话 Gateway 对接未启用，未执行 WS 探测。");
             return result;
         }
 
@@ -85,9 +86,9 @@ public class OpenClawGatewayClient {
                     result.put("nonce", payloadMap.get("nonce"));
                     result.put("ts", payloadMap.get("ts"));
                 }
-                result.put("message", "connect.challenge 已收到，可继续测试真实 connect。");
+                result.put(MSG_KEY, "connect.challenge 已收到，可继续测试真实 connect。");
             } catch (Exception parseEx) {
-                result.put("message", "WS 已连通并收到首帧，但首帧 JSON 解析失败。");
+                result.put(MSG_KEY, "WS 已连通并收到首帧，但首帧 JSON 解析失败。");
                 result.put("parseError", parseEx.getMessage());
             }
             return result;
@@ -95,7 +96,7 @@ public class OpenClawGatewayClient {
             result.put("ok", false);
             result.put("stage", "connect-failed");
             result.put("error", ex.getClass().getSimpleName());
-            result.put("message", ex.getMessage());
+            result.put(MSG_KEY, ex.getMessage());
             return result;
         }
     }
@@ -146,7 +147,7 @@ public class OpenClawGatewayClient {
         result.put("signatureResult", signatureResult);
         result.put("request", request);
         result.put("challenge", challenge);
-        result.put("message", "connect 请求草稿已生成。");
+        result.put(MSG_KEY, "connect 请求草稿已生成。");
         return result;
     }
 
@@ -158,7 +159,7 @@ public class OpenClawGatewayClient {
         if (!enabled()) {
             result.put("ok", false);
             result.put("stage", "disabled");
-            result.put("message", "未启用 Gateway，对 connect-test 直接跳过。");
+            result.put(MSG_KEY, "未启用 Gateway，对 connect-test 直接跳过。");
             return result;
         }
 
@@ -179,12 +180,12 @@ public class OpenClawGatewayClient {
                 Map<String, Object> response = objectMapper.readValue(responseFrame, new TypeReference<Map<String, Object>>() {});
                 result.put("response", response);
                 result.put("summary", summarizeConnectResponse(response));
-                result.put("message", Boolean.TRUE.equals(response.get("ok"))
+                result.put(MSG_KEY, Boolean.TRUE.equals(response.get("ok"))
                     ? "connect 测试成功，已收到 hello-ok / success response。"
                     : "connect 已返回 response，但结果不是 ok，已提取 error/details 摘要。"
                 );
             } catch (Exception ex) {
-                result.put("message", "connect 已返回 response frame，但 JSON 解析失败。");
+                result.put(MSG_KEY, "connect 已返回 response frame，但 JSON 解析失败。");
                 result.put("parseError", ex.getMessage());
             }
             return result;
@@ -192,7 +193,7 @@ public class OpenClawGatewayClient {
             result.put("ok", false);
             result.put("stage", "connect-test-failed");
             result.put("error", ex.getClass().getSimpleName());
-            result.put("message", ex.getMessage());
+            result.put(MSG_KEY, ex.getMessage());
             return result;
         }
     }
@@ -214,7 +215,7 @@ public class OpenClawGatewayClient {
     public Map<String, Object> sendMessage(String sessionKey, String message) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("sessionKey", sessionKey);
-        result.put("message", message);
+        result.put(MSG_KEY, message);
         result.put("enabled", enabled());
 
         if (!enabled()) {
@@ -231,7 +232,7 @@ public class OpenClawGatewayClient {
                 result.put("connection", connection.snapshot());
                 result.put("ok", false);
                 result.put("stage", "connection-busy");
-                result.put("message", "当前会话仍有消息在处理中，请稍后再试。" );
+                result.put(MSG_KEY, "当前会话仍有消息在处理中，请稍后再试。" );
                 return result;
             }
             result.put("connection", connection.snapshot());
@@ -263,7 +264,7 @@ public class OpenClawGatewayClient {
             result.put("ok", false);
             result.put("stage", "chat-send-failed");
             result.put("error", ex.getClass().getSimpleName());
-            result.put("message", ex.getMessage());
+            result.put(MSG_KEY, ex.getMessage());
             return result;
         } finally {
             String effectiveSessionKey = hasText(sessionKey) ? sessionKey : "main";
@@ -430,7 +431,7 @@ public class OpenClawGatewayClient {
             summary.put("auth", payload.get("auth"));
         }
         if (!error.isEmpty()) {
-            summary.put("errorMessage", error.get("message"));
+            summary.put("errorMessage", error.get(MSG_KEY));
             summary.put("errorCode", details.get("code"));
             summary.put("errorReason", details.get("reason"));
             summary.put("recommendedNextStep", details.get("recommendedNextStep"));
@@ -559,7 +560,7 @@ public class OpenClawGatewayClient {
                             String state = String.valueOf(payload.get("state"));
                             if (runIdHolder[0] == null || runIdHolder[0].equals(String.valueOf(payload.get("runId")))) {
                                 if ("delta".equals(state)) {
-                                    Map<String, Object> msg = castMap(payload.get("message"));
+                                    Map<String, Object> msg = castMap(payload.get(MSG_KEY));
                                     Object text = msg.get("text");
                                     if (text != null) {
                                         latestDelta.setLength(0);
@@ -626,7 +627,7 @@ public class OpenClawGatewayClient {
             chatRequest.put("method", "chat.send");
             Map<String, Object> chatParams = new LinkedHashMap<>();
             chatParams.put("sessionKey", hasText(sessionKey) ? sessionKey : "main");
-            chatParams.put("message", message);
+            chatParams.put(MSG_KEY, message);
             chatParams.put("deliver", false);
             chatParams.put("idempotencyKey", idempotencyKey);
             chatRequest.put("params", chatParams);
@@ -653,7 +654,7 @@ public class OpenClawGatewayClient {
             String finalText = extractLatestAssistantText(historyResponse);
             if (!hasText(finalText)) {
                 Map<String, Object> chatPayload = castMap(chatFinal.get("payload"));
-                Map<String, Object> finalMessage = castMap(chatPayload.get("message"));
+                Map<String, Object> finalMessage = castMap(chatPayload.get(MSG_KEY));
                 finalText = finalMessage.get("text") == null ? latestDelta.toString() : String.valueOf(finalMessage.get("text"));
             }
 
