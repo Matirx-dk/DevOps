@@ -164,12 +164,6 @@ create table sys_menu (
 insert into sys_menu values('4', 'AI对话', '0', '2', 'ai-chat', 'ai/chat/index', '', '', 1, 0, 'C', '0', '0', '', 'guide', 'admin', sysdate(), '', null, 'AI对话菜单');
 insert into sys_menu values('1', '平台管理', '0', '5', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
 insert into sys_menu values('2000', '运维中心', '0', '4', 'ops', 'ops/index', '', '', 1, 0, 'C', '0', '0', '', 'monitor', 'admin', sysdate(), '', null, '运维中心菜单');
-insert into sys_menu values('2001', 'IP管理', '2000', '1', 'ip', 'ip/index', '', '', 1, 0, 'C', '0', '0', 'ops:ip:list', 'server', 'admin', sysdate(), '', null, 'IP 地址管理菜单');
-insert into sys_menu values('200101', 'IP查询', '2001', '1', '#', '', '', '', 1, 0, 'F', '0', '0', 'ops:ip:query', '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('200102', 'IP新增', '2001', '2', '#', '', '', '', 1, 0, 'F', '0', '0', 'ops:ip:add',   '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('200103', 'IP修改', '2001', '3', '#', '', '', '', 1, 0, 'F', '0', '0', 'ops:ip:edit',  '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('200104', 'IP删除', '2001', '4', '#', '', '', '', 1, 0, 'F', '0', '0', 'ops:ip:remove','#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('200105', 'IP导出', '2001', '5', '#', '', '', '', 1, 0, 'F', '0', '0', 'ops:ip:export', '#', 'admin', sysdate(), '', null, '');
 insert into sys_menu values('3000', '质量中心', '0', '3', 'quality', 'quality/index', '', '', 1, 0, 'C', '0', '0', '', 'skill', 'admin', sysdate(), '', null, '质量中心菜单');
 insert into sys_menu values('1', '平台管理', '0', '5', 'system',           null, '', '', 1, 0, 'M', '0', '0', '', 'system',   'admin', sysdate(), '', null, '平台管理目录');
 -- 二级菜单
@@ -333,22 +327,6 @@ insert into sys_role_menu values ('2', '1057');
 insert into sys_role_menu values ('2', '1058');
 insert into sys_role_menu values ('2', '1059');
 insert into sys_role_menu values ('2', '1060');
-
--- IP 管理菜单
-insert into sys_role_menu values ('1', '2000');
-insert into sys_role_menu values ('1', '2001');
-insert into sys_role_menu values ('1', '200101');
-insert into sys_role_menu values ('1', '200102');
-insert into sys_role_menu values ('1', '200103');
-insert into sys_role_menu values ('1', '200104');
-insert into sys_role_menu values ('1', '200105');
-insert into sys_role_menu values ('2', '2000');
-insert into sys_role_menu values ('2', '2001');
-insert into sys_role_menu values ('2', '200101');
-insert into sys_role_menu values ('2', '200102');
-insert into sys_role_menu values ('2', '200103');
-insert into sys_role_menu values ('2', '200104');
-insert into sys_role_menu values ('2', '200105');
 
 -- ----------------------------
 -- 8、角色和部门关联表  角色1-N部门
