@@ -10,7 +10,7 @@ mysql:
   enabled: true
   rootPassword: password
   database: ry-cloud
-  image: 192.168.1.100:3443/dockerhub-proxy/library/mysql:8.0
+  image: harbor.zoudekang.cloud:3443/dockerhub-proxy/library/mysql:8.0
   nfs:
     server: 192.168.1.100
     path: /data/nfs/share/aidevops-mysql
@@ -18,11 +18,11 @@ mysql:
 
 redis:
   enabled: true
-  image: 192.168.1.100:3443/dockerhub-proxy/library/redis:7-alpine
+  image: harbor.zoudekang.cloud:3443/dockerhub-proxy/library/redis:7-alpine
 
 nacos:
   enabled: true
-  image: 192.168.1.100:3443/dockerhub-proxy/nacos/nacos-server:v2.2.3
+  image: harbor.zoudekang.cloud:3443/dockerhub-proxy/nacos/nacos-server:v2.2.3
   service:
     port: 8848
     grpc1: 9848
