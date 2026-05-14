@@ -1,119 +1,119 @@
-<template>
-  <div class="app-container page-shell page-ip">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="IP地址" prop="ipAddress">
-        <el-input v-model="queryParams.ipAddress" placeholder="请输入IP地址" clearable style="width: 200px" @keyup.enter.native="handleQuery" />
-      </el-form-item>
-      <el-form-item label="主机名" prop="hostName">
-        <el-input v-model="queryParams.hostName" placeholder="请输入主机名" clearable style="width: 200px" @keyup.enter.native="handleQuery" />
-      </el-form-item>
-      <el-form-item label="环境" prop="env">
-        <el-select v-model="queryParams.env" placeholder="全部" clearable style="width: 150px">
-          <el-option label="测试环境" value="test" />
-          <el-option label="生产环境" value="cloud" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 150px">
-          <el-option label="正常" value="0" />
-          <el-option label="禁用" value="1" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="创建时间">
-        <el-date-picker v-model="dateRange" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+<!--<template>-->
+<!--  <div class="app-container page-shell page-ip">-->
+<!--    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">-->
+<!--      <el-form-item label="IP地址" prop="ipAddress">-->
+<!--        <el-input v-model="queryParams.ipAddress" placeholder="请输入IP地址" clearable style="width: 200px" @keyup.enter.native="handleQuery" />-->
+<!--      </el-form-item>-->
+<!--      <el-form-item label="主机名" prop="hostName">-->
+<!--        <el-input v-model="queryParams.hostName" placeholder="请输入主机名" clearable style="width: 200px" @keyup.enter.native="handleQuery" />-->
+<!--      </el-form-item>-->
+<!--      <el-form-item label="环境" prop="env">-->
+<!--        <el-select v-model="queryParams.env" placeholder="全部" clearable style="width: 150px">-->
+<!--          <el-option label="测试环境" value="test" />-->
+<!--          <el-option label="生产环境" value="cloud" />-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
+<!--      <el-form-item label="状态" prop="status">-->
+<!--        <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 150px">-->
+<!--          <el-option label="正常" value="0" />-->
+<!--          <el-option label="禁用" value="1" />-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
+<!--      <el-form-item label="创建时间">-->
+<!--        <el-date-picker v-model="dateRange" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>-->
+<!--      </el-form-item>-->
+<!--      <el-form-item>-->
+<!--        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>-->
+<!--        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>-->
+<!--      </el-form-item>-->
+<!--    </el-form>-->
 
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate">修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete">删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
-    </el-row>
+<!--    <el-row :gutter="10" class="mb8">-->
+<!--      <el-col :span="1.5">-->
+<!--        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>-->
+<!--      </el-col>-->
+<!--      <el-col :span="1.5">-->
+<!--        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate">修改</el-button>-->
+<!--      </el-col>-->
+<!--      <el-col :span="1.5">-->
+<!--        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete">删除</el-button>-->
+<!--      </el-col>-->
+<!--      <el-col :span="1.5">-->
+<!--        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>-->
+<!--      </el-col>-->
+<!--      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>-->
+<!--    </el-row>-->
 
-    <el-table v-loading="loading" :data="ipList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="50" align="center" />
-      <el-table-column label="IP地址" align="center" key="ipAddress" prop="ipAddress" v-if="columns.ipAddress.visible" :show-overflow-tooltip="true" />
-      <el-table-column label="主机名" align="center" key="hostName" prop="hostName" v-if="columns.hostName.visible" :show-overflow-tooltip="true" />
-      <el-table-column label="端口" align="center" key="port" prop="port" v-if="columns.port.visible" width="80" />
-      <el-table-column label="环境" align="center" key="env" prop="env" v-if="columns.env.visible" width="100">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.env === 'cloud' ? 'danger' : 'success'" size="small">
-            {{ scope.row.env === 'cloud' ? '生产' : '测试' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="用途" align="center" key="purpose" prop="purpose" v-if="columns.purpose.visible" :show-overflow-tooltip="true" />
-      <el-table-column label="标签" align="center" key="tags" prop="tags" v-if="columns.tags.visible" :show-overflow-tooltip="true">
-        <template slot-scope="scope">
-          <span v-if="!scope.row.tags">-</span>
-          <el-tag v-else v-for="tag in scope.row.tags.split(',')" :key="tag" size="small" style="margin-right: 4px">{{ tag }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" align="center" key="status" prop="status" v-if="columns.status.visible" width="80">
-        <template slot-scope="scope">
-          <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)" />
-        </template>
-      </el-table-column>
-      <el-table-column label="备注" align="center" key="remark" prop="remark" v-if="columns.remark.visible" :show-overflow-tooltip="true" />
-      <el-table-column label="创建时间" align="center" key="createTime" prop="createTime" v-if="columns.createTime.visible" width="180" />
-      <el-table-column label="操作" align="center" width="160" fixed="right">
-        <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">修改</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+<!--    <el-table v-loading="loading" :data="ipList" @selection-change="handleSelectionChange">-->
+<!--      <el-table-column type="selection" width="50" align="center" />-->
+<!--      <el-table-column label="IP地址" align="center" key="ipAddress" prop="ipAddress" v-if="columns.ipAddress.visible" :show-overflow-tooltip="true" />-->
+<!--      <el-table-column label="主机名" align="center" key="hostName" prop="hostName" v-if="columns.hostName.visible" :show-overflow-tooltip="true" />-->
+<!--      <el-table-column label="端口" align="center" key="port" prop="port" v-if="columns.port.visible" width="80" />-->
+<!--      <el-table-column label="环境" align="center" key="env" prop="env" v-if="columns.env.visible" width="100">-->
+<!--        <template slot-scope="scope">-->
+<!--          <el-tag :type="scope.row.env === 'cloud' ? 'danger' : 'success'" size="small">-->
+<!--            {{ scope.row.env === 'cloud' ? '生产' : '测试' }}-->
+<!--          </el-tag>-->
+<!--        </template>-->
+<!--      </el-table-column>-->
+<!--      <el-table-column label="用途" align="center" key="purpose" prop="purpose" v-if="columns.purpose.visible" :show-overflow-tooltip="true" />-->
+<!--      <el-table-column label="标签" align="center" key="tags" prop="tags" v-if="columns.tags.visible" :show-overflow-tooltip="true">-->
+<!--        <template slot-scope="scope">-->
+<!--          <span v-if="!scope.row.tags">-</span>-->
+<!--          <el-tag v-else v-for="tag in scope.row.tags.split(',')" :key="tag" size="small" style="margin-right: 4px">{{ tag }}</el-tag>-->
+<!--        </template>-->
+<!--      </el-table-column>-->
+<!--      <el-table-column label="状态" align="center" key="status" prop="status" v-if="columns.status.visible" width="80">-->
+<!--        <template slot-scope="scope">-->
+<!--          <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)" />-->
+<!--        </template>-->
+<!--      </el-table-column>-->
+<!--      <el-table-column label="备注" align="center" key="remark" prop="remark" v-if="columns.remark.visible" :show-overflow-tooltip="true" />-->
+<!--      <el-table-column label="创建时间" align="center" key="createTime" prop="createTime" v-if="columns.createTime.visible" width="180" />-->
+<!--      <el-table-column label="操作" align="center" width="160" fixed="right">-->
+<!--        <template slot-scope="scope">-->
+<!--          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">修改</el-button>-->
+<!--          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>-->
+<!--        </template>-->
+<!--      </el-table-column>-->
+<!--    </el-table>-->
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="IP地址" prop="ipAddress">
-          <el-input v-model="form.ipAddress" placeholder="请输入IP地址" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="主机名" prop="hostName">
-          <el-input v-model="form.hostName" placeholder="请输入主机名" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="端口" prop="port">
-          <el-input-number v-model="form.port" :min="1" :max="65535" style="width: 100%" placeholder="端口号" />
-        </el-form-item>
-        <el-form-item label="环境" prop="env">
-          <el-radio-group v-model="form.env">
-            <el-radio label="test">测试环境</el-radio>
-            <el-radio label="cloud">生产环境</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="用途" prop="purpose">
-          <el-input v-model="form.purpose" placeholder="请输入用途" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="标签" prop="tags">
-          <el-input v-model="form.tags" placeholder="多个标签用逗号分隔，如: k8s,mysql,redis" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" style="width: 100%" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-      </div>
-    </el-dialog>
-  </div>
-</template>
+<!--    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px" append-to-body>-->
+<!--      <el-form ref="form" :model="form" :rules="rules" label-width="80px">-->
+<!--        <el-form-item label="IP地址" prop="ipAddress">-->
+<!--          <el-input v-model="form.ipAddress" placeholder="请输入IP地址" style="width: 100%" />-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="主机名" prop="hostName">-->
+<!--          <el-input v-model="form.hostName" placeholder="请输入主机名" style="width: 100%" />-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="端口" prop="port">-->
+<!--          <el-input-number v-model="form.port" :min="1" :max="65535" style="width: 100%" placeholder="端口号" />-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="环境" prop="env">-->
+<!--          <el-radio-group v-model="form.env">-->
+<!--            <el-radio label="test">测试环境</el-radio>-->
+<!--            <el-radio label="cloud">生产环境</el-radio>-->
+<!--          </el-radio-group>-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="用途" prop="purpose">-->
+<!--          <el-input v-model="form.purpose" placeholder="请输入用途" style="width: 100%" />-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="标签" prop="tags">-->
+<!--          <el-input v-model="form.tags" placeholder="多个标签用逗号分隔，如: k8s,mysql,redis" style="width: 100%" />-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="备注" prop="remark">-->
+<!--          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" style="width: 100%" />-->
+<!--        </el-form-item>-->
+<!--      </el-form>-->
+<!--      <div slot="footer" class="dialog-footer">-->
+<!--        <el-button @click="dialogVisible = false">取 消</el-button>-->
+<!--        <el-button type="primary" @click="submitForm">确 定</el-button>-->
+<!--      </div>-->
+<!--    </el-dialog>-->
+<!--  </div>-->
+<!--</template>-->
 
 <script>
 const STORAGE_KEY = '__ip_data__'
@@ -313,77 +313,77 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
-.page-shell {
-  ::v-deep .el-form { color: #dbe7ff; }
-  ::v-deep .el-form-item__label,
-  ::v-deep .el-radio,
-  ::v-deep .el-checkbox,
-  ::v-deep .el-tabs__item,
-  ::v-deep .el-input__inner,
-  ::v-deep .el-textarea__inner,
-  ::v-deep .el-input-group__append,
-  ::v-deep .el-input-group__prepend,
-  ::v-deep .el-select .el-input__inner,
-  ::v-deep .el-date-editor .el-range-input,
-  ::v-deep .el-date-editor .el-range-separator,
-  ::v-deep .el-pagination,
-  ::v-deep .el-pagination__total,
-  ::v-deep .el-pagination__jump,
-  ::v-deep .el-dropdown,
-  ::v-deep .el-link,
-  ::v-deep .el-descriptions__label,
-  ::v-deep .el-descriptions__content {
-    color: #dbe7ff !important;
-  }
-  ::v-deep .el-input__inner,
-  ::v-deep .el-textarea__inner,
-  ::v-deep .el-select .el-input__inner,
-  ::v-deep .el-date-editor,
-  ::v-deep .el-range-editor {
-    background: rgba(255,255,255,0.05) !important;
-    border-color: rgba(255,255,255,0.12) !important;
-  }
-  ::v-deep .el-range-editor .el-range-input,
-  ::v-deep .el-range-editor .el-range-separator {
-    background: transparent !important;
-  }
-  ::v-deep .el-table,
-  ::v-deep .el-table__expanded-cell,
-  ::v-deep .el-table tr,
-  ::v-deep .el-table th,
-  ::v-deep .el-table td,
-  ::v-deep .el-table__body-wrapper,
-  ::v-deep .el-table__header-wrapper,
-  ::v-deep .el-table__fixed,
-  ::v-deep .el-table__fixed-body-wrapper,
-  ::v-deep .el-table__fixed-header-wrapper {
-    background-color: transparent !important;
-  }
-  ::v-deep .el-table::before,
-  ::v-deep .el-table__fixed::before {
-    background-color: rgba(255,255,255,0.08) !important;
-  }
-  ::v-deep .el-table td,
-  ::v-deep .el-table th.is-leaf {
-    border-bottom-color: rgba(255,255,255,0.08) !important;
-  }
-  ::v-deep .el-dialog {
-    background: linear-gradient(135deg, #0f1728 0%, #18243a 55%, #203456 100%) !important;
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  ::v-deep .el-dialog__header {
-    background: transparent !important;
-    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
-  }
-  ::v-deep .el-dialog__title,
-  ::v-deep .el-dialog__body,
-  ::v-deep .el-dialog__footer {
-    color: #eaf2ff !important;
-  }
-  ::v-deep .el-dialog__body,
-  ::v-deep .el-dialog__footer {
-    background: transparent !important;
-  }
-}
-</style>
+<!--<style lang="scss" scoped>-->
+<!--.page-shell {-->
+<!--  ::v-deep .el-form { color: #dbe7ff; }-->
+<!--  ::v-deep .el-form-item__label,-->
+<!--  ::v-deep .el-radio,-->
+<!--  ::v-deep .el-checkbox,-->
+<!--  ::v-deep .el-tabs__item,-->
+<!--  ::v-deep .el-input__inner,-->
+<!--  ::v-deep .el-textarea__inner,-->
+<!--  ::v-deep .el-input-group__append,-->
+<!--  ::v-deep .el-input-group__prepend,-->
+<!--  ::v-deep .el-select .el-input__inner,-->
+<!--  ::v-deep .el-date-editor .el-range-input,-->
+<!--  ::v-deep .el-date-editor .el-range-separator,-->
+<!--  ::v-deep .el-pagination,-->
+<!--  ::v-deep .el-pagination__total,-->
+<!--  ::v-deep .el-pagination__jump,-->
+<!--  ::v-deep .el-dropdown,-->
+<!--  ::v-deep .el-link,-->
+<!--  ::v-deep .el-descriptions__label,-->
+<!--  ::v-deep .el-descriptions__content {-->
+<!--    color: #dbe7ff !important;-->
+<!--  }-->
+<!--  ::v-deep .el-input__inner,-->
+<!--  ::v-deep .el-textarea__inner,-->
+<!--  ::v-deep .el-select .el-input__inner,-->
+<!--  ::v-deep .el-date-editor,-->
+<!--  ::v-deep .el-range-editor {-->
+<!--    background: rgba(255,255,255,0.05) !important;-->
+<!--    border-color: rgba(255,255,255,0.12) !important;-->
+<!--  }-->
+<!--  ::v-deep .el-range-editor .el-range-input,-->
+<!--  ::v-deep .el-range-editor .el-range-separator {-->
+<!--    background: transparent !important;-->
+<!--  }-->
+<!--  ::v-deep .el-table,-->
+<!--  ::v-deep .el-table__expanded-cell,-->
+<!--  ::v-deep .el-table tr,-->
+<!--  ::v-deep .el-table th,-->
+<!--  ::v-deep .el-table td,-->
+<!--  ::v-deep .el-table__body-wrapper,-->
+<!--  ::v-deep .el-table__header-wrapper,-->
+<!--  ::v-deep .el-table__fixed,-->
+<!--  ::v-deep .el-table__fixed-body-wrapper,-->
+<!--  ::v-deep .el-table__fixed-header-wrapper {-->
+<!--    background-color: transparent !important;-->
+<!--  }-->
+<!--  ::v-deep .el-table::before,-->
+<!--  ::v-deep .el-table__fixed::before {-->
+<!--    background-color: rgba(255,255,255,0.08) !important;-->
+<!--  }-->
+<!--  ::v-deep .el-table td,-->
+<!--  ::v-deep .el-table th.is-leaf {-->
+<!--    border-bottom-color: rgba(255,255,255,0.08) !important;-->
+<!--  }-->
+<!--  ::v-deep .el-dialog {-->
+<!--    background: linear-gradient(135deg, #0f1728 0%, #18243a 55%, #203456 100%) !important;-->
+<!--    border: 1px solid rgba(255,255,255,0.08);-->
+<!--  }-->
+<!--  ::v-deep .el-dialog__header {-->
+<!--    background: transparent !important;-->
+<!--    border-bottom: 1px solid rgba(255,255,255,0.08) !important;-->
+<!--  }-->
+<!--  ::v-deep .el-dialog__title,-->
+<!--  ::v-deep .el-dialog__body,-->
+<!--  ::v-deep .el-dialog__footer {-->
+<!--    color: #eaf2ff !important;-->
+<!--  }-->
+<!--  ::v-deep .el-dialog__body,-->
+<!--  ::v-deep .el-dialog__footer {-->
+<!--    background: transparent !important;-->
+<!--  }-->
+<!--}-->
+<!--</style>-->
