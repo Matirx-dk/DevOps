@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container page-shell page-ip">
     <!-- 搜索表单 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="IP地址" prop="ipAddress">
