@@ -1,89 +1,87 @@
 <template>
-  <div class="app-container page-shell page-ip">
-    <div class="search-card">
-      <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-        <el-form-item label="IP地址" prop="ipAddress">
-          <el-input v-model="queryParams.ipAddress" placeholder="请输入IP地址" clearable style="width: 200px" @keyup.enter.native="handleQuery" />
-        </el-form-item>
-        <el-form-item label="主机名" prop="hostName">
-          <el-input v-model="queryParams.hostName" placeholder="请输入主机名" clearable style="width: 200px" @keyup.enter.native="handleQuery" />
-        </el-form-item>
-        <el-form-item label="环境" prop="env">
-          <el-select v-model="queryParams.env" placeholder="全部" clearable style="width: 150px">
-            <el-option label="测试环境" value="test" />
-            <el-option label="生产环境" value="cloud" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 150px">
-            <el-option label="正常" value="0" />
-            <el-option label="禁用" value="1" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="创建时间">
-          <el-date-picker v-model="dateRange" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
+  <div class="app-container">
+    <!-- 搜索表单 -->
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="IP地址" prop="ipAddress">
+        <el-input v-model="queryParams.ipAddress" placeholder="请输入IP地址" clearable style="width: 200px" @keyup.enter.native="handleQuery" />
+      </el-form-item>
+      <el-form-item label="主机名" prop="hostName">
+        <el-input v-model="queryParams.hostName" placeholder="请输入主机名" clearable style="width: 200px" @keyup.enter.native="handleQuery" />
+      </el-form-item>
+      <el-form-item label="环境" prop="env">
+        <el-select v-model="queryParams.env" placeholder="全部" clearable style="width: 150px">
+          <el-option label="测试环境" value="test" />
+          <el-option label="生产环境" value="cloud" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 150px">
+          <el-option label="正常" value="0" />
+          <el-option label="禁用" value="1" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="创建时间">
+        <el-date-picker v-model="dateRange" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-form>
 
-    <div class="toolbar-card">
-      <el-row :gutter="10" class="mb8">
-        <el-col :span="1.5">
-          <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
-        </el-col>
-        <el-col :span="1.5">
-          <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate">修改</el-button>
-        </el-col>
-        <el-col :span="1.5">
-          <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete">删除</el-button>
-        </el-col>
-        <el-col :span="1.5">
-          <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>
-        </el-col>
-        <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
-      </el-row>
-    </div>
+    <!-- 工具栏 -->
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5">
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate">修改</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete">删除</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>
+      </el-col>
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+    </el-row>
 
-    <div class="table-card">
-      <el-table v-loading="loading" :data="ipList" @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="50" align="center" />
-        <el-table-column label="IP地址" align="center" key="ipAddress" prop="ipAddress" v-if="columns.ipAddress.visible" :show-overflow-tooltip="true" />
-        <el-table-column label="主机名" align="center" key="hostName" prop="hostName" v-if="columns.hostName.visible" :show-overflow-tooltip="true" />
-        <el-table-column label="端口" align="center" key="port" prop="port" v-if="columns.port.visible" width="80" />
-        <el-table-column label="环境" align="center" key="env" prop="env" v-if="columns.env.visible" width="100">
-          <template slot-scope="scope">
-            <el-tag :type="scope.row.env === 'cloud' ? 'danger' : 'success'" size="small">
-              {{ scope.row.env === 'cloud' ? '生产' : '测试' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="用途" align="center" key="purpose" prop="purpose" v-if="columns.purpose.visible" :show-overflow-tooltip="true" />
-        <el-table-column label="标签" align="center" key="tags" prop="tags" v-if="columns.tags.visible" :show-overflow-tooltip="true">
-          <template slot-scope="scope">
-            <span v-if="!scope.row.tags">-</span>
-            <el-tag v-else v-for="tag in scope.row.tags.split(',')" :key="tag" size="small" style="margin-right: 4px">{{ tag }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" align="center" key="status" prop="status" v-if="columns.status.visible" width="80">
-          <template slot-scope="scope">
-            <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)" />
-          </template>
-        </el-table-column>
-        <el-table-column label="备注" align="center" key="remark" prop="remark" v-if="columns.remark.visible" :show-overflow-tooltip="true" />
-        <el-table-column label="创建时间" align="center" key="createTime" prop="createTime" v-if="columns.createTime.visible" width="180" />
-        <el-table-column label="操作" align="center" width="160" fixed="right">
-          <template slot-scope="scope">
-            <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">修改</el-button>
-            <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
-    </div>
+    <!-- 表格 -->
+    <el-table v-loading="loading" :data="ipList" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="50" align="center" />
+      <el-table-column label="IP地址" align="center" key="ipAddress" prop="ipAddress" v-if="columns.ipAddress.visible" :show-overflow-tooltip="true" />
+      <el-table-column label="主机名" align="center" key="hostName" prop="hostName" v-if="columns.hostName.visible" :show-overflow-tooltip="true" />
+      <el-table-column label="端口" align="center" key="port" prop="port" v-if="columns.port.visible" width="80" />
+      <el-table-column label="环境" align="center" key="env" prop="env" v-if="columns.env.visible" width="100">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.env === 'cloud' ? 'danger' : 'success'" size="small">
+            {{ scope.row.env === 'cloud' ? '生产' : '测试' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="用途" align="center" key="purpose" prop="purpose" v-if="columns.purpose.visible" :show-overflow-tooltip="true" />
+      <el-table-column label="标签" align="center" key="tags" prop="tags" v-if="columns.tags.visible" :show-overflow-tooltip="true">
+        <template slot-scope="scope">
+          <span v-if="!scope.row.tags">-</span>
+          <el-tag v-else v-for="tag in scope.row.tags.split(',')" :key="tag" size="small" style="margin-right: 4px">{{ tag }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" align="center" key="status" prop="status" v-if="columns.status.visible" width="80">
+        <template slot-scope="scope">
+          <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)" />
+        </template>
+      </el-table-column>
+      <el-table-column label="备注" align="center" key="remark" prop="remark" v-if="columns.remark.visible" :show-overflow-tooltip="true" />
+      <el-table-column label="创建时间" align="center" key="createTime" prop="createTime" v-if="columns.createTime.visible" width="180" />
+      <el-table-column label="操作" align="center" width="160" fixed="right">
+        <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">修改</el-button>
+          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 新增/修改对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px" append-to-body>
@@ -122,7 +120,7 @@
 </template>
 
 <script>
-const STORAGE_KEY = 'aidevops_ip_list'
+const STORAGE_KEY = '__ip_data__'
 
 const DEFAULT_DATA = [
   { ipId: 1, ipAddress: '192.168.10.101', hostName: 'devops-1', port: 22, env: 'test', purpose: 'K8s 控制面 / Jenkins', tags: 'k8s,jenkins', status: '0', remark: '内网 FRP 映射 47.115.133.185:4101', createTime: '2026-03-28 10:00:00' },
@@ -140,7 +138,6 @@ function getStoredData() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch (e) {}
-  // 首次或损坏：用默认数据初始化
   localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA))
   return DEFAULT_DATA
 }
@@ -160,11 +157,12 @@ export default {
   data() {
     return {
       loading: false,
-      ipList: [],
-      total: 0,
-      showSearch: true,
+      ids: [],
       single: true,
       multiple: true,
+      showSearch: true,
+      total: 0,
+      ipList: [],
       dateRange: [],
       queryParams: {
         pageNum: 1,
@@ -174,43 +172,28 @@ export default {
         env: undefined,
         status: undefined
       },
-      columns: [
-        { key: 'ipAddress', label: 'IP地址', visible: true },
-        { key: 'hostName', label: '主机名', visible: true },
-        { key: 'port', label: '端口', visible: true },
-        { key: 'env', label: '环境', visible: true },
-        { key: 'purpose', label: '用途', visible: true },
-        { key: 'tags', label: '标签', visible: true },
-        { key: 'status', label: '状态', visible: true },
-        { key: 'remark', label: '备注', visible: true },
-        { key: 'createTime', label: '创建时间', visible: true }
-      ],
+      columns: {
+        ipAddress: { label: 'IP地址', visible: true },
+        hostName: { label: '主机名', visible: true },
+        port: { label: '端口', visible: true },
+        env: { label: '环境', visible: true },
+        purpose: { label: '用途', visible: true },
+        tags: { label: '标签', visible: true },
+        status: { label: '状态', visible: true },
+        remark: { label: '备注', visible: true },
+        createTime: { label: '创建时间', visible: true }
+      },
       dialogTitle: '',
       dialogVisible: false,
-      form: {
-        ipId: null,
-        ipAddress: '',
-        hostName: '',
-        port: 22,
-        env: 'test',
-        purpose: '',
-        tags: '',
-        remark: '',
-        status: '0'
-      },
+      form: {},
       rules: {
         ipAddress: [
           { required: true, message: 'IP地址不能为空', trigger: 'blur' },
-          {
-            pattern: /^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$/,
-            message: '请输入正确的IP地址',
-            trigger: 'blur'
-          }
+          { pattern: /^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$/, message: '请输入正确的IP地址', trigger: 'blur' }
         ],
         hostName: [{ required: true, message: '主机名不能为空', trigger: 'blur' }],
         env: [{ required: true, message: '请选择环境', trigger: 'change' }]
-      },
-      ids: []
+      }
     }
   },
   created() {
@@ -219,9 +202,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      const all = getStoredData()
-      let data = all
-
+      let data = getStoredData()
       if (this.queryParams.ipAddress) {
         data = data.filter(d => d.ipAddress.includes(this.queryParams.ipAddress))
       }
@@ -241,11 +222,9 @@ export default {
           return ct >= start && ct <= end
         })
       }
-
       this.total = data.length
       const start = (this.queryParams.pageNum - 1) * this.queryParams.pageSize
-      const end = start + this.queryParams.pageSize
-      this.ipList = data.slice(start, end)
+      this.ipList = data.slice(start, start + this.queryParams.pageSize)
       this.loading = false
     },
     handleQuery() {
@@ -263,12 +242,11 @@ export default {
       this.multiple = !selection.length
     },
     handleAdd() {
-      this.reset()
+      this.form = { ipId: null, ipAddress: '', hostName: '', port: 22, env: 'test', purpose: '', tags: '', remark: '', status: '0' }
       this.dialogTitle = '添加IP'
       this.dialogVisible = true
     },
     handleUpdate(row) {
-      this.reset()
       const rowData = row.ipId ? row : this.ipList.find(d => d.ipId === this.ids[0])
       this.form = { ...rowData }
       this.dialogTitle = '修改IP'
@@ -282,8 +260,7 @@ export default {
         type: 'warning'
       }).then(() => {
         const all = getStoredData()
-        const filtered = all.filter(item => !ipIds.includes(item.ipId))
-        saveData(filtered)
+        saveData(all.filter(item => !ipIds.includes(item.ipId)))
         this.$modal.msgSuccess('删除成功')
         this.getList()
       }).catch(() => {})
@@ -320,7 +297,6 @@ export default {
         if (!valid) return
         const all = getStoredData()
         if (this.form.ipId) {
-          // 修改
           const idx = all.findIndex(item => item.ipId === this.form.ipId)
           if (idx !== -1) {
             all[idx] = { ...all[idx], ...this.form }
@@ -328,37 +304,21 @@ export default {
             this.$modal.msgSuccess('修改成功')
           }
         } else {
-          // 新增
           const newId = all.length > 0 ? Math.max(...all.map(i => i.ipId)) + 1 : 1
-          const newItem = { ...this.form, ipId: newId, createTime: formatDate() }
-          all.unshift(newItem)
+          all.unshift({ ...this.form, ipId: newId, createTime: formatDate() })
           saveData(all)
           this.$modal.msgSuccess('新增成功')
         }
         this.dialogVisible = false
         this.getList()
       })
-    },
-    reset() {
-      this.form = {
-        ipId: null,
-        ipAddress: '',
-        hostName: '',
-        port: 22,
-        env: 'test',
-        purpose: '',
-        tags: '',
-        remark: '',
-        status: '0'
-      }
-      this.$resetForm('form')
     }
   }
 }
 </script>
 
 <style scoped>
-.page-ip .el-input-number {
+.app-container .el-input-number {
   width: 100%;
 }
 </style>
