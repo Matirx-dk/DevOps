@@ -400,7 +400,7 @@ spec:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/backend.Dockerfile
         - --destination=${REGISTRY}/${TEST_PROJECT}/${image_name}:${GIT_COMMIT_TAG}
-        - --snapshot-mode=new
+        - --snapshot-mode=redo
         - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache/${BUILD_NUMBER}
@@ -502,7 +502,7 @@ spec:
         - --context=/workspace/src
         - --dockerfile=/workspace/src/docker/build/frontend.Dockerfile
         - --destination=${REGISTRY}/${TEST_PROJECT}/aidevops-ui:${GIT_COMMIT_TAG}
-        - --snapshot-mode=new
+        - --snapshot-mode=redo
         - --use-new-run
         - --cache=true
         - --cache-dir=/kaniko-cache/${BUILD_NUMBER}
