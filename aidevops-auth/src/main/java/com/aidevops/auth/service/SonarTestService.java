@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-public class SonarTest {
+public class SonarTestService {
 
     private String password = "root123"; // 硬编码密码 - 安全漏洞
 
