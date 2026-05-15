@@ -71,7 +71,7 @@
             :rows="3"
             resize="none"
             placeholder="输入消息，Enter 发送，Shift + Enter 换行"
-            @keydown.enter.exact.prevent="handleInputKeydown"
+            @keydown="handleInputKeydown"
             @focus="inputFocused = true"
             @blur="inputFocused = false"
           />
