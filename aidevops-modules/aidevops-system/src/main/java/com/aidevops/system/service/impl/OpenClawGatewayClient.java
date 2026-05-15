@@ -37,6 +37,14 @@ public class OpenClawGatewayClient {
         this.deviceSigner = deviceSigner;
     }
 
+    private String buildWsUrl(String baseUrl) {
+        String token = hasText(properties.getToken()) ? properties.getToken() : "";
+        if (hasText(token)) {
+            return baseUrl + (baseUrl.contains("?") ? "&" : "?") + "token=" + token;
+        }
+        return baseUrl;
+    }
+
     public boolean enabled() {
         return properties.isEnabled();
     }
@@ -71,7 +79,7 @@ public class OpenClawGatewayClient {
         }
 
         try {
-            String firstFrame = receiveFirstFrame(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs());
+            String firstFrame = receiveFirstFrame(buildWsUrl(properties.getGatewayWsUrl()), properties.getProbeTimeoutMs());
             result.put("ok", true);
             result.put("stage", "challenge-received");
             result.put("firstFrame", firstFrame);
@@ -163,7 +171,7 @@ public class OpenClawGatewayClient {
         }
 
         try {
-            Map<String, Object> exchange = sendConnectAndReceive(properties.getGatewayWsUrl(), properties.getProbeTimeoutMs());
+            Map<String, Object> exchange = sendConnectAndReceive(buildWsUrl(properties.getGatewayWsUrl()), properties.getProbeTimeoutMs());
             Map<String, Object> request = castMap(exchange.get("request"));
             result.put("challenge", exchange.get("challenge"));
             result.put("request", request);
@@ -856,7 +864,7 @@ public class OpenClawGatewayClient {
 
         private Map<String, Object> performSingleFlight(String message) throws Exception {
             return OpenClawGatewayClient.this.sendChatAndReceive(
-                properties.getGatewayWsUrl(),
+                buildWsUrl(properties.getGatewayWsUrl()),
                 properties.getProbeTimeoutMs(),
                 sessionKey,
                 message
