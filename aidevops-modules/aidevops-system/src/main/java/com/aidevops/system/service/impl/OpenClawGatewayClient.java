@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class OpenClawGatewayClient {
 
-    private static final int PROTOCOL_VERSION = 3;
+    private static final int PROTOCOL_VERSION = 4;
 
     private final AiChatProperties properties;
     private final OpenClawDeviceSigner deviceSigner;
